@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b0f8d0165f793d9408e7293d1a747d65, type: 3}
+  m_Name: New Palette Grid
+  m_EditorClassIdentifier: Assembly-CSharp::PaletteGrid
+  cols: 30
+  rows: 16
+  topLeft: {r: 0.5803922, g: 0.26666668, b: 0.121568635, a: 1}
+  topRight: {r: 0.54901963, g: 0.2392157, b: 0.59607846, a: 1}
+  bottomLeft: {r: 0.61960787, g: 0.7686275, b: 0.22352943, a: 1}
+  bottomRight: {r: 0.15686275, g: 0.5176471, b: 0.7803922, a: 1}
+  gammaX: 1
+  gammaY: 1.1
+  centerAmount: 0.834
+  centerOffset: {x: 0, y: 0}
+  centerAngleDeg: 13.6
+  centerStretch: {x: 1, y: 1}
+  centerGamma: 1.48
+  topDarkerBottomLighter: 0.033
+  centerWhite: 0.543
+  saturationBoost: 0.526
+  vibrance: 0.623
+  valueContrast: 1.316
+  valueGain: 0.131
+  yZeroAtTop: 1
