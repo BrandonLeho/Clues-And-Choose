@@ -115,13 +115,7 @@ public class CustomNetworkManager : NetworkManager
     /// <param name="newSceneName">Name of the scene that's about to be loaded</param>
     /// <param name="sceneOperation">Scene operation that's about to happen</param>
     /// <param name="customHandling">true to indicate that scene loading will be handled through overrides</param>
-    public override void OnClientChangeScene(string newSceneName, SceneOperation sceneOperation, bool customHandling) { }
-
-    /// <summary>
-    /// Called on clients when a scene has completed loaded, when the scene load was initiated by the server.
-    /// <para>Scene changes can cause player objects to be destroyed. The default implementation of OnClientSceneChanged in the NetworkManager is to add a player object for the connection if no player object exists.</para>
-    /// </summary>
-    public override void OnClientSceneChanged()
+    public override void OnClientChangeScene(string newSceneName, SceneOperation sceneOperation, bool customHandling)
     {
         base.OnClientSceneChanged();
 
@@ -131,6 +125,15 @@ public class CustomNetworkManager : NetworkManager
             Debug.Log("[CustomNetworkManager] Local player missing after scene change; requesting AddPlayer.");
             NetworkClient.AddPlayer();
         }
+    }
+
+    /// <summary>
+    /// Called on clients when a scene has completed loaded, when the scene load was initiated by the server.
+    /// <para>Scene changes can cause player objects to be destroyed. The default implementation of OnClientSceneChanged in the NetworkManager is to add a player object for the connection if no player object exists.</para>
+    /// </summary>
+    public override void OnClientSceneChanged()
+    {
+        base.OnClientSceneChanged();
     }
 
     #endregion
@@ -161,16 +164,6 @@ public class CustomNetworkManager : NetworkManager
     /// <param name="conn">Connection from client.</param>
     public override void OnServerAddPlayer(NetworkConnectionToClient conn)
     {
-        base.OnServerAddPlayer(conn);
-    }
-
-    /// <summary>
-    /// Called on the server when a client disconnects.
-    /// <para>This is called on the Server when a Client disconnects from the Server. Use an override to decide what should happen when a disconnection is detected.</para>
-    /// </summary>
-    /// <param name="conn">Connection from client.</param>
-    public override void OnServerDisconnect(NetworkConnectionToClient conn)
-    {
         string scene = SceneManager.GetActiveScene().name;
         GameObject prefabToUse = scene == gameplaySceneName ? playerGameplayPrefab : playerLobbyPrefab ?? playerPrefab;
 
@@ -187,6 +180,16 @@ public class CustomNetworkManager : NetworkManager
 
         NetworkServer.AddPlayerForConnection(conn, player);
         Debug.Log($"[CustomNetworkManager] Added player for conn {conn.connectionId} in scene {scene} using prefab {prefabToUse.name}");
+    }
+
+    /// <summary>
+    /// Called on the server when a client disconnects.
+    /// <para>This is called on the Server when a Client disconnects from the Server. Use an override to decide what should happen when a disconnection is detected.</para>
+    /// </summary>
+    /// <param name="conn">Connection from client.</param>
+    public override void OnServerDisconnect(NetworkConnectionToClient conn)
+    {
+        base.OnServerDisconnect(conn);
     }
 
     /// <summary>
