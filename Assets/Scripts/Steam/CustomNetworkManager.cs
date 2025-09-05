@@ -15,7 +15,6 @@ public class CustomNetworkManager : NetworkManager
     public static new CustomNetworkManager singleton => (CustomNetworkManager)NetworkManager.singleton;
 
     public GameObject playerGameplayPrefab;
-    public GameObject cursorPrefab;
 
     /// <summary>
     /// Runs on both Server and Client
@@ -158,25 +157,6 @@ public class CustomNetworkManager : NetworkManager
     public override void OnServerAddPlayer(NetworkConnectionToClient conn)
     {
         base.OnServerAddPlayer(conn);
-
-        // Now spawn a cursor for THIS connection
-        if (cursorPrefab != null)
-        {
-            GameObject cursor = Instantiate(cursorPrefab);
-
-            // Optional: parent to the player so it travels with them / is easy to find
-            if (conn.identity != null)
-            {
-                cursor.transform.SetParent(conn.identity.transform, worldPositionStays: true);
-            }
-
-            // Give the joining client authority so their local input can move it
-            NetworkServer.Spawn(cursor, conn);
-        }
-        else
-        {
-            Debug.LogError("[Network] cursorPrefab not assigned on CustomNetworkManager.");
-        }
     }
 
     /// <summary>
