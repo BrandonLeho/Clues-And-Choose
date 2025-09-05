@@ -1180,10 +1180,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: CursorManager
       objectReference: {fileID: 0}
-    - target: {fileID: 7148195056068978494, guid: 4abb5c2b9b61a7c40bd08890d1ba1595, type: 3}
-      propertyPath: sceneId
-      value: 3599613165
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

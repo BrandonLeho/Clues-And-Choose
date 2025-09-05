@@ -21,5 +21,12 @@ namespace SteamLobbySpace
             Vector3 world = Camera.main.ScreenToWorldPoint(new Vector3(sp.x, sp.y, zDepth));
             transform.position = new Vector3(world.x, world.y, 0f);
         }
+
+        [SerializeField] SpriteRenderer targetRenderer;
+
+        public override void OnStartLocalPlayer()
+        {
+            if (targetRenderer) targetRenderer.enabled = false;
+        }
     }
 }

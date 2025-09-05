@@ -10,9 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 565048546871275971}
   - component: {fileID: 2496962406044250277}
-  - component: {fileID: 8283560035204727187}
-  - component: {fileID: 7148195056068978494}
-  - component: {fileID: 356149012115742263}
   m_Layer: 6
   m_Name: CursorManager
   m_TagString: Untagged
@@ -52,70 +49,3 @@ MonoBehaviour:
   cursorTextureDraggable: {fileID: 2800000, guid: 724d11fa37ffcb44b9b731be80661058, type: 3}
   cursorTextureDragging: {fileID: 2800000, guid: a56b7dd0a7848df41a39a7c2fea1b284, type: 3}
   clickPosition: {x: 0, y: 0}
---- !u!114 &8283560035204727187
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6683582760211952267}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f98e99a6e67074248980bcfa9b64d895, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SteamLobbySpace.PlayerInteractionHandler
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0
-  zDepth: 10
---- !u!114 &7148195056068978494
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6683582760211952267}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Mirror::Mirror.NetworkIdentity
-  sceneId: 0
-  _assetId: 3907169680
-  serverOnly: 0
-  visibility: 0
-  hasSpawned: 0
---- !u!114 &356149012115742263
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6683582760211952267}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8ff3ba0becae47b8b9381191598957c8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Mirror.Components::Mirror.NetworkTransformReliable
-  syncDirection: 1
-  syncMode: 0
-  syncInterval: 0
-  target: {fileID: 565048546871275971}
-  syncPosition: 1
-  syncRotation: 1
-  syncScale: 0
-  onlySyncOnChange: 1
-  compressRotation: 1
-  interpolatePosition: 1
-  interpolateRotation: 1
-  interpolateScale: 1
-  coordinateSpace: 1
-  timelineOffset: 1
-  showGizmos: 0
-  showOverlay: 0
-  overlayColor: {r: 0, g: 0, b: 0, a: 0.5}
-  onlySyncOnChangeCorrectionMultiplier: 2
-  useFixedUpdate: 0
-  rotationSensitivity: 0.01
-  positionPrecision: 0.01
-  scalePrecision: 0.01
