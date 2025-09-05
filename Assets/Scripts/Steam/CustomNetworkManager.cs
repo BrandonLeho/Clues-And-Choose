@@ -115,17 +115,7 @@ public class CustomNetworkManager : NetworkManager
     /// <param name="newSceneName">Name of the scene that's about to be loaded</param>
     /// <param name="sceneOperation">Scene operation that's about to happen</param>
     /// <param name="customHandling">true to indicate that scene loading will be handled through overrides</param>
-    public override void OnClientChangeScene(string newSceneName, SceneOperation sceneOperation, bool customHandling)
-    {
-        base.OnClientSceneChanged();
-
-        // If Auto Create Player is OFF, force AddPlayer after scene switch
-        if (NetworkClient.active && NetworkClient.localPlayer == null)
-        {
-            Debug.Log("[CustomNetworkManager] Local player missing after scene change; requesting AddPlayer.");
-            NetworkClient.AddPlayer();
-        }
-    }
+    public override void OnClientChangeScene(string newSceneName, SceneOperation sceneOperation, bool customHandling) { }
 
     /// <summary>
     /// Called on clients when a scene has completed loaded, when the scene load was initiated by the server.
@@ -154,7 +144,14 @@ public class CustomNetworkManager : NetworkManager
     /// <param name="conn">Connection from client.</param>
     public override void OnServerReady(NetworkConnectionToClient conn)
     {
-        base.OnServerReady(conn);
+        base.OnClientSceneChanged();
+
+        // If Auto Create Player is OFF, force AddPlayer after scene switch
+        if (NetworkClient.active && NetworkClient.localPlayer == null)
+        {
+            Debug.Log("[CustomNetworkManager] Local player missing after scene change; requesting AddPlayer.");
+            NetworkClient.AddPlayer();
+        }
     }
 
     /// <summary>
