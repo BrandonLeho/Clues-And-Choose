@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 898814863477805479}
   - component: {fileID: 5282676179742421675}
   - component: {fileID: 4488473319011687874}
-  m_Layer: 6
+  m_Layer: 5
   m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -184,7 +184,7 @@ MonoBehaviour:
   spriteClickable: {fileID: 1574497776588965693, guid: 8d2bc14f4b4ec6844b0df816f1746294, type: 3}
   spriteDraggable: {fileID: -118057155318131194, guid: 724d11fa37ffcb44b9b731be80661058, type: 3}
   spriteDragging: {fileID: -3777569201786988421, guid: a56b7dd0a7848df41a39a7c2fea1b284, type: 3}
-  worldCursorRenderer: {fileID: 0}
+  worldCursorRenderer: {fileID: 7586770165006704532}
   sortingLayerName: Default
   sortingOrder: 5000
   worldZ: 0
