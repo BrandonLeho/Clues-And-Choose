@@ -18,7 +18,7 @@ namespace SteamLobbySpace
         {
             if (!isLocalPlayer) return;
 
-            Vector2 sp = Mouse.current.position.ReadValue();   // New Input System
+            Vector2 sp = Mouse.current.position.ReadValue();
             var mp = new Vector3(sp.x, sp.y, zDepthFromCamera);
             Vector3 world = Camera.main.ScreenToWorldPoint(mp);
             transform.position = new Vector3(world.x, world.y, 0f);

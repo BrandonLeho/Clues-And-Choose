@@ -51,6 +51,7 @@
     <Compile Include="Assets\Scripts\UI\Panel.cs" />
     <Compile Include="Assets\Scripts\Controller\CursorController\ChangeCursor.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerInteractionHandler.cs" />
+    <Compile Include="Assets\Scripts\Controller\CursorController\NetworkCursorWorld.cs" />
     <Compile Include="Assets\Scripts\Controller\PointerInput.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandler.cs" />
     <Compile Include="Assets\Scripts\Steamworks.NET\SteamManager.cs" />
