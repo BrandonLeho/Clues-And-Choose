@@ -4,12 +4,14 @@ public class CursorControllerModule : MonoBehaviour
 {
     public static CursorControllerModule Instance { get; private set; }
 
-    [SerializeField] private Texture2D cursorTextureDefault;
-    [SerializeField] private Texture2D cursorTextureClickable;
-    [SerializeField] private Texture2D cursorTextureDraggable;
-    [SerializeField] private Texture2D cursorTextureDragging;
+    [Header("Cursor Visual (SpriteRenderer-driven)")]
+    [SerializeField] private ChangeCursor cursorVisual;   // assign your CursorVisual2D object here
 
-    [SerializeField] private Vector2 clickPosition = Vector2.zero;
+    [Header("Sprites per Mode")]
+    [SerializeField] private Sprite spriteDefault;
+    [SerializeField] private Sprite spriteClickable;
+    [SerializeField] private Sprite spriteDraggable;
+    [SerializeField] private Sprite spriteDragging;
 
     private void Awake()
     {
@@ -24,29 +26,37 @@ public class CursorControllerModule : MonoBehaviour
         }
     }
 
-    void Start()
+    private void Start()
     {
-        Cursor.SetCursor(cursorTextureDefault, clickPosition, CursorMode.Auto);
+        // Ensure our visual exists and default sprite is applied
+        if (cursorVisual)
+            cursorVisual.SetSprite(spriteDefault);
+
+        // Make sure the hardware cursor is hidden, since we render our own sprite
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.None;
     }
 
     public void SetToMode(ModeOfCursor modeOfCursor)
     {
+        if (!cursorVisual) return;
+
         switch (modeOfCursor)
         {
             case ModeOfCursor.Default:
-                Cursor.SetCursor(cursorTextureDefault, clickPosition, CursorMode.Auto);
+                cursorVisual.SetSprite(spriteDefault);
                 break;
             case ModeOfCursor.Clickable:
-                Cursor.SetCursor(cursorTextureClickable, clickPosition, CursorMode.Auto);
+                cursorVisual.SetSprite(spriteClickable);
                 break;
             case ModeOfCursor.Draggable:
-                Cursor.SetCursor(cursorTextureDraggable, clickPosition, CursorMode.Auto);
+                cursorVisual.SetSprite(spriteDraggable);
                 break;
             case ModeOfCursor.Dragging:
-                Cursor.SetCursor(cursorTextureDragging, clickPosition, CursorMode.Auto);
+                cursorVisual.SetSprite(spriteDragging);
                 break;
             default:
-                Cursor.SetCursor(cursorTextureDefault, clickPosition, CursorMode.Auto);
+                cursorVisual.SetSprite(spriteDefault);
                 break;
         }
     }
