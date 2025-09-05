@@ -1399,9 +1399,8 @@ MonoBehaviour:
   evaluationMethod: 0
   evaluationInterval: 3
   timeInterpolationGui: 0
-  playerLobbyPrefab: {fileID: 4994856514909240876, guid: 7267df37f3048d644a8fc0bd1d366e0e, type: 3}
   playerGameplayPrefab: {fileID: 6683582760211952267, guid: 4abb5c2b9b61a7c40bd08890d1ba1595, type: 3}
-  gameplaySceneName: GameScene
+  cursorPrefab: {fileID: 6683582760211952267, guid: 4abb5c2b9b61a7c40bd08890d1ba1595, type: 3}
 --- !u!114 &978845370
 MonoBehaviour:
   m_ObjectHideFlags: 0

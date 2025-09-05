@@ -14,10 +14,9 @@ public class CustomNetworkManager : NetworkManager
     // have to cast to this type everywhere.
     public static new CustomNetworkManager singleton => (CustomNetworkManager)NetworkManager.singleton;
 
-    public GameObject playerLobbyPrefab;
     public GameObject playerGameplayPrefab;
+    public GameObject cursorPrefab;
 
-    [SerializeField] private string gameplaySceneName = "GameScene";
     /// <summary>
     /// Runs on both Server and Client
     /// Networking is NOT initialized when this fires
@@ -110,47 +109,7 @@ public class CustomNetworkManager : NetworkManager
     /// Called on the server when a scene is completed loaded, when the scene load was initiated by the server with ServerChangeScene().
     /// </summary>
     /// <param name="sceneName">The name of the new scene.</param>
-    public override void OnServerSceneChanged(string sceneName)
-    {
-        base.OnServerSceneChanged(sceneName);
-
-        if (sceneName != gameplaySceneName) return;
-
-        // For every active connection, ensure they have a gameplay player
-        foreach (var kvp in NetworkServer.connections)
-        {
-            var conn = kvp.Value;
-            if (conn == null) continue;
-
-            // If the conn already has a player, replace it with the gameplay (cursor) prefab
-            if (conn.identity != null)
-            {
-                Transform startPos = GetStartPosition();
-                GameObject newPlayer = startPos != null
-                    ? Instantiate(playerGameplayPrefab, startPos.position, startPos.rotation)
-                    : Instantiate(playerGameplayPrefab);
-
-                // Replace and destroy the old lobby player if it exists
-                var oldPlayer = conn.identity.gameObject;
-                NetworkServer.ReplacePlayerForConnection(conn, newPlayer, true);
-                if (oldPlayer != null && oldPlayer != newPlayer)
-                    NetworkServer.Destroy(oldPlayer);
-
-                Debug.Log($"[CustomNetworkManager] Replaced player for conn {conn.connectionId} with {playerGameplayPrefab.name} in {sceneName}");
-            }
-            else
-            {
-                // No player yet (e.g., late join), add one
-                Transform startPos = GetStartPosition();
-                GameObject newPlayer = startPos != null
-                    ? Instantiate(playerGameplayPrefab, startPos.position, startPos.rotation)
-                    : Instantiate(playerGameplayPrefab);
-
-                NetworkServer.AddPlayerForConnection(conn, newPlayer);
-                Debug.Log($"[CustomNetworkManager] Added (no prior) player for conn {conn.connectionId} with {playerGameplayPrefab.name} in {sceneName}");
-            }
-        }
-    }
+    public override void OnServerSceneChanged(string sceneName) { }
 
     /// <summary>
     /// Called from ClientChangeScene immediately before SceneManager.LoadSceneAsync is executed
@@ -168,11 +127,6 @@ public class CustomNetworkManager : NetworkManager
     public override void OnClientSceneChanged()
     {
         base.OnClientSceneChanged();
-        if (NetworkClient.active && NetworkClient.localPlayer == null)
-        {
-            Debug.Log("[CustomNetworkManager] Local player missing after scene change; requesting AddPlayer().");
-            NetworkClient.AddPlayer();
-        }
     }
 
     #endregion
@@ -203,21 +157,26 @@ public class CustomNetworkManager : NetworkManager
     /// <param name="conn">Connection from client.</param>
     public override void OnServerAddPlayer(NetworkConnectionToClient conn)
     {
-        // If you want lobby avatars in the lobby scene, else this can defer to base
-        string scene = SceneManager.GetActiveScene().name;
-        if (scene == gameplaySceneName || playerLobbyPrefab == null)
+        base.OnServerAddPlayer(conn);
+
+        // Now spawn a cursor for THIS connection
+        if (cursorPrefab != null)
         {
-            base.OnServerAddPlayer(conn); // uses default playerPrefab if set
-            return;
+            GameObject cursor = Instantiate(cursorPrefab);
+
+            // Optional: parent to the player so it travels with them / is easy to find
+            if (conn.identity != null)
+            {
+                cursor.transform.SetParent(conn.identity.transform, worldPositionStays: true);
+            }
+
+            // Give the joining client authority so their local input can move it
+            NetworkServer.Spawn(cursor, conn);
         }
-
-        Transform startPos = GetStartPosition();
-        GameObject player = startPos != null
-            ? Instantiate(playerLobbyPrefab, startPos.position, startPos.rotation)
-            : Instantiate(playerLobbyPrefab);
-
-        NetworkServer.AddPlayerForConnection(conn, player);
-        Debug.Log($"[CustomNetworkManager] Added lobby player for conn {conn.connectionId}");
+        else
+        {
+            Debug.LogError("[Network] cursorPrefab not assigned on CustomNetworkManager.");
+        }
     }
 
     /// <summary>
