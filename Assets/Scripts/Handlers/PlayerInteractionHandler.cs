@@ -8,9 +8,6 @@ namespace SteamLobbySpace
     {
         [SerializeField] float zDepth = 10f;
 
-        void OnEnable() { if (isLocalPlayer) Cursor.visible = false; }
-        void OnDisable() { if (isLocalPlayer) Cursor.visible = true; }
-
         void Update()
         {
             if (!isLocalPlayer) return;
