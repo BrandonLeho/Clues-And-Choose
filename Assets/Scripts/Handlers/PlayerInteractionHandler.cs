@@ -6,21 +6,22 @@ namespace SteamLobbySpace
 {
     public class PlayerInteractionHandler : NetworkBehaviour
     {
-        [SerializeField] float zDepthFromCamera = 10f;
+        [SerializeField] float zDepth = 10f;
 
-        [ClientCallback]
         void OnEnable() { if (isLocalPlayer) Cursor.visible = false; }
-        [ClientCallback]
         void OnDisable() { if (isLocalPlayer) Cursor.visible = true; }
 
-        [ClientCallback]
         void Update()
         {
             if (!isLocalPlayer) return;
 
+#if ENABLE_INPUT_SYSTEM
             Vector2 sp = Mouse.current.position.ReadValue();
-            var mp = new Vector3(sp.x, sp.y, zDepthFromCamera);
-            Vector3 world = Camera.main.ScreenToWorldPoint(mp);
+#else
+            Vector2 sp = Input.mousePosition;
+#endif
+
+            Vector3 world = Camera.main.ScreenToWorldPoint(new Vector3(sp.x, sp.y, zDepth));
             transform.position = new Vector3(world.x, world.y, 0f);
         }
     }

@@ -14,7 +14,10 @@ public class CustomNetworkManager : NetworkManager
     // have to cast to this type everywhere.
     public static new CustomNetworkManager singleton => (CustomNetworkManager)NetworkManager.singleton;
 
+    public GameObject playerLobbyPrefab;
     public GameObject playerGameplayPrefab;
+
+    [SerializeField] private string gameplaySceneName = "GameScene";
 
     /// <summary>
     /// Runs on both Server and Client
@@ -89,11 +92,6 @@ public class CustomNetworkManager : NetworkManager
     /// <param name="newSceneName"></param>
     public override void ServerChangeScene(string newSceneName)
     {
-        if (newSceneName == "GameScene")
-        {
-            this.playerPrefab = playerGameplayPrefab;
-            this.onlineScene = newSceneName;
-        }
         base.ServerChangeScene(newSceneName);
     }
 
@@ -126,6 +124,13 @@ public class CustomNetworkManager : NetworkManager
     public override void OnClientSceneChanged()
     {
         base.OnClientSceneChanged();
+
+        // If Auto Create Player is OFF, force AddPlayer after scene switch
+        if (NetworkClient.active && NetworkClient.localPlayer == null)
+        {
+            Debug.Log("[CustomNetworkManager] Local player missing after scene change; requesting AddPlayer.");
+            NetworkClient.AddPlayer();
+        }
     }
 
     #endregion
@@ -166,7 +171,22 @@ public class CustomNetworkManager : NetworkManager
     /// <param name="conn">Connection from client.</param>
     public override void OnServerDisconnect(NetworkConnectionToClient conn)
     {
-        base.OnServerDisconnect(conn);
+        string scene = SceneManager.GetActiveScene().name;
+        GameObject prefabToUse = scene == gameplaySceneName ? playerGameplayPrefab : playerLobbyPrefab ?? playerPrefab;
+
+        if (prefabToUse == null)
+        {
+            Debug.LogError("[CustomNetworkManager] No prefab assigned for current scene.");
+            return;
+        }
+
+        Transform startPos = GetStartPosition();
+        GameObject player = startPos != null
+            ? Instantiate(prefabToUse, startPos.position, startPos.rotation)
+            : Instantiate(prefabToUse);
+
+        NetworkServer.AddPlayerForConnection(conn, player);
+        Debug.Log($"[CustomNetworkManager] Added player for conn {conn.connectionId} in scene {scene} using prefab {prefabToUse.name}");
     }
 
     /// <summary>

@@ -13,7 +13,6 @@ GameObject:
   - component: {fileID: 8283560035204727187}
   - component: {fileID: 7148195056068978494}
   - component: {fileID: 356149012115742263}
-  - component: {fileID: 6847629287610163300}
   m_Layer: 6
   m_Name: CursorManager
   m_TagString: Untagged
@@ -68,7 +67,7 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  zDepthFromCamera: 10
+  zDepth: 10
 --- !u!114 &7148195056068978494
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -120,19 +119,3 @@ MonoBehaviour:
   rotationSensitivity: 0.01
   positionPrecision: 0.01
   scalePrecision: 0.01
---- !u!114 &6847629287610163300
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6683582760211952267}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 980d079c19715b34c8a85bc07ebc19f9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NetworkCursorWorld
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0
-  zDepth: 10
