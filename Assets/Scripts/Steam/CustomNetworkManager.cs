@@ -18,7 +18,6 @@ public class CustomNetworkManager : NetworkManager
     public GameObject playerGameplayPrefab;
 
     [SerializeField] private string gameplaySceneName = "GameScene";
-
     /// <summary>
     /// Runs on both Server and Client
     /// Networking is NOT initialized when this fires
@@ -92,6 +91,11 @@ public class CustomNetworkManager : NetworkManager
     /// <param name="newSceneName"></param>
     public override void ServerChangeScene(string newSceneName)
     {
+        if (newSceneName == "GameScene")
+        {
+            this.playerPrefab = playerGameplayPrefab;
+            this.onlineScene = newSceneName;
+        }
         base.ServerChangeScene(newSceneName);
     }
 
@@ -106,7 +110,47 @@ public class CustomNetworkManager : NetworkManager
     /// Called on the server when a scene is completed loaded, when the scene load was initiated by the server with ServerChangeScene().
     /// </summary>
     /// <param name="sceneName">The name of the new scene.</param>
-    public override void OnServerSceneChanged(string sceneName) { }
+    public override void OnServerSceneChanged(string sceneName)
+    {
+        base.OnServerSceneChanged(sceneName);
+
+        if (sceneName != gameplaySceneName) return;
+
+        // For every active connection, ensure they have a gameplay player
+        foreach (var kvp in NetworkServer.connections)
+        {
+            var conn = kvp.Value;
+            if (conn == null) continue;
+
+            // If the conn already has a player, replace it with the gameplay (cursor) prefab
+            if (conn.identity != null)
+            {
+                Transform startPos = GetStartPosition();
+                GameObject newPlayer = startPos != null
+                    ? Instantiate(playerGameplayPrefab, startPos.position, startPos.rotation)
+                    : Instantiate(playerGameplayPrefab);
+
+                // Replace and destroy the old lobby player if it exists
+                var oldPlayer = conn.identity.gameObject;
+                NetworkServer.ReplacePlayerForConnection(conn, newPlayer, true);
+                if (oldPlayer != null && oldPlayer != newPlayer)
+                    NetworkServer.Destroy(oldPlayer);
+
+                Debug.Log($"[CustomNetworkManager] Replaced player for conn {conn.connectionId} with {playerGameplayPrefab.name} in {sceneName}");
+            }
+            else
+            {
+                // No player yet (e.g., late join), add one
+                Transform startPos = GetStartPosition();
+                GameObject newPlayer = startPos != null
+                    ? Instantiate(playerGameplayPrefab, startPos.position, startPos.rotation)
+                    : Instantiate(playerGameplayPrefab);
+
+                NetworkServer.AddPlayerForConnection(conn, newPlayer);
+                Debug.Log($"[CustomNetworkManager] Added (no prior) player for conn {conn.connectionId} with {playerGameplayPrefab.name} in {sceneName}");
+            }
+        }
+    }
 
     /// <summary>
     /// Called from ClientChangeScene immediately before SceneManager.LoadSceneAsync is executed
@@ -124,6 +168,11 @@ public class CustomNetworkManager : NetworkManager
     public override void OnClientSceneChanged()
     {
         base.OnClientSceneChanged();
+        if (NetworkClient.active && NetworkClient.localPlayer == null)
+        {
+            Debug.Log("[CustomNetworkManager] Local player missing after scene change; requesting AddPlayer().");
+            NetworkClient.AddPlayer();
+        }
     }
 
     #endregion
@@ -144,14 +193,7 @@ public class CustomNetworkManager : NetworkManager
     /// <param name="conn">Connection from client.</param>
     public override void OnServerReady(NetworkConnectionToClient conn)
     {
-        base.OnClientSceneChanged();
-
-        // If Auto Create Player is OFF, force AddPlayer after scene switch
-        if (NetworkClient.active && NetworkClient.localPlayer == null)
-        {
-            Debug.Log("[CustomNetworkManager] Local player missing after scene change; requesting AddPlayer.");
-            NetworkClient.AddPlayer();
-        }
+        base.OnServerReady(conn);
     }
 
     /// <summary>
@@ -161,22 +203,21 @@ public class CustomNetworkManager : NetworkManager
     /// <param name="conn">Connection from client.</param>
     public override void OnServerAddPlayer(NetworkConnectionToClient conn)
     {
+        // If you want lobby avatars in the lobby scene, else this can defer to base
         string scene = SceneManager.GetActiveScene().name;
-        GameObject prefabToUse = scene == gameplaySceneName ? playerGameplayPrefab : playerLobbyPrefab ?? playerPrefab;
-
-        if (prefabToUse == null)
+        if (scene == gameplaySceneName || playerLobbyPrefab == null)
         {
-            Debug.LogError("[CustomNetworkManager] No prefab assigned for current scene.");
+            base.OnServerAddPlayer(conn); // uses default playerPrefab if set
             return;
         }
 
         Transform startPos = GetStartPosition();
         GameObject player = startPos != null
-            ? Instantiate(prefabToUse, startPos.position, startPos.rotation)
-            : Instantiate(prefabToUse);
+            ? Instantiate(playerLobbyPrefab, startPos.position, startPos.rotation)
+            : Instantiate(playerLobbyPrefab);
 
         NetworkServer.AddPlayerForConnection(conn, player);
-        Debug.Log($"[CustomNetworkManager] Added player for conn {conn.connectionId} in scene {scene} using prefab {prefabToUse.name}");
+        Debug.Log($"[CustomNetworkManager] Added lobby player for conn {conn.connectionId}");
     }
 
     /// <summary>
