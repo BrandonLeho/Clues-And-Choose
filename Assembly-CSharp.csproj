@@ -56,30 +56,29 @@
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandler.cs" />
     <Compile Include="Assets\Scripts\Steamworks.NET\SteamManager.cs" />
     <Compile Include="Assets\Scripts\Controller\CursorController\CursorControllerModule.cs" />
-    <Compile Include="Assets\Scripts\Controller\PlayerPickupInteractor.cs" />
     <Compile Include="Assets\Scripts\Board\BoardLabels.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardLabels.cs" />
     <Compile Include="Assets\Scripts\Board\BoardSpriteGenerator2D.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerListBinder.cs" />
+    <Compile Include="Assets\Scripts\Board\MarkerCorner\DynamicGridRows.cs" />
     <Compile Include="Assets\Scripts\Board\BoardScreenFitter.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard2D.cs" />
     <Compile Include="Assets\Scripts\Board\GridPalettePainter.cs" />
     <Compile Include="Assets\Scripts\Controller\DraggableItem.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardGridPainter.cs" />
+    <Compile Include="Assets\Scripts\Controller\Slot.cs" />
     <Compile Include="Assets\Scripts\Board\ScoreboardAttachToBoard.cs" />
     <Compile Include="Assets\Scripts\UI\LobbyUIManager.cs" />
     <Compile Include="Assets\Scripts\Steam\SteamLobby.cs" />
     <Compile Include="Assets\Scripts\GameNetworking\SaveSpriteAsPNG.cs" />
     <Compile Include="Assets\Scripts\Steam\CustomNetworkManager.cs" />
     <Compile Include="Assets\Scripts\Board\ScoreboardGenerator.cs" />
-    <Compile Include="Assets\Scripts\Controller\ColorSlot.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandlerGame.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerRow.cs" />
     <Compile Include="Assets\Scripts\Board\ScoreboardFitter.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\GameScenePlayerList.cs" />
     <Compile Include="Assets\Scripts\UI\PanelSwapper.cs" />
     <Compile Include="Assets\Scripts\Board\PaletteGrid.cs" />
-    <Compile Include="Assets\Scripts\Controller\Pickupable.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Mirror\Plugins\Mono.Cecil\Mono.CecilX.dll" />

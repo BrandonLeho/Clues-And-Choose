@@ -1,11 +1,10 @@
-// Example: attach to the Lobby panel
 using UnityEngine;
 using TMPro;
 
 public class PlayerListBinder : MonoBehaviour
 {
-    [SerializeField] Transform listParent;            // object with VerticalLayoutGroup
-    [SerializeField] GameObject rowPrefab;            // prefab with a TMP_Text
+    [SerializeField] Transform listParent;
+    [SerializeField] GameObject rowPrefab;
 
     void OnEnable()
     {
@@ -15,7 +14,7 @@ public class PlayerListBinder : MonoBehaviour
     public void Refresh()
     {
         foreach (Transform child in listParent) Destroy(child.gameObject);
-        var names = SteamLobbySpace.LobbyUIManager.Instance.CurrentPlayerNames; // see helper above
+        var names = SteamLobbySpace.LobbyUIManager.Instance.CurrentPlayerNames;
         foreach (var name in names)
         {
             var row = Instantiate(rowPrefab, listParent);
