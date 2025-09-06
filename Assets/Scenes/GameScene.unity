@@ -32269,10 +32269,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.GridLayoutGroup
   m_Padding:
-    m_Left: 0
-    m_Right: 0
-    m_Top: 0
-    m_Bottom: 0
+    m_Left: 10
+    m_Right: 10
+    m_Top: 10
+    m_Bottom: 10
   m_ChildAlignment: 4
   m_StartCorner: 0
   m_StartAxis: 0
@@ -32331,9 +32331,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DynamicGridLayout
   listParent: {fileID: 770518962}
-  rowPrefab: {fileID: 853919431}
+  leftCellPrefab: {fileID: 853919431}
+  rightCellPrefab: {fileID: 853919431}
   useRosterStore: 1
   refreshOnEnable: 1
+  fitCellSizeToParent: 1
+  minRowHeight: 0
 --- !u!224 &771616155 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 3337803732932086652, guid: 96c2c7455eef99f46961f53ff646d8a6, type: 3}

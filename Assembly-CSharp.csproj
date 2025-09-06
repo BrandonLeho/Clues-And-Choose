@@ -60,7 +60,6 @@
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardLabels.cs" />
     <Compile Include="Assets\Scripts\Board\BoardSpriteGenerator2D.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerListBinder.cs" />
-    <Compile Include="Assets\Scripts\Board\MarkerCorner\DynamicGridRows.cs" />
     <Compile Include="Assets\Scripts\Board\BoardScreenFitter.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard2D.cs" />
     <Compile Include="Assets\Scripts\Board\GridPalettePainter.cs" />
@@ -73,6 +72,7 @@
     <Compile Include="Assets\Scripts\GameNetworking\SaveSpriteAsPNG.cs" />
     <Compile Include="Assets\Scripts\Steam\CustomNetworkManager.cs" />
     <Compile Include="Assets\Scripts\Board\ScoreboardGenerator.cs" />
+    <Compile Include="Assets\Scripts\Board\MarkerCorner\MarkerGridSetup.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandlerGame.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerRow.cs" />
     <Compile Include="Assets\Scripts\Board\ScoreboardFitter.cs" />
