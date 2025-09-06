@@ -1,0 +1,481 @@
+fileFormatVersion: 2
+guid: 94ba9cbaf7424be479eace220eff6002
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 3764887150537722801
+    second: CluesAndChooseLogo_0
+  - first:
+      213: 2392724771100686076
+    second: CluesAndChooseLogo_1
+  - first:
+      213: -639503744698563941
+    second: CluesAndChooseLogo_2
+  - first:
+      213: -6170269935364392724
+    second: CluesAndChooseLogo_3
+  - first:
+      213: 5392186462364571640
+    second: CluesAndChooseLogo_4
+  - first:
+      213: -7014910442248561684
+    second: CluesAndChooseLogo_5
+  - first:
+      213: -7537566181070811181
+    second: CluesAndChooseLogo_6
+  - first:
+      213: 3483921343553828571
+    second: CluesAndChooseLogo_7
+  - first:
+      213: -3581669498603157172
+    second: CluesAndChooseLogo_8
+  - first:
+      213: 6295837814342903360
+    second: CluesAndChooseLogo_9
+  - first:
+      213: -6367183405582685969
+    second: CluesAndChooseLogo_10
+  - first:
+      213: 3227797866537057297
+    second: CluesAndChooseLogo_11
+  - first:
+      213: 7542425369723923536
+    second: CluesAndChooseLogo_12
+  - first:
+      213: -2095243081858538141
+    second: CluesAndChooseLogo_13
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 0
+    wrapV: 0
+    wrapW: 0
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: CluesAndChooseLogo_0
+      rect:
+        serializedVersion: 2
+        x: 3
+        y: 194
+        width: 111
+        height: 228
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1bbcb3b8ae09f3430800000000000000
+      internalID: 3764887150537722801
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CluesAndChooseLogo_1
+      rect:
+        serializedVersion: 2
+        x: 121
+        y: 197
+        width: 62
+        height: 219
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cf6fbba808aa43120800000000000000
+      internalID: 2392724771100686076
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CluesAndChooseLogo_2
+      rect:
+        serializedVersion: 2
+        x: 189
+        y: 194
+        width: 90
+        height: 222
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b92c5b08bb60027f0800000000000000
+      internalID: -639503744698563941
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CluesAndChooseLogo_3
+      rect:
+        serializedVersion: 2
+        x: 291
+        y: 197
+        width: 67
+        height: 219
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ce8355e6f2cce5aa0800000000000000
+      internalID: -6170269935364392724
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CluesAndChooseLogo_4
+      rect:
+        serializedVersion: 2
+        x: 363
+        y: 194
+        width: 88
+        height: 228
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8f719ebb405e4da40800000000000000
+      internalID: 5392186462364571640
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CluesAndChooseLogo_5
+      rect:
+        serializedVersion: 2
+        x: 461
+        y: 349
+        width: 74
+        height: 66
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ceb989e8e1806ae90800000000000000
+      internalID: -7014910442248561684
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CluesAndChooseLogo_6
+      rect:
+        serializedVersion: 2
+        x: 461
+        y: 277
+        width: 74
+        height: 65
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3dfc64a7e7f256790800000000000000
+      internalID: -7537566181070811181
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CluesAndChooseLogo_7
+      rect:
+        serializedVersion: 2
+        x: 461
+        y: 203
+        width: 80
+        height: 71
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bd67debd000695030800000000000000
+      internalID: 3483921343553828571
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CluesAndChooseLogo_8
+      rect:
+        serializedVersion: 2
+        x: 17
+        y: 7
+        width: 87
+        height: 180
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c4948e8419a5b4ec0800000000000000
+      internalID: -3581669498603157172
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CluesAndChooseLogo_9
+      rect:
+        serializedVersion: 2
+        x: 111
+        y: 9
+        width: 81
+        height: 174
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0466167a22f4f5750800000000000000
+      internalID: 6295837814342903360
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CluesAndChooseLogo_10
+      rect:
+        serializedVersion: 2
+        x: 202
+        y: 7
+        width: 83
+        height: 180
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fe86b7a6d6833a7a0800000000000000
+      internalID: -6367183405582685969
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CluesAndChooseLogo_11
+      rect:
+        serializedVersion: 2
+        x: 293
+        y: 7
+        width: 83
+        height: 180
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 11c74b9de017bcc20800000000000000
+      internalID: 3227797866537057297
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CluesAndChooseLogo_12
+      rect:
+        serializedVersion: 2
+        x: 380
+        y: 7
+        width: 84
+        height: 180
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 05ce94b89e31ca860800000000000000
+      internalID: 7542425369723923536
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: CluesAndChooseLogo_13
+      rect:
+        serializedVersion: 2
+        x: 474
+        y: 9
+        width: 71
+        height: 174
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3652ab3a4833ce2e0800000000000000
+      internalID: -2095243081858538141
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      CluesAndChooseLogo_0: 3764887150537722801
+      CluesAndChooseLogo_1: 2392724771100686076
+      CluesAndChooseLogo_10: -6367183405582685969
+      CluesAndChooseLogo_11: 3227797866537057297
+      CluesAndChooseLogo_12: 7542425369723923536
+      CluesAndChooseLogo_13: -2095243081858538141
+      CluesAndChooseLogo_2: -639503744698563941
+      CluesAndChooseLogo_3: -6170269935364392724
+      CluesAndChooseLogo_4: 5392186462364571640
+      CluesAndChooseLogo_5: -7014910442248561684
+      CluesAndChooseLogo_6: -7537566181070811181
+      CluesAndChooseLogo_7: 3483921343553828571
+      CluesAndChooseLogo_8: -3581669498603157172
+      CluesAndChooseLogo_9: 6295837814342903360
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

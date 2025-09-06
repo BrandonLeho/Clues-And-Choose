@@ -52,6 +52,7 @@
     <Compile Include="Assets\Scripts\Board\PlayerLIst\RosterStore.cs" />
     <Compile Include="Assets\Scripts\Controller\CursorController\ChangeCursor.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerInteractionHandler.cs" />
+    <Compile Include="Assets\Scripts\Background\UVScroller.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandler.cs" />
     <Compile Include="Assets\Scripts\Steamworks.NET\SteamManager.cs" />
     <Compile Include="Assets\Scripts\Controller\CursorController\CursorControllerModule.cs" />
@@ -68,6 +69,7 @@
     <Compile Include="Assets\Scripts\Board\ScoreboardAttachToBoard.cs" />
     <Compile Include="Assets\Scripts\UI\LobbyUIManager.cs" />
     <Compile Include="Assets\Scripts\Steam\SteamLobby.cs" />
+    <Compile Include="Assets\Scripts\GameNetworking\SaveSpriteAsPNG.cs" />
     <Compile Include="Assets\Scripts\Steam\CustomNetworkManager.cs" />
     <Compile Include="Assets\Scripts\Board\ScoreboardGenerator.cs" />
     <Compile Include="Assets\Scripts\Controller\ColorSlot.cs" />
