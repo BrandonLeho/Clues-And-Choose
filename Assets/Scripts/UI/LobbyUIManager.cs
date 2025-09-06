@@ -16,6 +16,10 @@ namespace SteamLobbySpace
         public List<PlayerLobbyHandler> playerLobbyHandlers = new List<PlayerLobbyHandler>();
         public Button playGameButton;
 
+        public IReadOnlyList<PlayerLobbyHandler> CurrentPlayers => playerLobbyHandlers;
+        public IReadOnlyList<string> CurrentPlayerNames => playerNameTexts.ConvertAll(t => t.text);
+
+
         void Awake()
         {
             if (Instance == null)
@@ -82,9 +86,12 @@ namespace SteamLobbySpace
         {
             if (NetworkServer.active)
             {
+                // snapshot the lobby names so GameScene can use them
+                RosterStore.SaveNames(CurrentPlayerNames);
                 CustomNetworkManager.singleton.ServerChangeScene("GameScene");
             }
         }
+
 
         public void RegisterPlayer(PlayerLobbyHandler player)
         {

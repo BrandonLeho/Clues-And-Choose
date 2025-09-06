@@ -49,6 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\UI\Panel.cs" />
+    <Compile Include="Assets\Scripts\Board\PlayerLIst\RosterStore.cs" />
     <Compile Include="Assets\Scripts\Controller\CursorController\ChangeCursor.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerInteractionHandler.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandler.cs" />
@@ -58,6 +59,7 @@
     <Compile Include="Assets\Scripts\Board\BoardLabels.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardLabels.cs" />
     <Compile Include="Assets\Scripts\Board\BoardSpriteGenerator2D.cs" />
+    <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerListBinder.cs" />
     <Compile Include="Assets\Scripts\Board\BoardScreenFitter.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard2D.cs" />
     <Compile Include="Assets\Scripts\Board\GridPalettePainter.cs" />
@@ -69,7 +71,9 @@
     <Compile Include="Assets\Scripts\Steam\CustomNetworkManager.cs" />
     <Compile Include="Assets\Scripts\Board\ScoreboardGenerator.cs" />
     <Compile Include="Assets\Scripts\Controller\ColorSlot.cs" />
+    <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerRow.cs" />
     <Compile Include="Assets\Scripts\Board\ScoreboardFitter.cs" />
+    <Compile Include="Assets\Scripts\Board\PlayerLIst\GameScenePlayerList.cs" />
     <Compile Include="Assets\Scripts\UI\PanelSwapper.cs" />
     <Compile Include="Assets\Scripts\Board\PaletteGrid.cs" />
     <Compile Include="Assets\Scripts\Controller\Pickupable.cs" />
