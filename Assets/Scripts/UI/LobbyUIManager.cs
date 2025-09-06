@@ -5,6 +5,7 @@ using TMPro;
 using UnityEngine.UI;
 using System.Collections;
 using Steamworks;
+using System.Linq;
 
 namespace SteamLobbySpace
 {
@@ -86,10 +87,24 @@ namespace SteamLobbySpace
         {
             if (NetworkServer.active)
             {
-                // snapshot the lobby names so GameScene can use them
-                RosterStore.SaveNames(CurrentPlayerNames);
+                var names = CurrentPlayerNames.ToArray();        // snapshot on server
+                RpcReceiveRoster(names);                         // broadcast to EVERYONE
                 CustomNetworkManager.singleton.ServerChangeScene("GameScene");
             }
+        }
+
+        // Sends roster to ALL clients (called by server)
+        [ClientRpc]
+        void RpcReceiveRoster(string[] names)
+        {
+            RosterStore.SaveNames(names);
+        }
+
+        // Sends roster to ONE specific client (handy for late joiners)
+        [TargetRpc]
+        void TargetReceiveRoster(NetworkConnectionToClient conn, string[] names)
+        {
+            RosterStore.SaveNames(names);
         }
 
 
