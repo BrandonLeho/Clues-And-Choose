@@ -495,7 +495,6 @@ GameObject:
   m_Component:
   - component: {fileID: 13277454}
   - component: {fileID: 13277455}
-  - component: {fileID: 13277456}
   m_Layer: 5
   m_Name: Players
   m_TagString: Untagged
@@ -548,20 +547,6 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
---- !u!114 &13277456
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 13277453}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b677d5a3161998844b9ec12ad8780692, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GamePlayerListUI
-  listParent: {fileID: 400563417}
-  nameRowPrefab: {fileID: 13277453}
 --- !u!224 &15692334 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 3337803732932086652, guid: 96c2c7455eef99f46961f53ff646d8a6, type: 3}

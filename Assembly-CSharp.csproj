@@ -48,7 +48,6 @@
     <Analyzer Include="C:\Program Files\Unity\Hub\Editor\6000.2.0f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\GameNetworking\LobbyRoster.cs" />
     <Compile Include="Assets\Scripts\UI\Panel.cs" />
     <Compile Include="Assets\Scripts\Controller\CursorController\ChangeCursor.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerInteractionHandler.cs" />
@@ -56,11 +55,9 @@
     <Compile Include="Assets\Scripts\Steamworks.NET\SteamManager.cs" />
     <Compile Include="Assets\Scripts\Controller\CursorController\CursorControllerModule.cs" />
     <Compile Include="Assets\Scripts\Controller\PlayerPickupInteractor.cs" />
-    <Compile Include="Assets\Scripts\GameNetworking\PlayerIdentity.cs" />
     <Compile Include="Assets\Scripts\Board\BoardLabels.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardLabels.cs" />
     <Compile Include="Assets\Scripts\Board\BoardSpriteGenerator2D.cs" />
-    <Compile Include="Assets\Scripts\Board\PlayerLIst\GamePlayerListUI.cs" />
     <Compile Include="Assets\Scripts\Board\BoardScreenFitter.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard2D.cs" />
     <Compile Include="Assets\Scripts\Board\GridPalettePainter.cs" />

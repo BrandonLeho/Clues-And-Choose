@@ -14,13 +14,7 @@ public class CustomNetworkManager : NetworkManager
     // have to cast to this type everywhere.
     public static new CustomNetworkManager singleton => (CustomNetworkManager)NetworkManager.singleton;
 
-    [Header("Gameplay")]
     public GameObject playerGameplayPrefab;
-
-    [Header("Lobby")]
-    public GameObject lobbyRosterPrefab;
-
-    GameObject rosterObj;
 
     /// <summary>
     /// Runs on both Server and Client
@@ -108,15 +102,7 @@ public class CustomNetworkManager : NetworkManager
     /// <para>This allows server to do work / cleanup / prep before the scene changes.</para>
     /// </summary>
     /// <param name="newSceneName">Name of the scene that's about to be loaded</param>
-    public override void OnServerChangeScene(string newSceneName)
-    {
-        if (newSceneName == "GameScene")
-        {
-            this.playerPrefab = playerGameplayPrefab;
-            this.onlineScene = newSceneName;
-        }
-        base.ServerChangeScene(newSceneName);
-    }
+    public override void OnServerChangeScene(string newSceneName) { }
 
     /// <summary>
     /// Called on the server when a scene is completed loaded, when the scene load was initiated by the server with ServerChangeScene().
@@ -171,7 +157,6 @@ public class CustomNetworkManager : NetworkManager
     public override void OnServerAddPlayer(NetworkConnectionToClient conn)
     {
         base.OnServerAddPlayer(conn);
-        if (LobbyRoster.Instance == null) EnsureRoster();
     }
 
     /// <summary>
@@ -257,21 +242,7 @@ public class CustomNetworkManager : NetworkManager
     /// This is invoked when a server is started - including when a host is started.
     /// <para>StartServer has multiple signatures, but they all cause this hook to be called.</para>
     /// </summary>
-    public override void OnStartServer()
-    {
-        base.OnStartServer();
-        EnsureRoster();
-    }
-
-    void EnsureRoster()
-    {
-        if (LobbyRoster.Instance == null)
-        {
-            rosterObj = Instantiate(lobbyRosterPrefab);
-            NetworkServer.Spawn(rosterObj);
-            DontDestroyOnLoad(rosterObj);
-        }
-    }
+    public override void OnStartServer() { }
 
     /// <summary>
     /// This is invoked when the client is started.
