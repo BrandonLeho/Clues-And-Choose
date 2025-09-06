@@ -1457,6 +1457,7 @@ MonoBehaviour:
   evaluationInterval: 3
   timeInterpolationGui: 0
   playerGameplayPrefab: {fileID: 5227058378306516699, guid: eae491b31354db34584bae3ef1ee773e, type: 3}
+  lobbyRosterPrefab: {fileID: 0}
 --- !u!114 &978845370
 MonoBehaviour:
   m_ObjectHideFlags: 0

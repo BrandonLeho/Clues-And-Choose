@@ -147,6 +147,7 @@ GameObject:
   - component: {fileID: 4528901527361209999}
   - component: {fileID: 532317553745249270}
   - component: {fileID: 4412337882315842828}
+  - component: {fileID: -8781844202787851186}
   m_Layer: 5
   m_Name: PlayerLobbySlot
   m_TagString: Untagged
@@ -210,6 +211,23 @@ MonoBehaviour:
   serverOnly: 0
   visibility: 0
   hasSpawned: 0
+--- !u!114 &-8781844202787851186
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4994856514909240876}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25ce2b595ed86c54499e99bc21fc081a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerIdentity
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  steamId: 0
+  displayName: 
 --- !u!1 &6266560265110304280
 GameObject:
   m_ObjectHideFlags: 0
