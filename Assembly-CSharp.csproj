@@ -71,6 +71,7 @@
     <Compile Include="Assets\Scripts\Steam\CustomNetworkManager.cs" />
     <Compile Include="Assets\Scripts\Board\ScoreboardGenerator.cs" />
     <Compile Include="Assets\Scripts\Controller\ColorSlot.cs" />
+    <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandlerGame.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerRow.cs" />
     <Compile Include="Assets\Scripts\Board\ScoreboardFitter.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\GameScenePlayerList.cs" />
