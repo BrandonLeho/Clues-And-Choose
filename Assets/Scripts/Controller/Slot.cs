@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.UI; // only needed if you use LayoutRebuilder
 
 public class Slot : MonoBehaviour, IDropHandler
 {
@@ -16,24 +15,21 @@ public class Slot : MonoBehaviour, IDropHandler
 
     public void OnDrop(PointerEventData eventData)
     {
-        // Safety checks
         if (eventData == null || eventData.pointerDrag == null) return;
 
         var dropped = eventData.pointerDrag;
         var draggable = dropped.GetComponent<DraggableItem>();
-        if (draggable == null) return; // not a draggable item
+        if (draggable == null) return;
 
         if (acceptOnlyWhenEmpty && transform.childCount > 0)
             return;
 
-        // Reparent under this slot (keeps it in the UI hierarchy; DraggableItem will clean up its temp canvas on EndDrag)
+
         dropped.transform.SetParent(transform, worldPositionStays: false);
 
-        // Optional: keep as top-most child within this slot
         if (setAsLastSibling)
             dropped.transform.SetAsLastSibling();
 
-        // Optional: snap to slot center and normalize transform
         if (snapToCenter)
         {
             var rt = dropped.GetComponent<RectTransform>();
@@ -44,8 +40,5 @@ public class Slot : MonoBehaviour, IDropHandler
                 rt.localScale = Vector3.one;
             }
         }
-
-        // Optional: if you're using layout groups and want instant refresh
-        // LayoutRebuilder.ForceRebuildLayoutImmediate(transform as RectTransform);
     }
 }

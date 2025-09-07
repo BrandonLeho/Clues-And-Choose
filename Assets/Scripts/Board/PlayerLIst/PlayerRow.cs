@@ -17,7 +17,6 @@ public class PlayerRow : MonoBehaviour
 
     public void SetReady(bool isReady)
     {
-        // Example: append a "Ready!" tag
         nameText.text = isReady ? $"{nameText.text} (Ready)" : nameText.text.Replace(" (Ready)", "");
     }
 }

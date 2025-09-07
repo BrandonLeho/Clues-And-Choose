@@ -87,20 +87,18 @@ namespace SteamLobbySpace
         {
             if (NetworkServer.active)
             {
-                var names = CurrentPlayerNames.ToArray();        // snapshot on server
-                RpcReceiveRoster(names);                         // broadcast to EVERYONE
+                var names = CurrentPlayerNames.ToArray();
+                RpcReceiveRoster(names);
                 CustomNetworkManager.singleton.ServerChangeScene("GameScene");
             }
         }
 
-        // Sends roster to ALL clients (called by server)
         [ClientRpc]
         void RpcReceiveRoster(string[] names)
         {
             RosterStore.SaveNames(names);
         }
 
-        // Sends roster to ONE specific client (handy for late joiners)
         [TargetRpc]
         void TargetReceiveRoster(NetworkConnectionToClient conn, string[] names)
         {

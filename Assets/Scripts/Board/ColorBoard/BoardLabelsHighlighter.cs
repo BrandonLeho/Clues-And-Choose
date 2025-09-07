@@ -8,7 +8,7 @@ public class BoardLabelsHighlighter : MonoBehaviour
 {
     [Header("References")]
     [Tooltip("Your existing BoardLabels component. If left empty, will search in parents/children.")]
-    public MonoBehaviour boardLabels; // type name "BoardLabels" (kept generic to avoid hard ref)
+    public MonoBehaviour boardLabels;
 
     [Header("Outline Style")]
     [Tooltip("Outline width when highlighted (TMP SDF). 0.1–0.35 is typical.")]
@@ -29,15 +29,13 @@ public class BoardLabelsHighlighter : MonoBehaviour
     [Tooltip("If true, we’ll locate the 4 edge containers by name contains: Top, Bottom, Left, Right.")]
     public bool autoFindByNames = true;
 
-    // Internal caches
     TextMeshProUGUI[] _top, _bottom, _left, _right;
-    Material[] _topMats, _bottomMats, _leftMats, _rightMats; // per-label material instances
-    int _lastCol = -1, _lastRow = -1; // for clearing previous highlight
+    Material[] _topMats, _bottomMats, _leftMats, _rightMats;
+    int _lastCol = -1, _lastRow = -1;
 
 
     Color _lastColor = Color.white;
 
-    // TMP Shader property IDs (faster access)
     static readonly int ID_OutlineWidth = Shader.PropertyToID("_OutlineWidth");
     static readonly int ID_OutlineColor = Shader.PropertyToID("_OutlineColor");
     static readonly int ID_FaceColor = Shader.PropertyToID("_FaceColor");
@@ -46,7 +44,6 @@ public class BoardLabelsHighlighter : MonoBehaviour
     {
         if (!boardLabels)
         {
-            // Try to find a component named "BoardLabels" nearby
             boardLabels = GetComponentsInParent<MonoBehaviour>(true)
                 .Concat(GetComponentsInChildren<MonoBehaviour>(true))
                 .FirstOrDefault(m => m && m.GetType().Name == "BoardLabels");
@@ -57,8 +54,6 @@ public class BoardLabelsHighlighter : MonoBehaviour
 
     void BuildCaches()
     {
-        // Find four containers:
-        // We assume BoardLabels created 4 rects (commonly named with Top/Bottom/Left/Right).
         var root = boardLabels ? ((Component)boardLabels).transform : transform;
 
         Transform topT = null, bottomT = null, leftT = null, rightT = null;
@@ -74,8 +69,6 @@ public class BoardLabelsHighlighter : MonoBehaviour
             }
         }
 
-        // Fallback: if not found, just pick the 4 biggest groups of TMPs by “edge-ness”.
-        // (Usually not needed if names exist.)
         if (!topT || !bottomT || !leftT || !rightT)
         {
             var allParents = root.GetComponentsInChildren<RectTransform>(true);
@@ -85,7 +78,6 @@ public class BoardLabelsHighlighter : MonoBehaviour
                 int cnt = p.GetComponentsInChildren<TextMeshProUGUI>(true).Length;
                 if (cnt > 0) groups.Add((p, cnt));
             }
-            // Take 4 largest distinct parents as a coarse fallback
             foreach (var g in groups.OrderByDescending(g => g.count).Take(10))
             {
                 if (!topT) topT = g.tr;
@@ -100,13 +92,12 @@ public class BoardLabelsHighlighter : MonoBehaviour
         _left = GetSortedChildren(leftT, horizontal: false);
         _right = GetSortedChildren(rightT, horizontal: false);
 
-        // Create per-label material instances so we don’t mutate shared materials.
+
         _topMats = CreateMaterialClones(_top);
         _bottomMats = CreateMaterialClones(_bottom);
         _leftMats = CreateMaterialClones(_left);
         _rightMats = CreateMaterialClones(_right);
 
-        // Initialize all outlines to idle
         ClearAll();
     }
 
@@ -115,12 +106,11 @@ public class BoardLabelsHighlighter : MonoBehaviour
         if (!parent) return new TextMeshProUGUI[0];
         var arr = parent.GetComponentsInChildren<TextMeshProUGUI>(true);
 
-        // Sort by anchored position so index matches visual order
         return arr
             .OrderBy(t =>
             {
                 var rt = t.transform as RectTransform;
-                return horizontal ? rt.anchoredPosition.x : -rt.anchoredPosition.y; // left->right or top->bottom
+                return horizontal ? rt.anchoredPosition.x : -rt.anchoredPosition.y;
             })
             .ToArray();
     }
@@ -139,10 +129,9 @@ public class BoardLabelsHighlighter : MonoBehaviour
 
     public void SetHighlightLerp(int colIndex, int rowIndex, Color targetColor, float progress)
     {
-        // Reset last col/row if changed
         if (colIndex != _lastCol || rowIndex != _lastRow)
         {
-            Clear(); // clears old
+            Clear();
             _lastCol = colIndex;
             _lastRow = rowIndex;
             _lastColor = targetColor;
@@ -180,7 +169,7 @@ public class BoardLabelsHighlighter : MonoBehaviour
 
         if (tintFace)
         {
-            var face = label.color; // preserve current alpha
+            var face = label.color;
             var tint = faceHighlightTint;
             tint.a = face.a;
             mat.SetColor(ID_FaceColor, tint);
@@ -191,10 +180,8 @@ public class BoardLabelsHighlighter : MonoBehaviour
     {
         if (!label || !mat) return;
         mat.SetFloat(ID_OutlineWidth, idleOutlineWidth);
-        // Keep outline color as-is; width 0 hides it.
         if (tintFaceOnHighlight)
         {
-            // restore face color back to current label color
             var face = label.color;
             mat.SetColor(ID_FaceColor, face);
         }
@@ -209,16 +196,10 @@ public class BoardLabelsHighlighter : MonoBehaviour
         _lastCol = -1; _lastRow = -1;
     }
 
-    /// <summary>
-    /// Highlight the matching row/column. Indexes are 0-based:
-    /// col: 0..29 (left->right), row: 0..15 (top->bottom).
-    /// </summary>
     public void Highlight(int colIndex, int rowIndex, Color outlineColor)
     {
-        // Early-out if nothing changed
         if (colIndex == _lastCol && rowIndex == _lastRow) return;
 
-        // Clear previous
         if (_lastCol >= 0)
         {
             if (_lastCol < _top.Length) ResetLabel(_top[_lastCol], _topMats[_lastCol]);
@@ -230,7 +211,6 @@ public class BoardLabelsHighlighter : MonoBehaviour
             if (_lastRow < _right.Length) ResetLabel(_right[_lastRow], _rightMats[_lastRow]);
         }
 
-        // Apply new
         if (colIndex >= 0)
         {
             if (colIndex < _top.Length) SetLabelOutline(_top[colIndex], _topMats[colIndex], highlightOutlineWidth, outlineColor, tintFaceOnHighlight);
@@ -248,7 +228,6 @@ public class BoardLabelsHighlighter : MonoBehaviour
 
     public void Clear()
     {
-        // Only clear the last highlighted ones quickly
         if (_lastCol >= 0)
         {
             if (_lastCol < _top.Length) ResetLabel(_top[_lastCol], _topMats[_lastCol]);

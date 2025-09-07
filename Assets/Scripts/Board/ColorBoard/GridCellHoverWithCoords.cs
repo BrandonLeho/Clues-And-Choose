@@ -17,7 +17,7 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     [SerializeField] TextMeshProUGUI label;
     [SerializeField] bool deactivateLabelWhenHidden = true;
     [Tooltip("Format for coordinate text. {C}=column number, {R}=row letter.")]
-    [SerializeField] string coordinateFormat = "{C} {R}"; // e.g., "12 B" (column number then row letter)
+    [SerializeField] string coordinateFormat = "{C} {R}";
     [SerializeField, Range(0f, 1f)] float maxLabelAlpha = 1f;
 
     [Header("Grid Sizing (Auto unless overridden)")]
@@ -31,9 +31,9 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     [SerializeField] bool aStartsAtTop = true;
 
     [Header("Optional Links")]
-    [SerializeField] GridLayoutGroup grid;                 // parent grid (auto if null)
-    [SerializeField] MonoBehaviour boardLabelsComponent;    // optional: assign your BoardLabels
-    [SerializeField] ScriptableObject paletteGridAsset;     // optional: assign your PaletteGrid
+    [SerializeField] GridLayoutGroup grid;
+    [SerializeField] MonoBehaviour boardLabelsComponent;
+    [SerializeField] ScriptableObject paletteGridAsset;
 
     [Header("Label Highlighter")]
     [SerializeField] BoardLabelsHighlighter labelsHighlighter;
@@ -41,10 +41,9 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     [Header("Extra Graphics to Fade")]
     [SerializeField] Graphic[] extraGraphicsToFade;
 
-    // runtime
     Vector3 _baseScale;
     Coroutine _anim;
-    float _progress01; // 0..1
+    float _progress01;
     Color _labelBaseColor;
     Color[] _extraBaseColors;
     int _cols, _rows;
@@ -59,11 +58,9 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
 
         if (label != null)
         {
-            // Cache the base RGB, but force alpha to maxLabelAlpha
             _labelBaseColor = label.color;
             _labelBaseColor.a = maxLabelAlpha;
 
-            // Start hidden
             SetLabelAlpha(0f);
             if (deactivateLabelWhenHidden) label.gameObject.SetActive(false);
         }
@@ -78,7 +75,6 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
             }
         }
 
-        // Ensure we can receive raycasts
         var g = GetComponent<Graphic>();
         if (g == null)
         {
@@ -94,7 +90,7 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
         if (!labelsHighlighter) labelsHighlighter = GetComponentInParent<BoardLabelsHighlighter>(true);
 
         if (!boardLabelsComponent)
-            boardLabelsComponent = GetComponentInParent<MonoBehaviour>(true); // your type check remains
+            boardLabelsComponent = GetComponentInParent<MonoBehaviour>(true);
 
     }
 
@@ -102,14 +98,12 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     {
         if (!grid) grid = GetComponentInParent<GridLayoutGroup>();
 
-        // Defaults
         _cols = Mathf.Max(1, colsOverride);
         _rows = Mathf.Max(1, rowsOverride);
         _orientationAOnTop = aStartsAtTop;
 
         if (!autoDetectGrid) return;
 
-        // 1) Try GridLayoutGroup constraint
         if (grid)
         {
             if (grid.constraint == GridLayoutGroup.Constraint.FixedColumnCount && grid.constraintCount > 0)
@@ -118,9 +112,9 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
                 _rows = grid.constraintCount;
         }
 
-        // 2) Try BoardLabels on this or parent (public fields: cols/rows/aStartsAtTop)
+
         if (!boardLabelsComponent)
-            boardLabelsComponent = GetComponentInParent<MonoBehaviour>(); // harmless; we verify by type name
+            boardLabelsComponent = GetComponentInParent<MonoBehaviour>();
         if (boardLabelsComponent && boardLabelsComponent.GetType().Name == "BoardLabels")
         {
             var t = boardLabelsComponent.GetType();
@@ -132,7 +126,6 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
             if (fAAtTop != null) _orientationAOnTop = (bool)fAAtTop.GetValue(boardLabelsComponent);
         }
 
-        // 3) Try PaletteGrid asset (public fields: cols/rows/yZeroAtTop)
         if (paletteGridAsset)
         {
             var t = paletteGridAsset.GetType();
@@ -141,24 +134,22 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
             var fYTop = t.GetField("yZeroAtTop", BindingFlags.Public | BindingFlags.Instance);
             if (fCols != null) _cols = Mathf.Max(1, (int)fCols.GetValue(paletteGridAsset));
             if (fRows != null) _rows = Mathf.Max(1, (int)fRows.GetValue(paletteGridAsset));
-            if (fYTop != null) _orientationAOnTop = (bool)fYTop.GetValue(paletteGridAsset); // true => A at top
+            if (fYTop != null) _orientationAOnTop = (bool)fYTop.GetValue(paletteGridAsset);
         }
     }
 
     public void OnPointerEnter(PointerEventData eventData)
     {
-        UpdateLabelToCoords(); // already sets label text
+        UpdateLabelToCoords();
 
-        // NEW: compute indices and call highlighter
         int idx = transform.GetSiblingIndex();
-        int col = (_cols <= 0) ? 0 : (idx % _cols);   // 0-based, left->right
-        int row = (_cols <= 0) ? 0 : (idx / _cols);   // 0-based, top->bottom
+        int col = (_cols <= 0) ? 0 : (idx % _cols);
+        int row = (_cols <= 0) ? 0 : (idx / _cols);
 
         _lastColIdx = col; _lastRowIdx = row;
 
         if (labelsHighlighter)
         {
-            // Get the cell's current color (from its Image background)
             var img = GetComponent<Image>();
             Color c = img ? img.color : Color.white;
 
@@ -210,14 +201,11 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
 
     void Apply(float p)
     {
-        // Scale the cell
         float s = Mathf.Lerp(1f, hoverScale, p);
         transform.localScale = _baseScale * s;
 
-        // Fade the cell's own label
         if (label) SetLabelAlpha(p);
 
-        // Fade any extra graphics
         if (_extraBaseColors != null)
         {
             for (int i = 0; i < extraGraphicsToFade.Length; i++)
@@ -250,15 +238,13 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     {
         if (!label) return;
 
-        // Re-cache in case layout changed since Awake
         CacheGridRefs();
 
         int idx = transform.GetSiblingIndex();
         if (_cols <= 0) _cols = 1;
 
-        int col = (idx % _cols);         // 0-based
-        int row = (idx / _cols);         // 0-based from top if parent orders top->bottom
-
+        int col = (idx % _cols);
+        int row = (idx / _cols);
         // If A is at top, letter = row; if A is at bottom, flip
         int letterIndex = _orientationAOnTop ? row : (_rows - 1 - row);
         letterIndex = Mathf.Clamp(letterIndex, 0, Mathf.Max(0, _rows - 1));
@@ -271,7 +257,6 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
             .Replace("{R}", rowLetter);
     }
 
-    // A, B, ..., Z, AA, AB, ...
     static string IndexToLetters(int idx)
     {
         idx = Mathf.Max(0, idx);

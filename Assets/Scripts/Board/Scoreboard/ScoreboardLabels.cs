@@ -13,13 +13,13 @@ public class PerimeterEvery5Labeler : MonoBehaviour
     [Header("Label style")]
     public TMP_FontAsset font;
     public Color labelColor = Color.white;
-    public int fontSize = 24;             // pixels
+    public int fontSize = 24;
     [Tooltip("If >0, overrides Font Size with cellHeight * factor (e.g., 0.6).")]
     public float sizeRelativeToCell = 0f;
 
     [Header("Outline")]
     public bool useOutline = true;
-    [Range(0f, 1f)] public float outlineWidth = 0.25f; // 0..1 (TMP SDF)
+    [Range(0f, 1f)] public float outlineWidth = 0.25f;
     public Color outlineColor = Color.black;
 
     [Header("Placement")]
@@ -41,7 +41,6 @@ public class PerimeterEvery5Labeler : MonoBehaviour
         var grid = GetComponent<GridLayoutGroup>();
         var parent = (RectTransform)transform;
 
-        // Prefer Grid constraint for size
         if (grid.constraint == GridLayoutGroup.Constraint.FixedColumnCount && grid.constraintCount > 0)
             cols = grid.constraintCount;
         else if (grid.constraint == GridLayoutGroup.Constraint.FixedRowCount && grid.constraintCount > 0)
@@ -70,7 +69,7 @@ public class PerimeterEvery5Labeler : MonoBehaviour
             string labelText = "";
             if (idx >= 0)
             {
-                int oneBased = idx + 1;          // 1..perimeter
+                int oneBased = idx + 1;
                 if (oneBased % 5 == 0 && oneBased <= 50)
                     labelText = oneBased.ToString();
             }
@@ -78,7 +77,6 @@ public class PerimeterEvery5Labeler : MonoBehaviour
             var tmp = GetOrCreateTMP(cell, labelText.Length > 0);
             if (tmp)
             {
-                // Text + basic style
                 tmp.text = labelText;
                 tmp.raycastTarget = false;
                 tmp.enableWordWrapping = false;
@@ -89,10 +87,9 @@ public class PerimeterEvery5Labeler : MonoBehaviour
                 tmp.fontSize = effFont;
                 tmp.color = labelColor;
 
-                // Outline
                 if (useOutline)
                 {
-                    tmp.outlineWidth = outlineWidth;   // 0..1
+                    tmp.outlineWidth = outlineWidth;
                     tmp.outlineColor = outlineColor;
                 }
                 else
@@ -100,7 +97,6 @@ public class PerimeterEvery5Labeler : MonoBehaviour
                     tmp.outlineWidth = 0f;
                 }
 
-                // Stretch to cell (centered), optional offset
                 var tr = (RectTransform)tmp.transform;
                 tr.anchorMin = new Vector2(0, 0);
                 tr.anchorMax = new Vector2(1, 1);
@@ -112,20 +108,18 @@ public class PerimeterEvery5Labeler : MonoBehaviour
         }
     }
 
-    // CCW perimeter index starting at TOP-LEFT; -1 for interior.
     static int PerimeterIndex(int x, int y, int cols, int rows)
     {
         int lastCol = cols - 1;
         int lastRow = rows - 1;
 
-        if (y == 0) return x;                                       // top L→R
-        if (x == lastCol) return lastCol + y;                             // right T→B
-        if (y == lastRow) return lastCol + lastRow + (lastCol - x);       // bottom R→L
-        if (x == 0) return lastCol + lastRow + lastCol + (lastRow - y); // left B→T
+        if (y == 0) return x;
+        if (x == lastCol) return lastCol + y;
+        if (y == lastRow) return lastCol + lastRow + (lastCol - x);
+        if (x == 0) return lastCol + lastRow + lastCol + (lastRow - y);
         return -1;
     }
 
-    // Map child index → (x,y) according to GridLayoutGroup fill order, then optional flips.
     static void IndexToXY(
         int index, int cols, int rows,
         GridLayoutGroup.Axis axis,

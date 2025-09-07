@@ -8,18 +8,18 @@ using UnityEngine.UI;
 public class BoardLabels : MonoBehaviour
 {
     [Header("Grid")]
-    public GridLayoutGroup grid;          // If null, auto-grab on this GO
-    public ScriptableObject paletteGrid;  // Optional: read cols/rows from a PaletteGrid asset
-    public int cols = 30;                 // Fallback if not deduced
+    public GridLayoutGroup grid;
+    public ScriptableObject paletteGrid;
+    public int cols = 30;
     public int rows = 16;
 
     [Header("Font & Style")]
     public TMP_FontAsset font;
     public Color numberColor = Color.white;
     public Color letterColor = Color.white;
-    public int fontSize = 24;             // px
+    public int fontSize = 24;
     [Tooltip("If > 0, overrides Font Size with (cellHeight * factor). e.g. 0.5")]
-    public float sizeRelativeToCell = 0f; // e.g. 0.45–0.60 is typical
+    public float sizeRelativeToCell = 0f;
 
     [Header("Offsets (cell units if enabled)")]
     public bool useCellUnits = true;
@@ -37,15 +37,14 @@ public class BoardLabels : MonoBehaviour
     [Tooltip("Move this object to the end of its Canvas hierarchy so labels render on top.")]
     public bool bringToFront = true;
 
-    // --- runtime state ---
     RectTransform _rt, _root, _top, _bottom, _left, _right;
     readonly List<TextMeshProUGUI> _topLabels = new();
     readonly List<TextMeshProUGUI> _bottomLabels = new();
     readonly List<TextMeshProUGUI> _leftLabels = new();
     readonly List<TextMeshProUGUI> _rightLabels = new();
 
-    bool _dirty;        // needs rebuild/relayout
-    bool _validating;   // guard to avoid RT writes during OnValidate
+    bool _dirty;
+    bool _validating;
 
     void MarkDirty() { _dirty = true; }
 
@@ -61,12 +60,11 @@ public class BoardLabels : MonoBehaviour
     {
         if (!grid) grid = GetComponent<GridLayoutGroup>();
         _rt = GetComponent<RectTransform>();
-        CacheGridSizeFromSources(); // read-only work is fine here
+        CacheGridSizeFromSources();
 
-        _validating = true;   // prevent OnRectTransformDimensionsChange side-effects
+        _validating = true;
         MarkDirty();
 
-        // Defer actual UI mutations until after validation finishes
         UnityEditor.EditorApplication.delayCall += () =>
         {
             if (this == null) return;
@@ -78,7 +76,7 @@ public class BoardLabels : MonoBehaviour
 
     void OnRectTransformDimensionsChange()
     {
-        if (_validating) return; // Unity sends this during OnValidate – ignore then
+        if (_validating) return;
         MarkDirty();
     }
 
@@ -92,7 +90,6 @@ public class BoardLabels : MonoBehaviour
         if (!grid) grid = GetComponent<GridLayoutGroup>();
         if (!_rt) _rt = GetComponent<RectTransform>();
 
-        // Make sure layout is up to date before we measure anything
         Canvas.ForceUpdateCanvases();
         LayoutRebuilder.ForceRebuildLayoutImmediate(_rt);
 
@@ -103,7 +100,6 @@ public class BoardLabels : MonoBehaviour
         BringToFrontIfNeeded();
     }
 
-    // ---------- hierarchy helpers ----------
     void EnsureParents()
     {
         _root = GetOrCreateRect((RectTransform)transform, "EdgeLabelsUI", new Vector2(0, 0), new Vector2(1, 1), new Vector2(0.5f, 0.5f));
@@ -134,10 +130,8 @@ public class BoardLabels : MonoBehaviour
         if (bringToFront && _rt) _rt.SetAsLastSibling();
     }
 
-    // ---------- data sources ----------
     void CacheGridSizeFromSources()
     {
-        // Prefer Grid constraint if set
         if (grid)
         {
             if (grid.constraint == GridLayoutGroup.Constraint.FixedColumnCount && grid.constraintCount > 0)
@@ -146,7 +140,6 @@ public class BoardLabels : MonoBehaviour
                 rows = grid.constraintCount;
         }
 
-        // Optional: read from a PaletteGrid SO (expects public int cols/rows)
         if (paletteGrid)
         {
             var t = paletteGrid.GetType();
@@ -160,7 +153,6 @@ public class BoardLabels : MonoBehaviour
         rows = Mathf.Max(1, rows);
     }
 
-    // ---------- build / sync label objects ----------
     void RebuildSides()
     {
         if (!_rt || cols <= 0 || rows <= 0) return;
@@ -174,7 +166,6 @@ public class BoardLabels : MonoBehaviour
     {
         if (!parent) return;
 
-        // Remove extras
         for (int i = parent.childCount - 1; i >= 0; i--)
         {
             var ch = parent.GetChild(i);
@@ -191,7 +182,6 @@ public class BoardLabels : MonoBehaviour
             }
         }
 
-        // Ensure count
         while (parent.childCount < count)
         {
             var go = new GameObject(prefix + (parent.childCount + 1), typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -199,7 +189,6 @@ public class BoardLabels : MonoBehaviour
             t.SetParent(parent, false);
         }
 
-        // Cache list
         list.Clear();
         for (int i = 0; i < count; i++)
         {
@@ -210,7 +199,6 @@ public class BoardLabels : MonoBehaviour
         }
     }
 
-    // ---------- layout / positioning ----------
     void UpdateAll()
     {
         if (!_rt || cols <= 0 || rows <= 0) return;
@@ -219,14 +207,12 @@ public class BoardLabels : MonoBehaviour
         float w = rect.width;
         float h = rect.height;
 
-        // Use GridLayoutGroup metrics so spacing/padding are respected
         var pad = grid ? grid.padding : new RectOffset();
         var spacing = grid ? grid.spacing : Vector2.zero;
 
         float cellW = grid ? grid.cellSize.x : (w / cols);
         float cellH = grid ? grid.cellSize.y : (h / rows);
 
-        // Center of the first (top-left) cell in local space
         float firstCenterX = -w * 0.5f + pad.left + cellW * 0.5f;
         float firstCenterY = h * 0.5f - pad.top - cellH * 0.5f;
 
@@ -253,14 +239,13 @@ public class BoardLabels : MonoBehaviour
             tr.localScale = Vector3.one;
         }
 
-        // Top numbers 1..cols
         if (_topLabels.Count == cols)
         {
             Vector2 o = ToUI(topOffset);
             for (int x = 0; x < cols; x++)
             {
                 float px = firstCenterX + x * (cellW + spacing.x) + o.x;
-                float py = h * 0.5f + o.y; // just above board
+                float py = h * 0.5f + o.y;
                 var tmp = _topLabels[x];
                 if (!tmp) continue;
                 tmp.text = (x + 1).ToString();
@@ -269,14 +254,13 @@ public class BoardLabels : MonoBehaviour
             }
         }
 
-        // Bottom numbers 1..cols
         if (_bottomLabels.Count == cols)
         {
             Vector2 o = ToUI(bottomOffset);
             for (int x = 0; x < cols; x++)
             {
                 float px = firstCenterX + x * (cellW + spacing.x) + o.x;
-                float py = -h * 0.5f + o.y; // just below board
+                float py = -h * 0.5f + o.y;
                 var tmp = _bottomLabels[x];
                 if (!tmp) continue;
                 tmp.text = (x + 1).ToString();
@@ -285,7 +269,6 @@ public class BoardLabels : MonoBehaviour
             }
         }
 
-        // Left/Right letters A..
         if (_leftLabels.Count == rows || _rightLabels.Count == rows)
         {
             Vector2 oL = ToUI(leftOffset);
@@ -321,7 +304,6 @@ public class BoardLabels : MonoBehaviour
         }
     }
 
-    // A, B, ..., Z, AA, AB, ...
     static string IndexToLetters(int idx)
     {
         idx = Mathf.Max(0, idx);

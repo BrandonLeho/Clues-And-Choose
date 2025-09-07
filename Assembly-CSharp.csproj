@@ -70,14 +70,12 @@
     <Compile Include="Assets\Scripts\Controller\DraggableItem.cs" />
     <Compile Include="Assets\Scripts\Controller\Slot.cs" />
     <Compile Include="Assets\Scripts\UI\LobbyUIManager.cs" />
-    <Compile Include="Assets\Scripts\Board\ColorBoard\BoardSpriteGenerator2D.cs" />
     <Compile Include="Assets\Scripts\Steam\SteamLobby.cs" />
     <Compile Include="Assets\Scripts\Steam\CustomNetworkManager.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\GridPalettePainter.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardFitter.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandlerGame.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerRow.cs" />
-    <Compile Include="Assets\Scripts\Board\ColorBoard\BoardScreenFitter.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardAttachToBoard.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\BoardLabels.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\GameScenePlayerList.cs" />

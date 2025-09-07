@@ -50,8 +50,6 @@ public class GridPalettePainter : MonoBehaviour
         }
     }
 
-    // Maps index -> (x,y) respecting GridLayoutGroup fill order,
-    // then applies manual flips (horizontal/vertical).
     static void IndexToXY(
         int index, int cols, int rows,
         GridLayoutGroup.Axis axis,
@@ -70,11 +68,9 @@ public class GridPalettePainter : MonoBehaviour
             y = index % rows;
         }
 
-        // Corner-implied inversions (Unity layout)
         bool invertXFromCorner = (corner == GridLayoutGroup.Corner.UpperRight || corner == GridLayoutGroup.Corner.LowerRight);
         bool invertYFromCorner = (corner == GridLayoutGroup.Corner.LowerLeft || corner == GridLayoutGroup.Corner.LowerRight);
 
-        // Final inversions = corner ^ manual flip
         bool invertX = invertXFromCorner ^ flipH;
         bool invertY = invertYFromCorner ^ flipV;
 

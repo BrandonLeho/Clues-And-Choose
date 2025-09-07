@@ -1,4 +1,3 @@
-// RosterStore.cs  (put in any folder)
 using System.Collections.Generic;
 using UnityEngine;
 

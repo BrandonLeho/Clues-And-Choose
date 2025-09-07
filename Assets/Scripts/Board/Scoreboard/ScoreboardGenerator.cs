@@ -9,9 +9,9 @@ public class HuesCuesScoreboard : MonoBehaviour
 {
     [Header("Grid")]
     [SerializeField] private int columns = 25;
-    [SerializeField] private int rows = 2; // fixed by spec
-    [SerializeField] private float width = 8f;     // world units
-    [SerializeField] private float height = 0.8f;  // world units
+    [SerializeField] private int rows = 2;
+    [SerializeField] private float width = 8f;
+    [SerializeField] private float height = 0.8f;
     [SerializeField] private Vector2 spacing = new Vector2(0.02f, 0.02f);
 
     [Header("Gradient (clockwise path)")]
@@ -24,7 +24,7 @@ public class HuesCuesScoreboard : MonoBehaviour
     [SerializeField] private TMP_FontAsset labelFont;
     [SerializeField] private int labelFontSize = 24;
     [SerializeField] private Color labelColor = Color.black;
-    [SerializeField] private Vector2 labelOffset = new Vector2(0, 0); // local (px in UI units)
+    [SerializeField] private Vector2 labelOffset = new Vector2(0, 0);
     [SerializeField] private Vector2 labelRectSize = new Vector2(60, 40);
     [SerializeField] private TextAlignmentOptions labelAlignment = TextAlignmentOptions.Center;
     [SerializeField] private bool labelsAutoSize = true;
@@ -61,7 +61,6 @@ public class HuesCuesScoreboard : MonoBehaviour
     void OnValidate() => BuildOrUpdate();
 #endif
 
-    // Public call if you want to refresh from other scripts
     [ContextMenu("Regenerate")]
     public void BuildOrUpdate()
     {
@@ -73,7 +72,6 @@ public class HuesCuesScoreboard : MonoBehaviour
 
     private void EnsureCanvasWorldSpace()
     {
-        // Find or make a world-space canvas as a child
         Transform existing = transform.Find(CanvasName);
         if (existing == null)
         {
@@ -91,7 +89,7 @@ public class HuesCuesScoreboard : MonoBehaviour
             _canvasRect.sizeDelta = new Vector2(width, height);
 
             var scaler = go.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize; // consistent look in world space
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;
         }
         else
         {
@@ -136,10 +134,8 @@ public class HuesCuesScoreboard : MonoBehaviour
 
     private void ApplyRectSizeAndGrid()
     {
-        // Size canvas in world units
         _canvasRect.sizeDelta = new Vector2(width, height);
 
-        // Compute cell size to fit the grid area with spacing
         float totalSpacingX = spacing.x * (columns - 1);
         float totalSpacingY = spacing.y * (rows - 1);
 
@@ -151,7 +147,6 @@ public class HuesCuesScoreboard : MonoBehaviour
 
     private void EnsureExactCellCountAndConfigure()
     {
-        // Make sure we have exactly TotalCells children named Cell_0..Cell_n
         var keep = new HashSet<string>();
         for (int i = 0; i < TotalCells; i++)
         {
@@ -160,30 +155,25 @@ public class HuesCuesScoreboard : MonoBehaviour
             Transform child = _rootRect.Find(name);
             if (child == null)
             {
-                // Create new
                 var go = new GameObject(name, typeof(RectTransform), typeof(Image));
                 go.transform.SetParent(_rootRect, false);
                 child = go.transform;
             }
 
-            // Ensure components
             var rt = child as RectTransform;
             var img = child.GetComponent<Image>();
             img.raycastTarget = false;
 
-            // Color by clockwise path index
-            int pathIndex = GetClockwisePathIndex(i); // 0..TotalCells-1
+            int pathIndex = GetClockwisePathIndex(i);
             float t = (TotalCells <= 1) ? 0f : (pathIndex / (float)(TotalCells - 1));
             img.color = Color.Lerp(startGray, endGray, t);
 
-            // Labels on every Nth number
-            int labelNumber = GetLabelNumberForCell(i); // 1..50
+            int labelNumber = GetLabelNumberForCell(i);
             bool needsLabel = showEvery5thLabel && (labelNumber % labelEveryN == 0);
 
             ConfigureLabel(child, needsLabel, labelNumber);
         }
 
-        // Destroy any extra children not in keep, to prevent duplicates forever
         var toRemove = new List<Transform>();
         for (int i = 0; i < _rootRect.childCount; i++)
         {
@@ -199,32 +189,28 @@ public class HuesCuesScoreboard : MonoBehaviour
 
     private int GetClockwisePathIndex(int flatIndex)
     {
-        // flatIndex is row-major: row = i/columns, col = i%columns, top row first, then bottom row
-        int row = flatIndex / columns; // 0 or 1
-        int col = flatIndex % columns; // 0..24
+        int row = flatIndex / columns;
+        int col = flatIndex % columns;
 
         if (row == 0)
         {
-            // Top row, left->right: 0..24
             return col;
         }
         else
         {
-            // Bottom row, RIGHT->LEFT in path: 25..49
             return columns + (columns - 1 - col);
         }
     }
 
     private int GetLabelNumberForCell(int flatIndex)
     {
-        // 1..25 along top row left->right; then 26..50 along bottom row RIGHT->LEFT
         int row = flatIndex / columns;
         int col = flatIndex % columns;
 
         if (row == 0)
-            return col + 1;            // 1..25
+            return col + 1;
         else
-            return (columns * rows) - col; // bottom-right=26 (col=24), bottom-left=50 (col=0)
+            return (columns * rows) - col;
     }
 
     private void ConfigureLabel(Transform cell, bool needsLabel, int labelNumber)
@@ -238,7 +224,6 @@ public class HuesCuesScoreboard : MonoBehaviour
             return;
         }
 
-        // Ensure label exists (no duplicates — we always reference the same "Label" child name)
         if (labelTr == null)
         {
             var go = new GameObject(labelName, typeof(RectTransform), typeof(TextMeshProUGUI));
@@ -249,7 +234,6 @@ public class HuesCuesScoreboard : MonoBehaviour
         var rt = labelTr as RectTransform;
         var tmp = labelTr.GetComponent<TextMeshProUGUI>();
 
-        // Apply style
         if (labelFont != null) tmp.font = labelFont;
         tmp.fontSize = labelFontSize;
         tmp.color = labelColor;
@@ -260,7 +244,6 @@ public class HuesCuesScoreboard : MonoBehaviour
         tmp.fontSizeMax = labelFontMax;
         tmp.text = labelNumber.ToString();
 
-        // Make sure there's a font; try TMP default if none was given
         if (tmp.font == null)
         {
             var defaultFont = TMP_Settings.defaultFontAsset;
@@ -268,19 +251,15 @@ public class HuesCuesScoreboard : MonoBehaviour
                 tmp.font = defaultFont;
         }
 
-        // Apply outline safely (only if we have a font/material that supports it)
         if (useOutline && tmp.font != null)
         {
-            // Get current material
             var mat = tmp.fontMaterial;
 
             if (mat != null)
             {
-                // Instantiate once so we don't mutate the shared asset each refresh
                 if (!mat.name.EndsWith(" (Instance)"))
                     mat = tmp.fontMaterial = new Material(mat);
 
-                // Only set properties if the shader actually has them
                 if (mat.HasProperty(ShaderUtilities.ID_OutlineWidth))
                     tmp.outlineWidth = outlineWidth;
 
@@ -289,9 +268,6 @@ public class HuesCuesScoreboard : MonoBehaviour
             }
         }
 
-
-
-        // Layout inside cell
         rt.anchorMin = new Vector2(0.5f, 0.5f);
         rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
@@ -307,7 +283,6 @@ public class HuesCuesScoreboard : MonoBehaviour
         else DestroyImmediate(obj);
     }
 
-    // Expose setters to change size at runtime (optional)
     public void SetSize(float newWidth, float newHeight)
     {
         width = newWidth;

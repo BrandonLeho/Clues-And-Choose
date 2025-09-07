@@ -27,7 +27,6 @@ public class ScoreboardGridPainter : MonoBehaviour
         var grid = GetComponent<GridLayoutGroup>();
         var parent = (RectTransform)transform;
 
-        // Prefer Grid constraint for size if set
         if (grid.constraint == GridLayoutGroup.Constraint.FixedColumnCount && grid.constraintCount > 0)
             cols = grid.constraintCount;
         else if (grid.constraint == GridLayoutGroup.Constraint.FixedRowCount && grid.constraintCount > 0)
@@ -52,28 +51,26 @@ public class ScoreboardGridPainter : MonoBehaviour
         }
     }
 
-    // Counter-clockwise perimeter gradient index starting at TOP-LEFT.
     static Color ColorForPerimeter(int x, int y, int cols, int rows, Color darkC, Color lightC)
     {
         int perim = Mathf.Max(1, 2 * cols + 2 * rows - 4);
         int idx;
 
         if (y == 0)
-            idx = x;                                           // top: L → R
+            idx = x;
         else if (x == cols - 1)
-            idx = (cols - 1) + y;                              // right: top → bottom
+            idx = (cols - 1) + y;
         else if (y == rows - 1)
-            idx = (cols - 1) + (rows - 1) + (cols - 1 - x);    // bottom: R → L
+            idx = (cols - 1) + (rows - 1) + (cols - 1 - x);
         else if (x == 0)
-            idx = (cols - 1) + (rows - 1) + (cols - 1) + (rows - 1 - y); // left: bottom → top
+            idx = (cols - 1) + (rows - 1) + (cols - 1) + (rows - 1 - y);
         else
-            idx = 0; // interior cells (won't exist for 25x2); just use start color
+            idx = 0;
 
         float t = perim > 1 ? idx / (perim - 1f) : 0f;
         return Color.Lerp(darkC, lightC, t);
     }
 
-    // Map child index → (x,y) in grid coordinates, mirroring layout logic + optional flips.
     static void IndexToXY(
         int index, int cols, int rows,
         GridLayoutGroup.Axis axis,

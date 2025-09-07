@@ -12,8 +12,8 @@ public class ViewportAnchor : MonoBehaviour
 
     [SerializeField] private Camera targetCamera;
     [SerializeField] private Anchor anchor = Anchor.TopCenter;
-    [SerializeField] private float distanceFromCamera = 5f; // world units
-    [SerializeField] private Vector2 worldOffset = new Vector2(0f, -0.2f); // x = right, y = up in camera space
+    [SerializeField] private float distanceFromCamera = 5f;
+    [SerializeField] private Vector2 worldOffset = new Vector2(0f, -0.2f);
     [SerializeField] private bool faceCamera = false;
 
     void LateUpdate()
@@ -24,7 +24,6 @@ public class ViewportAnchor : MonoBehaviour
         Vector2 vp = AnchorToViewport(anchor);
         Vector3 baseWorld = targetCamera.ViewportToWorldPoint(new Vector3(vp.x, vp.y, distanceFromCamera));
 
-        // Offset in camera X/Y directions
         Vector3 offset = targetCamera.transform.right * worldOffset.x + targetCamera.transform.up * worldOffset.y;
 
         transform.position = baseWorld + offset;

@@ -3,7 +3,7 @@ using TMPro;
 
 public class GameScenePlayerList : MonoBehaviour
 {
-    [SerializeField] Transform listParent; // VerticalLayoutGroup parent
+    [SerializeField] Transform listParent;
     [SerializeField] GameObject rowPrefab;
 
     void Start()
