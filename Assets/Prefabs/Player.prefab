@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 595481117653479941}
   - component: {fileID: 8236750188372419570}
   - component: {fileID: 7877326681467798868}
+  - component: {fileID: 839034816264329764}
   m_Layer: 5
   m_Name: Player
   m_TagString: Untagged
@@ -161,3 +162,19 @@ MonoBehaviour:
   rotationSensitivity: 0.01
   positionPrecision: 0.01
   scalePrecision: 0.01
+--- !u!114 &839034816264329764
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5227058378306516699}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ee485568bc81e6499933948e1f5e33d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NetworkChat
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  DisplayName: 
