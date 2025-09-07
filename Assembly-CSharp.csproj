@@ -48,37 +48,41 @@
     <Analyzer Include="C:\Program Files\Unity\Hub\Editor\6000.2.0f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Scripts\Board\Cards\RandomChildPaletteColor.cs" />
+    <Compile Include="Assets\Scripts\Board\ColorBoard\BoardLabelsHighlighter.cs" />
     <Compile Include="Assets\Scripts\UI\Panel.cs" />
+    <Compile Include="Assets\Scripts\Board\MarkerCorner\GradientShadow.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\RosterStore.cs" />
     <Compile Include="Assets\Scripts\Controller\CursorController\ChangeCursor.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerInteractionHandler.cs" />
+    <Compile Include="Assets\Scripts\Board\ColorBoard\ColorBoard2D.cs" />
     <Compile Include="Assets\Scripts\Background\UVScroller.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandler.cs" />
     <Compile Include="Assets\Scripts\Steamworks.NET\SteamManager.cs" />
     <Compile Include="Assets\Scripts\Controller\CursorController\CursorControllerModule.cs" />
-    <Compile Include="Assets\Scripts\Board\BoardLabels.cs" />
+    <Compile Include="Assets\Scripts\Board\ColorBoard\ScoreboardGridPainter.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardLabels.cs" />
-    <Compile Include="Assets\Scripts\Board\BoardSpriteGenerator2D.cs" />
+    <Compile Include="Assets\Scripts\Board\ColorBoard\PaletteGrid.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerListBinder.cs" />
     <Compile Include="Assets\Scripts\GameNetworking\NetworkChat.cs" />
     <Compile Include="Assets\Scripts\Board\GameChat\ChatUI.cs" />
-    <Compile Include="Assets\Scripts\Board\BoardScreenFitter.cs" />
-    <Compile Include="Assets\Scripts\Board\ColorBoard2D.cs" />
-    <Compile Include="Assets\Scripts\Board\GridPalettePainter.cs" />
+    <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardGenerator.cs" />
     <Compile Include="Assets\Scripts\Controller\DraggableItem.cs" />
-    <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardGridPainter.cs" />
     <Compile Include="Assets\Scripts\Controller\Slot.cs" />
-    <Compile Include="Assets\Scripts\Board\ScoreboardAttachToBoard.cs" />
     <Compile Include="Assets\Scripts\UI\LobbyUIManager.cs" />
+    <Compile Include="Assets\Scripts\Board\ColorBoard\BoardSpriteGenerator2D.cs" />
     <Compile Include="Assets\Scripts\Steam\SteamLobby.cs" />
     <Compile Include="Assets\Scripts\Steam\CustomNetworkManager.cs" />
-    <Compile Include="Assets\Scripts\Board\ScoreboardGenerator.cs" />
+    <Compile Include="Assets\Scripts\Board\ColorBoard\GridPalettePainter.cs" />
+    <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardFitter.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandlerGame.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerRow.cs" />
-    <Compile Include="Assets\Scripts\Board\ScoreboardFitter.cs" />
+    <Compile Include="Assets\Scripts\Board\ColorBoard\BoardScreenFitter.cs" />
+    <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardAttachToBoard.cs" />
+    <Compile Include="Assets\Scripts\Board\ColorBoard\BoardLabels.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\GameScenePlayerList.cs" />
     <Compile Include="Assets\Scripts\UI\PanelSwapper.cs" />
-    <Compile Include="Assets\Scripts\Board\PaletteGrid.cs" />
+    <Compile Include="Assets\Scripts\Board\ColorBoard\GridCellHoverWithCoords.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Mirror\Plugins\Mono.Cecil\Mono.CecilX.dll" />
