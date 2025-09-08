@@ -161,9 +161,6 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        if (labelsHighlighter) labelsHighlighter.Clear();
-        _lastColIdx = _lastRowIdx = -1;
-
         StartAnim(0f);
     }
 
@@ -193,10 +190,13 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
         _progress01 = target;
         Apply(_progress01);
 
-        if (Mathf.Approximately(_progress01, 0f) && label && deactivateLabelWhenHidden)
-            label.gameObject.SetActive(false);
+        if (Mathf.Approximately(_progress01, 0f))
+        {
+            if (labelsHighlighter && _lastColIdx >= 0 && _lastRowIdx >= 0)
+                labelsHighlighter.Clear();
 
-        _anim = null;
+            _lastColIdx = _lastRowIdx = -1;
+        }
     }
 
     void Apply(float p)
@@ -245,11 +245,10 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
 
         int col = (idx % _cols);
         int row = (idx / _cols);
-        // If A is at top, letter = row; if A is at bottom, flip
         int letterIndex = _orientationAOnTop ? row : (_rows - 1 - row);
         letterIndex = Mathf.Clamp(letterIndex, 0, Mathf.Max(0, _rows - 1));
 
-        string rowLetter = IndexToLetters(letterIndex); // A, B, ... P
+        string rowLetter = IndexToLetters(letterIndex);
         int colNumber = col + 1;
 
         label.text = coordinateFormat

@@ -127,6 +127,9 @@ public class BoardLabelsHighlighter : MonoBehaviour
         return mats;
     }
 
+    public float maxScale = 1.2f;
+    Vector3 _baseScale = Vector3.one;
+
     public void SetHighlightLerp(int colIndex, int rowIndex, Color targetColor, float progress)
     {
         if (colIndex != _lastCol || rowIndex != _lastRow)
@@ -141,23 +144,28 @@ public class BoardLabelsHighlighter : MonoBehaviour
         Color outline = targetColor;
         if (fadeOutlineAlpha) outline.a *= progress;
 
+        Vector3 scale = Vector3.Lerp(_baseScale, Vector3.one * maxScale, progress);
+
         if (colIndex >= 0)
         {
-            if (colIndex < _top.Length) ApplyFade(_top[colIndex], _topMats[colIndex], width, outline);
-            if (colIndex < _bottom.Length) ApplyFade(_bottom[colIndex], _bottomMats[colIndex], width, outline);
+            if (colIndex < _top.Length) ApplyFadeAndScale(_top[colIndex], _topMats[colIndex], width, outline, scale);
+            if (colIndex < _bottom.Length) ApplyFadeAndScale(_bottom[colIndex], _bottomMats[colIndex], width, outline, scale);
         }
         if (rowIndex >= 0)
         {
-            if (rowIndex < _left.Length) ApplyFade(_left[rowIndex], _leftMats[rowIndex], width, outline);
-            if (rowIndex < _right.Length) ApplyFade(_right[rowIndex], _rightMats[rowIndex], width, outline);
+            if (rowIndex < _left.Length) ApplyFadeAndScale(_left[rowIndex], _leftMats[rowIndex], width, outline, scale);
+            if (rowIndex < _right.Length) ApplyFadeAndScale(_right[rowIndex], _rightMats[rowIndex], width, outline, scale);
         }
     }
 
-    void ApplyFade(TextMeshProUGUI label, Material mat, float width, Color outline)
+    void ApplyFadeAndScale(TextMeshProUGUI label, Material mat, float width, Color outline, Vector3 scale)
     {
         if (!label || !mat) return;
         mat.SetFloat(ID_OutlineWidth, width);
         mat.SetColor(ID_OutlineColor, outline);
+
+        var rt = label.rectTransform;
+        rt.localScale = scale;
     }
 
     void SetLabelOutline(TextMeshProUGUI label, Material mat, float width, Color outline, bool tintFace)
@@ -185,6 +193,7 @@ public class BoardLabelsHighlighter : MonoBehaviour
             var face = label.color;
             mat.SetColor(ID_FaceColor, face);
         }
+        label.rectTransform.localScale = Vector3.one;
     }
 
     void ClearAll()
