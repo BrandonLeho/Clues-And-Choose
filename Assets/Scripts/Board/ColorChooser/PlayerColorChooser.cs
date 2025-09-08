@@ -4,29 +4,48 @@ using UnityEngine;
 
 public class PlayerColorChooser : NetworkBehaviour
 {
-    [Header("UI (auto-found)")]
-    [Tooltip("Optional: if assigned, will be used; otherwise auto-found at runtime.")]
+    [Header("UI (auto-found if left empty)")]
     public SelectionController picker;
+    [Tooltip("Optional: if you know the GameObject name that holds the picker, set it here for a faster lookup.")]
+    public string pickerObjectNameOverride = "";
+    [Tooltip("How long to keep searching for the UI (unscaled seconds).")]
+    public float uiSearchTimeoutSeconds = 10f;
+    [Tooltip("Include inactive objects in the search (useful if your UI starts disabled).")]
+    public bool includeInactiveInSearch = true;
 
     ColorReservationManager _mgr;
-    bool _boundPicker;
-    bool _subscribedDict;
 
     void Start()
     {
-        if (!isLocalPlayer)  // only the local player drives local UI
-            return;
+        // Subscribe to reservation replication on all clients
+        TryBindManagerOrWait();
 
-        StartCoroutine(AutoBindRoutine());
+        // Only the local player needs to wire up local UI events
+        if (isLocalPlayer)
+        {
+            // If not assigned in Inspector, auto-find it
+            if (!picker) TryFindPickerImmediate();
+            if (!picker) StartCoroutine(WaitForPickerRoutine());
+
+            // If already present, bind now
+            if (picker) BindPickerEvents();
+        }
+
+        // If manager is already present, reflect state into UI (if UI already found)
+        if (picker && _mgr) RefreshFromReservations();
     }
 
     void OnDestroy()
     {
-        UnbindPicker();
-        UnsubscribeReservations();
+        if (_mgr != null)
+            _mgr.reservations.OnChange -= OnReservationsChanged;
+
+        if (isLocalPlayer && picker != null)
+            picker.onColorConfirmed.RemoveListener(OnLocalConfirm);
     }
 
     // ---------------- Local → Server ----------------
+
     void OnLocalConfirm(Color _, int swatchIndex)
     {
         if (!isLocalPlayer) return;
@@ -44,23 +63,23 @@ public class PlayerColorChooser : NetworkBehaviour
         if (!ok) { TargetReservationDenied(connectionToClient, swatchIndex); return; }
 
         TargetReservationConfirmed(connectionToClient, swatchIndex, previous);
-        // SyncDictionary replication will update everyone’s UI.
     }
 
     [TargetRpc]
     void TargetReservationDenied(NetworkConnectionToClient _, int swatchIndex)
     {
-        Debug.Log($"Color {swatchIndex} already taken.");
+        Debug.Log($"Color {swatchIndex} is already taken.");
+        // Optional: shake button / SFX
     }
 
     [TargetRpc]
     void TargetReservationConfirmed(NetworkConnectionToClient _, int newIndex, int oldIndex)
     {
-        // Optional: play a confirm SFX/flash here.
+        // Optional: confirm SFX / flash
     }
 
     // ---------------- Replication → UI ----------------
-    // Mirror SyncDictionary OnChange: (op, key, item)
+
     void OnReservationsChanged(SyncIDictionary<int, uint>.Operation op, int key, uint item)
     {
         RefreshFromReservations();
@@ -80,8 +99,8 @@ public class PlayerColorChooser : NetworkBehaviour
 
             if (reserved)
             {
-                if (!s.IsLocked) s.Lock();
-                s.SetSelected(false);
+                if (!s.IsLocked) s.Lock();   // unselectable for all clients
+                s.SetSelected(false);        // make sure it isn’t “pending selected”
             }
             else
             {
@@ -90,84 +109,99 @@ public class PlayerColorChooser : NetworkBehaviour
         }
     }
 
+    // ---------------- Helpers ----------------
+
+    void TryBindManagerOrWait()
+    {
+        _mgr = ColorReservationManager.Instance;
+        if (_mgr != null)
+        {
+            _mgr.reservations.OnChange += OnReservationsChanged;
+        }
+        else
+        {
+            StartCoroutine(WaitForManagerRoutine());
+        }
+    }
+
+    IEnumerator WaitForManagerRoutine()
+    {
+        float end = Time.unscaledTime + uiSearchTimeoutSeconds;
+        while (_mgr == null && Time.unscaledTime < end)
+        {
+            _mgr = ColorReservationManager.Instance;
+            if (_mgr != null)
+            {
+                _mgr.reservations.OnChange += OnReservationsChanged;
+                yield break;
+            }
+            yield return null;
+        }
+        if (_mgr == null)
+            Debug.LogWarning("PlayerColorChooser: ColorReservationManager not found in time.");
+    }
+
+    void TryFindPickerImmediate()
+    {
+        // 1) If you provided a GameObject name, try that first
+        if (!string.IsNullOrWhiteSpace(pickerObjectNameOverride))
+        {
+            var go = GameObject.Find(pickerObjectNameOverride);
+            if (go) picker = go.GetComponentInChildren<SelectionController>(includeInactiveInSearch);
+            if (picker) return;
+        }
+
+        // 2) Generic search across the scene
+#if UNITY_2020_1_OR_NEWER
+        picker = Object.FindFirstObjectByType<SelectionController>();
+#else
+        // Fallback for older Unity without includeInactive overload
+        picker = Object.FindObjectOfType<SelectionController>();
+        if (!picker && includeInactiveInSearch)
+        {
+            // Slow path: scan all (rarely needed)
+            foreach (var ui in Resources.FindObjectsOfTypeAll<SelectionController>())
+            {
+                if (ui.gameObject.hideFlags == HideFlags.None) { picker = ui; break; }
+            }
+        }
+#endif
+    }
+
+    IEnumerator WaitForPickerRoutine()
+    {
+        float end = Time.unscaledTime + uiSearchTimeoutSeconds;
+        while (picker == null && Time.unscaledTime < end)
+        {
+            TryFindPickerImmediate();
+            if (picker) break;
+            yield return null;
+        }
+
+        if (!picker)
+        {
+            Debug.LogWarning("PlayerColorChooser: SelectionController not found in scene.");
+            yield break;
+        }
+
+        BindPickerEvents();
+
+        // Once bound, if we already have replicated state, reflect it now
+        RefreshFromReservations();
+    }
+
+    void BindPickerEvents()
+    {
+        if (!isLocalPlayer || picker == null) return;
+        picker.onColorConfirmed.RemoveListener(OnLocalConfirm); // avoid double bind
+        picker.onColorConfirmed.AddListener(OnLocalConfirm);
+    }
+
+    // Server cleanup for this player's reservation
     public override void OnStopServer()
     {
         var mgr = ColorReservationManager.Instance;
         if (mgr != null)
             mgr.ReleaseByOwner(netIdentity.netId);
-    }
-
-    // ---------------- Binding helpers ----------------
-    IEnumerator AutoBindRoutine()
-    {
-        // Wait for scene & UI to be ready
-        while (picker == null)
-        {
-            // Prefer active-in-hierarchy pickers
-            picker = FindActivePicker();
-            if (picker != null) break;
-            yield return null; // try again next frame
-        }
-
-        BindPicker();
-
-        // Also wait for the reservation manager to exist, then subscribe
-        while (_mgr == null)
-        {
-            _mgr = ColorReservationManager.Instance;
-            if (_mgr != null) break;
-            yield return null;
-        }
-
-        SubscribeReservations();
-        RefreshFromReservations();
-    }
-
-    SelectionController FindActivePicker()
-    {
-        // Try active objects first
-#if UNITY_2023_1_OR_NEWER
-        var found = Object.FindFirstObjectByType<SelectionController>();
-        if (found != null && found.isActiveAndEnabled && found.gameObject.activeInHierarchy)
-            return found;
-        // Fallback: find any, including inactive, and prefer one that’s active
-        var all = Object.FindObjectsByType<SelectionController>(FindObjectsSortMode.None);
-        foreach (var p in all) if (p.isActiveAndEnabled && p.gameObject.activeInHierarchy) return p;
-        return all.Length > 0 ? all[0] : null;
-#else
-        // Older Unity
-        var all = Object.FindObjectsOfType<SelectionController>(true); // include inactive
-        SelectionController active = null;
-        foreach (var p in all) if (p.isActiveAndEnabled && p.gameObject.activeInHierarchy) { active = p; break; }
-        return active != null ? active : (all.Length > 0 ? all[0] : null);
-#endif
-    }
-
-    void BindPicker()
-    {
-        if (_boundPicker || picker == null) return;
-        picker.onColorConfirmed.AddListener(OnLocalConfirm);
-        _boundPicker = true;
-    }
-
-    void UnbindPicker()
-    {
-        if (!_boundPicker || picker == null) return;
-        picker.onColorConfirmed.RemoveListener(OnLocalConfirm);
-        _boundPicker = false;
-    }
-
-    void SubscribeReservations()
-    {
-        if (_subscribedDict || _mgr == null) return;
-        _mgr.reservations.OnChange += OnReservationsChanged;
-        _subscribedDict = true;
-    }
-
-    void UnsubscribeReservations()
-    {
-        if (!_subscribedDict || _mgr == null) return;
-        _mgr.reservations.OnChange -= OnReservationsChanged;
-        _subscribedDict = false;
     }
 }
