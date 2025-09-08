@@ -6,80 +6,58 @@ public class ColorReservationManager : NetworkBehaviour
 {
     public static ColorReservationManager Instance;
 
-    // index -> ownerNetId
+    // swatchIndex -> ownerNetId
     public class SyncDictIntUInt : SyncDictionary<int, uint> { }
     public SyncDictIntUInt reservations = new SyncDictIntUInt();
-
-    // Bumped on any change, so clients can cheaply detect updates
-    [SyncVar] public int version;
 
     void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
-        DontDestroyOnLoad(gameObject);
     }
 
-    // --- Server API ---
+    public override void OnStartServer()
+    {
+        reservations.Clear();
+    }
+
+    // ---------- SERVER API ----------
     [Server]
     public bool TryReserve(uint ownerNetId, int swatchIndex, out int previousIndex)
     {
         previousIndex = -1;
 
-        // If already owned by this player, accept (no change)
-        uint existing;
-        if (reservations.TryGetValue(swatchIndex, out existing))
-            return existing == ownerNetId;
+        // Already owned by same player? (idempotent)
+        if (reservations.TryGetValue(swatchIndex, out var existingOwner))
+            return existingOwner == ownerNetId;
 
-        // Free player's previous reservation (if any)
-        int toRemove = -1;
+        // Free previous reservation (if any) for this owner
         foreach (KeyValuePair<int, uint> kv in reservations)
         {
             if (kv.Value == ownerNetId)
             {
-                toRemove = kv.Key;
+                previousIndex = kv.Key;
                 break;
             }
         }
-        if (toRemove != -1)
-        {
-            previousIndex = toRemove;
-            reservations.Remove(toRemove);
-        }
+        if (previousIndex != -1) reservations.Remove(previousIndex);
 
-        // Only reserve if free
+        // If still free, take it
         if (!reservations.ContainsKey(swatchIndex))
         {
             reservations[swatchIndex] = ownerNetId;
-            version++; // notify clients
             return true;
         }
-        return false;
+        return false; // lost a race
     }
 
     [Server]
     public void ReleaseByOwner(uint ownerNetId)
     {
-        int toRemove = -1;
+        int found = -1;
         foreach (KeyValuePair<int, uint> kv in reservations)
-        {
-            if (kv.Value == ownerNetId)
-            {
-                toRemove = kv.Key;
-                break;
-            }
-        }
-        if (toRemove != -1)
-        {
-            reservations.Remove(toRemove);
-            version++; // notify clients
-        }
-    }
+            if (kv.Value == ownerNetId) { found = kv.Key; break; }
 
-    public override void OnStartServer()
-    {
-        // Optional: clear on server start
-        reservations.Clear();
-        version = 0;
+        if (found != -1) reservations.Remove(found);
     }
 }

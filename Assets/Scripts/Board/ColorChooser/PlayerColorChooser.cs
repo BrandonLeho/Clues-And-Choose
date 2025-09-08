@@ -1,43 +1,32 @@
+using System.Collections;
 using Mirror;
 using UnityEngine;
 
 public class PlayerColorChooser : NetworkBehaviour
 {
-    [Header("UI (local-only)")]
-    public SelectionController picker;   // assign on the local player (or find at runtime)
+    [Header("UI (auto-found)")]
+    [Tooltip("Optional: if assigned, will be used; otherwise auto-found at runtime.")]
+    public SelectionController picker;
 
     ColorReservationManager _mgr;
-    int _lastVersion = -1;
+    bool _boundPicker;
+    bool _subscribedDict;
 
     void Start()
     {
-        _mgr = ColorReservationManager.Instance;
+        if (!isLocalPlayer)  // only the local player drives local UI
+            return;
 
-        if (isLocalPlayer && picker)
-            picker.onColorConfirmed.AddListener(OnLocalConfirm);
-
-        // Initial paint when we join
-        RefreshFromReservations(force: true);
+        StartCoroutine(AutoBindRoutine());
     }
 
     void OnDestroy()
     {
-        if (isLocalPlayer && picker)
-            picker.onColorConfirmed.RemoveListener(OnLocalConfirm);
+        UnbindPicker();
+        UnsubscribeReservations();
     }
 
-    void Update()
-    {
-        // Passive version check—works across Mirror versions
-        if (_mgr == null) _mgr = ColorReservationManager.Instance;
-        if (_mgr && _mgr.version != _lastVersion)
-        {
-            RefreshFromReservations();
-            _lastVersion = _mgr.version;
-        }
-    }
-
-    // -------- Local → Server --------
+    // ---------------- Local → Server ----------------
     void OnLocalConfirm(Color _, int swatchIndex)
     {
         if (!isLocalPlayer) return;
@@ -52,61 +41,133 @@ public class PlayerColorChooser : NetworkBehaviour
 
         int previous;
         bool ok = mgr.TryReserve(netIdentity.netId, swatchIndex, out previous);
-        if (!ok)
-            TargetReservationDenied(connectionToClient, swatchIndex);
-        else
-            TargetReservationConfirmed(connectionToClient, swatchIndex, previous);
+        if (!ok) { TargetReservationDenied(connectionToClient, swatchIndex); return; }
+
+        TargetReservationConfirmed(connectionToClient, swatchIndex, previous);
+        // SyncDictionary replication will update everyone’s UI.
     }
 
     [TargetRpc]
     void TargetReservationDenied(NetworkConnectionToClient _, int swatchIndex)
     {
-        // Optional UX: toast/SFX. UI stays unchanged because server denied.
         Debug.Log($"Color {swatchIndex} already taken.");
     }
 
     [TargetRpc]
-    void TargetReservationConfirmed(NetworkConnectionToClient _, int swatchIndex, int previousIndex)
+    void TargetReservationConfirmed(NetworkConnectionToClient _, int newIndex, int oldIndex)
     {
-        // Optional UX: play a confirm SFX. UI will update via version-sync.
+        // Optional: play a confirm SFX/flash here.
     }
 
-    // -------- Replicated state → local UI --------
-    void RefreshFromReservations(bool force = false)
+    // ---------------- Replication → UI ----------------
+    // Mirror SyncDictionary OnChange: (op, key, item)
+    void OnReservationsChanged(SyncIDictionary<int, uint>.Operation op, int key, uint item)
     {
-        if (!picker) return;
-        if (_mgr == null) return;
+        RefreshFromReservations();
+    }
+
+    void RefreshFromReservations()
+    {
+        if (picker == null) return;
+        if (_mgr == null) _mgr = ColorReservationManager.Instance;
 
         for (int i = 0; i < picker.swatches.Count; i++)
         {
             var s = picker.swatches[i];
             if (!s) continue;
 
-            uint owner; // <-- declare first; no 'out var'
-            bool isReserved = _mgr.reservations.TryGetValue(i, out owner);
+            bool reserved = _mgr != null && _mgr.reservations.TryGetValue(i, out uint _);
 
-            if (!isReserved)
+            if (reserved)
+            {
+                if (!s.IsLocked) s.Lock();
+                s.SetSelected(false);
+            }
+            else
             {
                 if (s.IsLocked) s.Unlock();
-                s.SetSelected(false);
-                continue;
             }
-
-            // If it's mine, it will be my locked swatch; if not, it must be unselectable
-            bool isMine = (owner == netIdentity.netId) && isLocalPlayer;
-
-            if (!s.IsLocked) s.Lock();    // lock for everyone visually
-            if (!isMine) s.SetSelected(false);
         }
-
-        // Confirm button interactivity is already handled by your picker logic.
     }
 
     public override void OnStopServer()
     {
-        // Free reservation on disconnect
         var mgr = ColorReservationManager.Instance;
         if (mgr != null)
             mgr.ReleaseByOwner(netIdentity.netId);
+    }
+
+    // ---------------- Binding helpers ----------------
+    IEnumerator AutoBindRoutine()
+    {
+        // Wait for scene & UI to be ready
+        while (picker == null)
+        {
+            // Prefer active-in-hierarchy pickers
+            picker = FindActivePicker();
+            if (picker != null) break;
+            yield return null; // try again next frame
+        }
+
+        BindPicker();
+
+        // Also wait for the reservation manager to exist, then subscribe
+        while (_mgr == null)
+        {
+            _mgr = ColorReservationManager.Instance;
+            if (_mgr != null) break;
+            yield return null;
+        }
+
+        SubscribeReservations();
+        RefreshFromReservations();
+    }
+
+    SelectionController FindActivePicker()
+    {
+        // Try active objects first
+#if UNITY_2023_1_OR_NEWER
+        var found = Object.FindFirstObjectByType<SelectionController>();
+        if (found != null && found.isActiveAndEnabled && found.gameObject.activeInHierarchy)
+            return found;
+        // Fallback: find any, including inactive, and prefer one that’s active
+        var all = Object.FindObjectsByType<SelectionController>(FindObjectsSortMode.None);
+        foreach (var p in all) if (p.isActiveAndEnabled && p.gameObject.activeInHierarchy) return p;
+        return all.Length > 0 ? all[0] : null;
+#else
+        // Older Unity
+        var all = Object.FindObjectsOfType<SelectionController>(true); // include inactive
+        SelectionController active = null;
+        foreach (var p in all) if (p.isActiveAndEnabled && p.gameObject.activeInHierarchy) { active = p; break; }
+        return active != null ? active : (all.Length > 0 ? all[0] : null);
+#endif
+    }
+
+    void BindPicker()
+    {
+        if (_boundPicker || picker == null) return;
+        picker.onColorConfirmed.AddListener(OnLocalConfirm);
+        _boundPicker = true;
+    }
+
+    void UnbindPicker()
+    {
+        if (!_boundPicker || picker == null) return;
+        picker.onColorConfirmed.RemoveListener(OnLocalConfirm);
+        _boundPicker = false;
+    }
+
+    void SubscribeReservations()
+    {
+        if (_subscribedDict || _mgr == null) return;
+        _mgr.reservations.OnChange += OnReservationsChanged;
+        _subscribedDict = true;
+    }
+
+    void UnsubscribeReservations()
+    {
+        if (!_subscribedDict || _mgr == null) return;
+        _mgr.reservations.OnChange -= OnReservationsChanged;
+        _subscribedDict = false;
     }
 }
