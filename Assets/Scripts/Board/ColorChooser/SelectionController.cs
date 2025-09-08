@@ -110,4 +110,42 @@ public class SelectionController : MonoBehaviour
 
     public bool CanConfirmNow() => (_current != null && _current != _locked);
 
+    // ADD inside SelectionController:
+    public void ApplyLockFromNetwork(int swatchIndex, bool asLocalPlayer)
+    {
+        if (swatchIndex < 0 || swatchIndex >= swatches.Count) return;
+        var sw = swatches[swatchIndex];
+        if (!sw) return;
+
+        // unlock the previously locked (if different)
+        if (_locked != null && _locked != sw)
+            _locked.Unlock();
+
+        // set + show lock
+        _locked = sw;
+        _locked.Lock();
+
+        // keep it visually selected and fire your existing event only for the owner
+        if (asLocalPlayer)
+        {
+            _current = _locked;
+            _locked.SetSelected(true);
+            onColorConfirmed?.Invoke(_locked.GetFillColor(), swatchIndex);
+        }
+        UpdateConfirmInteractable();
+    }
+
+    public void ApplyUnlockFromNetwork(int swatchIndex)
+    {
+        if (swatchIndex < 0 || swatchIndex >= swatches.Count) return;
+        var sw = swatches[swatchIndex];
+        if (!sw) return;
+
+        bool wasMine = (sw == _locked);
+        sw.Unlock();
+        if (wasMine) _locked = null;
+        UpdateConfirmInteractable();
+    }
+
+
 }

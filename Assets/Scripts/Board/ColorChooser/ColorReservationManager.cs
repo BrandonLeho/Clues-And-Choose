@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Mirror;
 using UnityEngine;
@@ -6,58 +7,76 @@ public class ColorReservationManager : NetworkBehaviour
 {
     public static ColorReservationManager Instance;
 
-    // swatchIndex -> ownerNetId
-    public class SyncDictIntUInt : SyncDictionary<int, uint> { }
-    public SyncDictIntUInt reservations = new SyncDictIntUInt();
+    // swatchIndex -> playerNetId
+    public readonly SyncDictionary<int, uint> lockedBy = new SyncDictionary<int, uint>();
 
-    void Awake()
-    {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-        Instance = this;
-    }
+    public event System.Action OnStateChanged;
+
+    void Awake() => Instance = this;
 
     public override void OnStartServer()
     {
-        reservations.Clear();
+        lockedBy.Clear();
     }
 
-    // ---------- SERVER API ----------
-    [Server]
-    public bool TryReserve(uint ownerNetId, int swatchIndex, out int previousIndex)
+    public override void OnStartClient()
     {
-        previousIndex = -1;
+        base.OnStartClient();
 
-        // Already owned by same player? (idempotent)
-        if (reservations.TryGetValue(swatchIndex, out var existingOwner))
-            return existingOwner == ownerNetId;
+        // Subscribe to dictionary changes (Mirror newer API)
+        lockedBy.OnChange += OnDictChanged;
 
-        // Free previous reservation (if any) for this owner
-        foreach (KeyValuePair<int, uint> kv in reservations)
-        {
-            if (kv.Value == ownerNetId)
-            {
-                previousIndex = kv.Key;
-                break;
-            }
-        }
-        if (previousIndex != -1) reservations.Remove(previousIndex);
+        // Kick one initial refresh for late-joiners
+        OnStateChanged?.Invoke();
+    }
 
-        // If still free, take it
-        if (!reservations.ContainsKey(swatchIndex))
-        {
-            reservations[swatchIndex] = ownerNetId;
-            return true;
-        }
-        return false; // lost a race
+    public override void OnStopClient()
+    {
+        // Unsubscribe
+        lockedBy.OnChange -= OnDictChanged;
+    }
+
+    // NOTE: Signature matches Mirror's SyncIDictionary OnChange delegate
+    void OnDictChanged(SyncIDictionary<int, uint>.Operation op, int key, uint value)
+    {
+        OnStateChanged?.Invoke();
+    }
+
+    // ---------- Queries ----------
+    [Server]
+    public int GetIndexForPlayer(uint playerNetId)
+    {
+        foreach (var kv in lockedBy)
+            if (kv.Value == playerNetId)
+                return kv.Key;
+        return -1;
+    }
+
+    public bool IsLocked(int swatchIndex) => lockedBy.ContainsKey(swatchIndex);
+
+    // ---------- Mutations (Server only) ----------
+    [Server]
+    public bool TryLock(int swatchIndex, NetworkIdentity requester)
+    {
+        if (!requester) return false;
+
+        // already taken?
+        if (lockedBy.ContainsKey(swatchIndex))
+            return false;
+
+        // release any previous lock by this player
+        int prev = GetIndexForPlayer(requester.netId);
+        if (prev >= 0) lockedBy.Remove(prev);
+
+        // claim
+        lockedBy[swatchIndex] = requester.netId;
+        return true;
     }
 
     [Server]
-    public void ReleaseByOwner(uint ownerNetId)
+    public void ReleaseByPlayer(uint playerNetId)
     {
-        int found = -1;
-        foreach (KeyValuePair<int, uint> kv in reservations)
-            if (kv.Value == ownerNetId) { found = kv.Key; break; }
-
-        if (found != -1) reservations.Remove(found);
+        int idx = GetIndexForPlayer(playerNetId);
+        if (idx >= 0) lockedBy.Remove(idx);
     }
 }

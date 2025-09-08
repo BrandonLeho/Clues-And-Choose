@@ -50,6 +50,7 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\Board\Cards\RandomChildPaletteColor.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\BoardLabelsHighlighter.cs" />
+    <Compile Include="Assets\Scripts\Board\ColorChooser\PlayerColorLock.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\NeonRectBorderBinder.cs" />
     <Compile Include="Assets\Scripts\UI\Panel.cs" />
     <Compile Include="Assets\Scripts\Board\MarkerCorner\GradientShadow.cs" />
@@ -66,7 +67,6 @@
     <Compile Include="Assets\Scripts\Controller\CursorController\CursorControllerModule.cs" />
     <Compile Include="Assets\Scripts\Board\MarkerCorner\DraggableCoin.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\ScoreboardGridPainter.cs" />
-    <Compile Include="Assets\Scripts\Board\ColorChooser\SelectionControllerBinder.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardLabels.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\PaletteGrid.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerListBinder.cs" />
@@ -85,7 +85,6 @@
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardFitter.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandlerGame.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerRow.cs" />
-    <Compile Include="Assets\Scripts\Board\ColorChooser\PlayerColorChooser.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardAttachToBoard.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\SwatchHoverNeon.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\BoardLabels.cs" />
