@@ -1,0 +1,125 @@
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.EventSystems;
+
+public class ConfirmButtonNeonHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+{
+    [Header("Refs")]
+    public SelectionController picker;               // parent picker
+    public NeonRectBorderBinder glow;          // Glow child with neon border
+    public Button button;                      // the confirm button
+    public RectTransform scaleTarget;          // what scales on hover (default: this)
+
+    [Header("Glow States")]
+    [Range(0f, 1f)] public float normalAlpha = 0.0f;
+    [Range(0f, 1f)] public float hoverAlpha = 1.0f;
+
+    [Range(0f, 10f)] public float normalIntensity = 0.0f;
+    [Range(0f, 10f)] public float hoverIntensity = 3.5f;
+
+    [Header("Pulse on Hover")]
+    public bool pulseOnHover = true;
+    [Range(0f, 1f)] public float hoverPulseAmp = 0.25f;
+    [Range(0.05f, 5f)] public float pulseSpeed = 1.2f;
+
+    [Header("Scale on Hover")]
+    public bool scaleOnlyWhenInteractable = true;
+    [Range(0.8f, 1.5f)] public float normalScale = 1.00f;
+    [Range(0.8f, 1.5f)] public float hoverScale = 1.05f;
+    [Range(2f, 40f)] public float scaleLerpSpeed = 16f; // higher = snappier
+
+    [Header("Animation")]
+    public bool useUnscaledTime = true;
+    [Range(2f, 40f)] public float glowLerpSpeed = 16f;
+
+    bool _hovering;
+    bool _hasColor;
+    Color _lastAppliedColor;
+    Vector3 _targetScale;
+
+    void Reset()
+    {
+        button = GetComponent<Button>();
+        scaleTarget = transform as RectTransform;
+        if (!glow) glow = GetComponentInChildren<NeonRectBorderBinder>(true);
+    }
+
+    void Awake()
+    {
+        if (!button) button = GetComponent<Button>();
+        if (!scaleTarget) scaleTarget = transform as RectTransform;
+
+        // start visual states
+        if (glow)
+        {
+            var img = glow.GetComponent<Image>();
+            if (img) img.raycastTarget = false;
+
+            glow.baseIntensity = normalIntensity;
+            glow.alpha = normalAlpha;
+            glow.pulse = false;
+            glow.Apply();
+            glow.gameObject.SetActive(true);
+        }
+
+        _targetScale = Vector3.one * normalScale;
+        scaleTarget.localScale = _targetScale;
+    }
+
+    void Update()
+    {
+        if (!button || !glow || !picker) { SmoothScaleOnly(); return; }
+
+        bool canConfirm = picker.CanConfirmNow();
+        bool canGlow = _hovering && canConfirm && button.interactable;
+
+        // Use the selected swatch's FILL color for the outline while hovered
+        if (canGlow && picker.TryGetCurrentSwatch(out var swatch))
+        {
+            var selColor = swatch.fillImage ? swatch.fillImage.color : Color.white;
+            if (!_hasColor || selColor != _lastAppliedColor)
+            {
+                _lastAppliedColor = selColor;
+                _hasColor = true;
+                glow.MatchImageColor(selColor);
+            }
+        }
+        else
+        {
+            _hasColor = false;
+        }
+
+        // Target glow params
+        float targetAlpha = canGlow ? hoverAlpha : normalAlpha;
+        float targetIntensity = canGlow ? hoverIntensity : normalIntensity;
+        float targetPulseAmp = (canGlow && pulseOnHover) ? hoverPulseAmp : 0f;
+
+        float dt = useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
+        float kGlow = 1f - Mathf.Exp(-glowLerpSpeed * dt);
+
+        glow.alpha = Mathf.Lerp(glow.alpha, targetAlpha, kGlow);
+        glow.baseIntensity = Mathf.Lerp(glow.baseIntensity, targetIntensity, kGlow);
+        glow.pulseAmplitude = Mathf.Lerp(glow.pulseAmplitude, targetPulseAmp, kGlow);
+        glow.pulse = pulseOnHover;
+        glow.pulseSpeed = pulseSpeed;
+        glow.Apply();
+
+        // Target scale
+        bool allowScale = !scaleOnlyWhenInteractable || button.interactable;
+        float desired = (_hovering && allowScale) ? hoverScale : normalScale;
+        _targetScale = Vector3.one * desired;
+
+        SmoothScaleOnly();
+    }
+
+    void SmoothScaleOnly()
+    {
+        if (!scaleTarget) return;
+        float dt = useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
+        float kScale = 1f - Mathf.Exp(-scaleLerpSpeed * dt);
+        scaleTarget.localScale = Vector3.Lerp(scaleTarget.localScale, _targetScale, kScale);
+    }
+
+    public void OnPointerEnter(PointerEventData e) { _hovering = true; }
+    public void OnPointerExit(PointerEventData e) { _hovering = false; }
+}

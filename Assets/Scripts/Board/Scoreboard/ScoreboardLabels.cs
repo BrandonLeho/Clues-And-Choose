@@ -79,7 +79,7 @@ public class PerimeterEvery5Labeler : MonoBehaviour
             {
                 tmp.text = labelText;
                 tmp.raycastTarget = false;
-                tmp.enableWordWrapping = false;
+                tmp.textWrappingMode = TextWrappingModes.NoWrap;
                 tmp.overflowMode = TextOverflowModes.Overflow;
                 tmp.alignment = TextAlignmentOptions.Center;
                 tmp.verticalAlignment = VerticalAlignmentOptions.Middle;

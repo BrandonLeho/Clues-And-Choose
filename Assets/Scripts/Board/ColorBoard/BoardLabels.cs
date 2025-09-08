@@ -227,7 +227,7 @@ public class BoardLabels : MonoBehaviour
             if (font && tmp.font != font) tmp.font = font;
             if (tmp.fontSize != effectiveFontSize) tmp.fontSize = effectiveFontSize;
 
-            tmp.enableWordWrapping = false;
+            tmp.textWrappingMode = TextWrappingModes.NoWrap;
             tmp.overflowMode = TextOverflowModes.Overflow;
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.verticalAlignment = VerticalAlignmentOptions.Middle;
