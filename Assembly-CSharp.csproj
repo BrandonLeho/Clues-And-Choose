@@ -66,6 +66,7 @@
     <Compile Include="Assets\Scripts\Controller\CursorController\CursorControllerModule.cs" />
     <Compile Include="Assets\Scripts\Board\MarkerCorner\DraggableCoin.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\ScoreboardGridPainter.cs" />
+    <Compile Include="Assets\Scripts\Board\ColorChooser\SelectionControllerBinder.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardLabels.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\PaletteGrid.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerListBinder.cs" />
