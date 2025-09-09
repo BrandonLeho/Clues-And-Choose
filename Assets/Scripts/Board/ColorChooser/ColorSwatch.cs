@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System.Collections;
+using TMPro;
 
 [RequireComponent(typeof(Button))]
 public class ColorSwatch : MonoBehaviour, IPointerClickHandler
@@ -30,20 +31,49 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
     [Range(0.05f, 0.6f)] public float iconPopDuration = 0.18f;
     public AnimationCurve iconPopCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
+    [Header("Owner Label UI")]
+    [SerializeField] TextMeshProUGUI ownerText;     // assign in Inspector (child under the banner)
+    [SerializeField] RectTransform ownerRect;     // the rect of the text
+    [SerializeField] CanvasGroup ownerGroup;    // CanvasGroup on the text for fades
+
+    [Header("Owner Label Layout")]
+    [SerializeField] float leftPadding = 8f;
+    [SerializeField] float rightPadding = 8f;
+    [SerializeField] float topPadding = 6f;
+    [SerializeField] float bottomPadding = 6f;
+
+    [Header("Owner Label Anim")]
+    [SerializeField] float slideDuration = 0.25f;
+    [SerializeField] float hiddenYOffset = -40f;    // start below the banner
+    [SerializeField] AnimationCurve ease = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
+    [Header("Clipping")]
+    [SerializeField] RectTransform clipArea;
+
     [Header("State (read-only)")]
     public bool IsSelected { get; private set; }
     public bool IsLocked { get; private set; }
 
     internal SelectionController owner;
 
+
     Button _btn;
     Coroutine _fadeCo;
     Coroutine _scaleCo;
     Coroutine _iconPopCo;
+    Coroutine _ownerCo;
     RectTransform _iconRT;
 
     void Awake()
     {
+        if (ownerText && !ownerRect) ownerRect = ownerText.rectTransform;
+        if (ownerText && !ownerGroup) ownerGroup = ownerText.GetComponent<CanvasGroup>();
+        if (ownerText && ownerRect && ownerGroup) ResetOwnerLabelDefaults();
+
+        if (!clipArea) clipArea = GetComponent<RectTransform>();
+        if (clipArea && !clipArea.GetComponent<RectMask2D>())
+            clipArea.gameObject.AddComponent<RectMask2D>();
+
         _btn = GetComponent<Button>();
         if (!scaleTarget) scaleTarget = transform as RectTransform;
         _iconRT = lockOverlay ? lockOverlay.rectTransform : null;
@@ -56,6 +86,8 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
             SetOverlayAlpha(0f);
             lockOverlay.enabled = false;
         }
+
+        ResetOwnerLabelDefaults();
     }
 
     public void OnPointerClick(PointerEventData e)
@@ -210,5 +242,91 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
         var c = lockOverlay.color;
         c.a = Mathf.Clamp01(a);
         lockOverlay.color = c;
+    }
+
+    void ResetOwnerLabelDefaults()
+    {
+        if (!ownerText || !ownerRect || !ownerGroup) return;
+
+        // Auto-size to fit, no wrap, no overflow
+        ownerText.enableAutoSizing = true;
+        ownerText.fontSizeMin = 8;     // tweak as you like
+        ownerText.fontSizeMax = 200;   // tweak as you like
+        ownerText.textWrappingMode = TextWrappingModes.NoWrap;
+        ownerText.overflowMode = TextOverflowModes.Truncate; // never overflow visually
+        ownerText.alignment = TextAlignmentOptions.MidlineLeft;
+
+        var p = ownerRect.anchoredPosition;
+        p.y = hiddenYOffset;
+        ownerGroup.alpha = 0f;
+        ownerText.text = string.Empty;
+    }
+
+    public void ShowOwnerName(string displayName)
+    {
+        if (!ownerText || !ownerRect || !ownerGroup) return;
+        ownerText.text = displayName ?? string.Empty;
+
+        if (_ownerCo != null) StopCoroutine(_ownerCo);
+        _ownerCo = StartCoroutine(Co_ShowOwner());
+    }
+
+    // Called when unlocked or not owned
+    public void HideOwnerName()
+    {
+        if (!ownerText || !ownerRect || !ownerGroup) return;
+        if (_ownerCo != null) StopCoroutine(_ownerCo);
+        _ownerCo = StartCoroutine(Co_HideOwner());
+    }
+
+    IEnumerator Co_ShowOwner()
+    {
+        // slide from hiddenYOffset -> 0, fade 0 -> 1
+        float t = 0f;
+        Vector2 from = ownerRect.anchoredPosition;
+        from.y = hiddenYOffset;
+        Vector2 to = ownerRect.anchoredPosition;
+        to.y = 0f;
+
+        // put it at start, visible anim
+        ownerRect.anchoredPosition = from;
+
+        // fade in slightly overlapped with slide
+        float fadeOverlap = Mathf.Min(fadeDuration, slideDuration) * 0.75f;
+
+        while (t < slideDuration)
+        {
+            t += Time.deltaTime;
+            float p = ease.Evaluate(Mathf.Clamp01(t / slideDuration));
+            ownerRect.anchoredPosition = Vector2.LerpUnclamped(from, to, p);
+
+            float a = Mathf.Clamp01(t / fadeOverlap);
+            ownerGroup.alpha = a;
+            yield return null;
+        }
+        ownerRect.anchoredPosition = to;
+        ownerGroup.alpha = 1f;
+        _ownerCo = null;
+    }
+
+    IEnumerator Co_HideOwner()
+    {
+        // fade 1 -> 0 while sliding a bit down
+        float t = 0f;
+        Vector2 from = ownerRect.anchoredPosition;
+        Vector2 to = from; to.y = hiddenYOffset;
+
+        while (t < fadeDuration)
+        {
+            t += Time.deltaTime;
+            float p = ease.Evaluate(Mathf.Clamp01(t / fadeDuration));
+            ownerGroup.alpha = 1f - p;
+            ownerRect.anchoredPosition = Vector2.LerpUnclamped(from, to, p);
+            yield return null;
+        }
+        ownerGroup.alpha = 0f;
+        ownerRect.anchoredPosition = to;
+        ownerText.text = string.Empty; // “Otherwise don’t display the text.”
+        _ownerCo = null;
     }
 }

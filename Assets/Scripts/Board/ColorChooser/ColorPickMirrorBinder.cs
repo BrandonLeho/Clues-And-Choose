@@ -59,16 +59,18 @@ public class ColorPickerMirrorBinder : NetworkBehaviour
     {
         if (!_registry || !picker) return;
 
-        // 1) Apply lock visual for every swatch from the synced dictionary
         for (int i = 0; i < picker.swatches.Count; i++)
         {
             bool isLocked = _registry.lockedBy.ContainsKey(i);
             picker.SetSwatchLockedState(i, isLocked);
+
+            if (isLocked && _registry.labelByIndex.TryGetValue(i, out string owner))
+                picker.SetOwnerName(i, owner);
+            else
+                picker.ClearOwnerName(i);
         }
 
-        // 2) If I hold one, reflect that
         int myIndex = _registry.FindIndexLockedByLocal(netIdentity.netId);
-        if (myIndex >= 0)
-            picker.SetLockedFromNetwork(myIndex);
+        if (myIndex >= 0) picker.SetLockedFromNetwork(myIndex);
     }
 }

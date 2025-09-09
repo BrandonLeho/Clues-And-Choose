@@ -166,6 +166,10 @@ public class CustomNetworkManager : NetworkManager
     /// <param name="conn">Connection from client.</param>
     public override void OnServerDisconnect(NetworkConnectionToClient conn)
     {
+        var registry = FindFirstObjectByType<ColorLockRegistry>();
+        if (registry && conn != null && conn.identity != null)
+            registry.UnlockAllFor(conn.identity);
+
         base.OnServerDisconnect(conn);
     }
 

@@ -73,6 +73,7 @@
     <Compile Include="Assets\Scripts\GameNetworking\NetworkChat.cs" />
     <Compile Include="Assets\Scripts\Board\GameChat\ChatUI.cs" />
     <Compile Include="Assets\Scripts\Board\MarkerCorner\DropCellUI.cs" />
+    <Compile Include="Assets\Scripts\Board\ColorChooser\PlayerNameSync.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardGenerator.cs" />
     <Compile Include="Assets\Scripts\Board\MarkerCorner\NeonRingPulse.cs" />
     <Compile Include="Assets\Scripts\Controller\DraggableItem.cs" />

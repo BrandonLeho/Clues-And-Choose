@@ -157,4 +157,16 @@ public class SelectionController : MonoBehaviour
     }
 
     public bool CanConfirmNow() => (_current != null && _current != _locked);
+
+    public void SetOwnerName(int index, string owner)
+    {
+        if (index < 0 || index >= swatches.Count || !swatches[index]) return;
+        swatches[index].ShowOwnerName(owner);
+    }
+    public void ClearOwnerName(int index)
+    {
+        if (index < 0 || index >= swatches.Count || !swatches[index]) return;
+        swatches[index].HideOwnerName();
+    }
+
 }

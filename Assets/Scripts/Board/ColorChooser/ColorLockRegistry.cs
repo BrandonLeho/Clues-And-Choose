@@ -8,6 +8,7 @@ public class ColorLockRegistry : NetworkBehaviour
 
     // index -> ownerNetId
     public readonly SyncDictionary<int, uint> lockedBy = new SyncDictionary<int, uint>();
+    public readonly SyncDictionary<int, string> labelByIndex = new SyncDictionary<int, string>();
 
     public delegate void RegistryChanged();
     public event RegistryChanged OnRegistryChanged;
@@ -18,13 +19,14 @@ public class ColorLockRegistry : NetworkBehaviour
     {
         base.OnStartClient();
         lockedBy.OnChange += OnDictChanged;
-        // Optional: remove this first invoke if you want to wait for initial sync
+        labelByIndex.OnChange += (_, __, ___) => OnRegistryChanged?.Invoke();
         OnRegistryChanged?.Invoke();
     }
 
     public override void OnStopClient()
     {
         lockedBy.OnChange -= OnDictChanged;
+        labelByIndex.OnChange -= (_, __, ___) => OnRegistryChanged?.Invoke();
         base.OnStopClient();
     }
 
@@ -40,9 +42,18 @@ public class ColorLockRegistry : NetworkBehaviour
 
         // one color per player
         int previous = FindIndexLockedByServer(player.netId);
-        if (previous >= 0) lockedBy.Remove(previous);
+        if (previous >= 0)
+        {
+            lockedBy.Remove(previous);
+            labelByIndex.Remove(previous);
+        }
+
+        // who owns it?
+        string owner = player.GetComponent<PlayerNameSync>()?.DisplayName;
+        if (string.IsNullOrWhiteSpace(owner)) owner = $"Player {player.netId}";
 
         lockedBy[newIndex] = player.netId;
+        labelByIndex[newIndex] = owner;
         return true;
     }
 
@@ -53,7 +64,12 @@ public class ColorLockRegistry : NetworkBehaviour
         var toRemove = new List<int>();
         foreach (var kv in lockedBy)
             if (kv.Value == player.netId) toRemove.Add(kv.Key);
-        foreach (var idx in toRemove) lockedBy.Remove(idx);
+
+        foreach (var idx in toRemove)
+        {
+            lockedBy.Remove(idx);
+            labelByIndex.Remove(idx);
+        }
     }
 
     [Server]
