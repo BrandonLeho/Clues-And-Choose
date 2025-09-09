@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 8236750188372419570}
   - component: {fileID: 7877326681467798868}
   - component: {fileID: 839034816264329764}
-  - component: {fileID: 6174311998840596437}
+  - component: {fileID: 7321503784007075703}
   m_Layer: 5
   m_Name: Player
   m_TagString: Untagged
@@ -179,7 +179,7 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0
   DisplayName: 
---- !u!114 &6174311998840596437
+--- !u!114 &7321503784007075703
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -188,10 +188,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 5227058378306516699}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0df9eb95c46188a4c9125e417200b37b, type: 3}
+  m_Script: {fileID: 11500000, guid: e5a4542198ea1f342993e05dd111cc82, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerColorLock
+  m_EditorClassIdentifier: Assembly-CSharp::ColorPickerMirrorBinder
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  selectionController: {fileID: 0}
+  picker: {fileID: 0}

@@ -50,16 +50,16 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\Board\Cards\RandomChildPaletteColor.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\BoardLabelsHighlighter.cs" />
-    <Compile Include="Assets\Scripts\Board\ColorChooser\PlayerColorLock.cs" />
+    <Compile Include="Assets\Scripts\Board\ColorChooser\ColorPickMirrorBinder.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\NeonRectBorderBinder.cs" />
     <Compile Include="Assets\Scripts\UI\Panel.cs" />
     <Compile Include="Assets\Scripts\Board\MarkerCorner\GradientShadow.cs" />
-    <Compile Include="Assets\Scripts\Board\ColorChooser\ColorReservationManager.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\RosterStore.cs" />
     <Compile Include="Assets\Scripts\Controller\CursorController\ChangeCursor.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerInteractionHandler.cs" />
     <Compile Include="Assets\Scripts\Board\MarkerCorner\CoinMakerUI.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\ColorBoard2D.cs" />
+    <Compile Include="Assets\Scripts\Board\ColorChooser\ColorLockRegistry.cs" />
     <Compile Include="Assets\Scripts\Background\UVScroller.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandler.cs" />
     <Compile Include="Assets\Scripts\Steamworks.NET\SteamManager.cs" />

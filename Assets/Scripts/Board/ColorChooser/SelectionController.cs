@@ -15,6 +15,10 @@ public class SelectionController : MonoBehaviour
     [Header("Events")]
     public ColorChosenEvent onColorConfirmed;   // subscribe from game code
 
+    [Header("Multiplayer")]
+    [Tooltip("When true, Confirm only requests a lock from server; actual lock is applied from network callbacks.")]
+    public bool networkAuthoritative = true;
+
     ColorSwatch _current;       // currently highlighted/selected (not yet locked)
     ColorSwatch _locked;        // the swatch this player has locked
 
@@ -50,25 +54,32 @@ public class SelectionController : MonoBehaviour
     {
         if (_current == null) return;
 
-        // If the current is already the locked one, nothing to do.
-        if (_current == _locked && _locked != null) return;
-
-        // 1) Re-enable the previously locked swatch (if any)
-        if (_locked != null)
+        if (networkAuthoritative)
         {
-            _locked.Unlock();                 // restores interactable + hover
-            _locked.SetSelected(false);       // clear its selected visuals
+            // In network mode, just ask whoever is listening (ColorPickerMirrorBinder)
+            int idx = swatches.IndexOf(_current);
+            onColorConfirmed?.Invoke(_current.GetFillColor(), idx);
+
+            // Keep it visually selected while we wait for server approval
+            _current.SetSelected(true);
+            // We do NOT lock locally here.
+            return;
         }
 
-        // 2) Lock the newly selected swatch
+        // --- Local/offline behavior (original) ---
+        if (_current == _locked && _locked != null) return;
+
+        if (_locked != null)
+        {
+            _locked.Unlock();
+            _locked.SetSelected(false);
+        }
+
         _current.Lock();
         _locked = _current;
 
-        // 3) Notify listeners (doesn't change colors)
-        int idx = swatches.IndexOf(_current);
-        onColorConfirmed?.Invoke(_current.GetFillColor(), idx);
-
-        // Keep it visually selected (optional)
+        int i2 = swatches.IndexOf(_current);
+        onColorConfirmed?.Invoke(_current.GetFillColor(), i2);
         _current.SetSelected(true);
 
         UpdateConfirmInteractable();
@@ -81,7 +92,7 @@ public class SelectionController : MonoBehaviour
         UpdateConfirmInteractable();
     }
 
-    public void ClearLock()  // optional API if you ever need to free it programmatically
+    public void ClearLock()
     {
         if (_locked != null) _locked.Unlock();
         _locked = null;
@@ -91,11 +102,49 @@ public class SelectionController : MonoBehaviour
     void UpdateConfirmInteractable()
     {
         if (!confirmButton) return;
-        // Can confirm iff something is selected and it's not already the locked one
         confirmButton.interactable = (_current != null && _current != _locked);
     }
 
-    // In ColorPickerUI
+    // --- Helpers used by the multiplayer binder ---
+
+    /// <summary>Called when the server has approved a lock for *this* player.</summary>
+    public void SetLockedFromNetwork(int index)
+    {
+        if (index < 0 || index >= swatches.Count) return;
+        var s = swatches[index];
+
+        if (_locked != null && _locked != s)
+        {
+            _locked.Unlock();
+            _locked.SetSelected(false);
+        }
+
+        // Apply the same visuals as local lock, but as a result of server approval
+        s.Lock();
+        s.SetSelected(true);
+        _locked = s;
+
+        UpdateConfirmInteractable();
+    }
+
+    /// <summary>Called for every swatch to reflect global lock state (any player).</summary>
+    public void SetSwatchLockedState(int index, bool locked)
+    {
+        if (index < 0 || index >= swatches.Count) return;
+        var s = swatches[index];
+        if (!s) return;
+
+        if (locked && !s.IsLocked) s.Lock();
+        if (!locked && s.IsLocked) s.Unlock();
+
+        // If the one we thought we owned got unlocked (e.g., server cleanup),
+        // ensure our local pointer is cleared.
+        if (!locked && _locked == s) _locked = null;
+
+        UpdateConfirmInteractable();
+    }
+
+    // Used by ConfirmButtonNeonHover to color the glow
     public bool TryGetCurrentSwatch(out ColorSwatch swatch)
     {
         swatch = null;
@@ -107,45 +156,5 @@ public class SelectionController : MonoBehaviour
         return false;
     }
 
-
     public bool CanConfirmNow() => (_current != null && _current != _locked);
-
-    // ADD inside SelectionController:
-    public void ApplyLockFromNetwork(int swatchIndex, bool asLocalPlayer)
-    {
-        if (swatchIndex < 0 || swatchIndex >= swatches.Count) return;
-        var sw = swatches[swatchIndex];
-        if (!sw) return;
-
-        // unlock the previously locked (if different)
-        if (_locked != null && _locked != sw)
-            _locked.Unlock();
-
-        // set + show lock
-        _locked = sw;
-        _locked.Lock();
-
-        // keep it visually selected and fire your existing event only for the owner
-        if (asLocalPlayer)
-        {
-            _current = _locked;
-            _locked.SetSelected(true);
-            onColorConfirmed?.Invoke(_locked.GetFillColor(), swatchIndex);
-        }
-        UpdateConfirmInteractable();
-    }
-
-    public void ApplyUnlockFromNetwork(int swatchIndex)
-    {
-        if (swatchIndex < 0 || swatchIndex >= swatches.Count) return;
-        var sw = swatches[swatchIndex];
-        if (!sw) return;
-
-        bool wasMine = (sw == _locked);
-        sw.Unlock();
-        if (wasMine) _locked = null;
-        UpdateConfirmInteractable();
-    }
-
-
 }
