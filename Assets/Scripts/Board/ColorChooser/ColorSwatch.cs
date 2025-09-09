@@ -36,12 +36,6 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
     [SerializeField] RectTransform ownerRect;     // the rect of the text
     [SerializeField] CanvasGroup ownerGroup;    // CanvasGroup on the text for fades
 
-    [Header("Owner Label Layout")]
-    [SerializeField] float leftPadding = 8f;
-    [SerializeField] float rightPadding = 8f;
-    [SerializeField] float topPadding = 6f;
-    [SerializeField] float bottomPadding = 6f;
-
     [Header("Owner Label Anim")]
     [SerializeField] float slideDuration = 0.25f;
     [SerializeField] float hiddenYOffset = -40f;    // start below the banner

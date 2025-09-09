@@ -1,4 +1,3 @@
-// ColorChoosingPhaseController.cs  (chooser-only slide, wrapper-based)
 using System.Collections;
 using System.Linq;
 using Mirror;
@@ -9,33 +8,37 @@ using UnityEngine.UI;
 public class ColorChoosingPhaseController : NetworkBehaviour
 {
     [Header("Chooser (CanvasGroup on the WRAPPER)")]
-    public CanvasGroup chooserGroup;            // put on ChooserWrapper
+    public CanvasGroup chooserGroup;
 
     [Header("Slide Settings")]
-    public float slideDuration = 0.5f;          // your 0.5s
-    public float offscreenMargin = 80f;         // pixels below the canvas
+    public float slideDuration = 0.5f;
+    public float offscreenMargin = 80f;
     public AnimationCurve ease = AnimationCurve.EaseInOut(0, 0, 1, 1);
     public bool deactivateChooserOnEnd = true;
 
     [Header("Handoff")]
-    public bool activateGameRootsOnEnd = false; // no animation here; your system handles it
+    public bool activateGameRootsOnEnd = false;
     public GameObject[] gameRoots;
-    public UnityEvent onPhaseStarted;           // after chooser slides IN
-    public UnityEvent onPhaseEnded;             // after chooser slides OUT
+    public UnityEvent onPhaseStarted;
+    public UnityEvent onPhaseEnded;
+
+    [Header("Exit Timing")]
+    public float exitDelaySeconds = 1f;
+    bool _exitStarted;
+
 
     ColorLockRegistry registry;
     bool serverPhaseEnded;
 
     RectTransform canvasRT;
-    RectTransform wrapperRT;     // the thing we animate (ChooserWrapper)
-    Vector2 wrapperHome = Vector2.zero; // always (0,0) with stretch anchors
+    RectTransform wrapperRT;
+    Vector2 wrapperHome = Vector2.zero;
     Coroutine anim;
 
     void Awake()
     {
-        // canvas size for off-screen calc
         canvasRT = GetComponentInParent<Canvas>()?.GetComponent<RectTransform>();
-        if (!canvasRT) canvasRT = FindObjectOfType<Canvas>()?.GetComponent<RectTransform>();
+        if (!canvasRT) canvasRT = FindFirstObjectByType<Canvas>()?.GetComponent<RectTransform>();
 
         if (!chooserGroup)
         {
@@ -46,7 +49,6 @@ public class ColorChoosingPhaseController : NetworkBehaviour
 #endif
             if (picker)
             {
-                // Take a CanvasGroup from a parent — we want the WRAPPER’s CanvasGroup
                 chooserGroup = picker.GetComponentInParent<CanvasGroup>(true);
             }
         }
@@ -69,14 +71,12 @@ public class ColorChoosingPhaseController : NetworkBehaviour
             return;
         }
 
-        // Wrapper must be full-screen and centered so home = (0,0)
         wrapperRT.anchorMin = Vector2.zero;
         wrapperRT.anchorMax = Vector2.one;
         wrapperRT.pivot = new Vector2(0.5f, 0.5f);
         wrapperRT.anchoredPosition = wrapperHome;
         wrapperRT.sizeDelta = Vector2.zero;
 
-        // Start off-screen (but WAIT to slide until Start coroutine)
         wrapperRT.anchoredPosition = OffscreenBelow(wrapperHome);
     }
 
@@ -88,12 +88,10 @@ public class ColorChoosingPhaseController : NetworkBehaviour
 
     IEnumerator Co_EnterAfterLayout()
     {
-        // let UI and scaler settle
         yield return null;
         Canvas.ForceUpdateCanvases();
         yield return new WaitForEndOfFrame();
 
-        // ensure we start off-screen using the *current* canvas height
         wrapperRT.anchoredPosition = OffscreenBelow(wrapperHome);
         yield return null;
 
@@ -152,9 +150,19 @@ public class ColorChoosingPhaseController : NetworkBehaviour
     void RpcEndChoosingPhase()
     {
         if (!chooserGroup || !wrapperRT) return;
+        if (_exitStarted) return;
+        _exitStarted = true;
 
         chooserGroup.interactable = false;
         chooserGroup.blocksRaycasts = false;
+
+        StartCoroutine(Co_ExitAfterDelay());
+    }
+
+    IEnumerator Co_ExitAfterDelay()
+    {
+        float wait = Mathf.Max(0f, exitDelaySeconds);
+        if (wait > 0f) yield return new WaitForSecondsRealtime(wait);
 
         SlideTo(OffscreenBelow(wrapperHome), () =>
         {
@@ -167,7 +175,6 @@ public class ColorChoosingPhaseController : NetworkBehaviour
         });
     }
 
-    // -------- slide helpers --------
     Vector2 OffscreenBelow(Vector2 home)
     {
         float h = canvasRT ? canvasRT.rect.height : Screen.height;
