@@ -55,7 +55,6 @@ public class ColorChoosingPhaseController : NetworkBehaviour
 
         if (!chooserGroup)
         {
-            Debug.LogWarning("[ColorChoosingPhase] chooserGroup not set.");
             return;
         }
 
@@ -67,7 +66,6 @@ public class ColorChoosingPhaseController : NetworkBehaviour
         wrapperRT = chooserGroup.GetComponent<RectTransform>();
         if (!wrapperRT)
         {
-            Debug.LogWarning("[ColorChoosingPhase] chooserGroup needs a RectTransform.");
             return;
         }
 

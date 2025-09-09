@@ -5,10 +5,10 @@ using UnityEngine.EventSystems;
 public class ConfirmButtonNeonHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
     [Header("Refs")]
-    public SelectionController picker;               // parent picker
-    public NeonRectBorderBinder glow;          // Glow child with neon border
-    public Button button;                      // the confirm button
-    public RectTransform scaleTarget;          // what scales on hover (default: this)
+    public SelectionController picker;
+    public NeonRectBorderBinder glow;
+    public Button button;
+    public RectTransform scaleTarget;
 
     [Header("Glow States")]
     [Range(0f, 1f)] public float normalAlpha = 0.0f;
@@ -26,7 +26,7 @@ public class ConfirmButtonNeonHover : MonoBehaviour, IPointerEnterHandler, IPoin
     public bool scaleOnlyWhenInteractable = true;
     [Range(0.8f, 1.5f)] public float normalScale = 1.00f;
     [Range(0.8f, 1.5f)] public float hoverScale = 1.05f;
-    [Range(2f, 40f)] public float scaleLerpSpeed = 16f; // higher = snappier
+    [Range(2f, 40f)] public float scaleLerpSpeed = 16f;
 
     [Header("Animation")]
     public bool useUnscaledTime = true;
@@ -49,7 +49,6 @@ public class ConfirmButtonNeonHover : MonoBehaviour, IPointerEnterHandler, IPoin
         if (!button) button = GetComponent<Button>();
         if (!scaleTarget) scaleTarget = transform as RectTransform;
 
-        // start visual states
         if (glow)
         {
             var img = glow.GetComponent<Image>();
@@ -73,7 +72,6 @@ public class ConfirmButtonNeonHover : MonoBehaviour, IPointerEnterHandler, IPoin
         bool canConfirm = picker.CanConfirmNow();
         bool canGlow = _hovering && canConfirm && button.interactable;
 
-        // Use the selected swatch's FILL color for the outline while hovered
         if (canGlow && picker.TryGetCurrentSwatch(out var swatch))
         {
             var selColor = swatch.fillImage ? swatch.fillImage.color : Color.white;
@@ -89,7 +87,6 @@ public class ConfirmButtonNeonHover : MonoBehaviour, IPointerEnterHandler, IPoin
             _hasColor = false;
         }
 
-        // Target glow params
         float targetAlpha = canGlow ? hoverAlpha : normalAlpha;
         float targetIntensity = canGlow ? hoverIntensity : normalIntensity;
         float targetPulseAmp = (canGlow && pulseOnHover) ? hoverPulseAmp : 0f;
@@ -104,7 +101,6 @@ public class ConfirmButtonNeonHover : MonoBehaviour, IPointerEnterHandler, IPoin
         glow.pulseSpeed = pulseSpeed;
         glow.Apply();
 
-        // Target scale
         bool allowScale = !scaleOnlyWhenInteractable || button.interactable;
         float desired = (_hovering && allowScale) ? hoverScale : normalScale;
         _targetScale = Vector3.one * desired;

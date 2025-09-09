@@ -8,10 +8,10 @@ using TMPro;
 public class ColorSwatch : MonoBehaviour, IPointerClickHandler
 {
     [Header("Refs")]
-    public Image fillImage;                   // read-only color block
-    public SwatchHoverNeon hover;             // optional hover/selection scaler
-    public RectTransform scaleTarget;         // what scales on hover/selection
-    public Image lockOverlay;                 // lock icon image (position/size set in prefab)
+    public Image fillImage;
+    public SwatchHoverNeon hover;
+    public RectTransform scaleTarget;
+    public Image lockOverlay;
 
     [Header("Lock Overlay FX")]
     public bool fadeOverlay = true;
@@ -32,13 +32,13 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
     public AnimationCurve iconPopCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
     [Header("Owner Label UI")]
-    [SerializeField] TextMeshProUGUI ownerText;     // assign in Inspector (child under the banner)
-    [SerializeField] RectTransform ownerRect;     // the rect of the text
-    [SerializeField] CanvasGroup ownerGroup;    // CanvasGroup on the text for fades
+    [SerializeField] TextMeshProUGUI ownerText;
+    [SerializeField] RectTransform ownerRect;
+    [SerializeField] CanvasGroup ownerGroup;
 
     [Header("Owner Label Anim")]
     [SerializeField] float slideDuration = 0.25f;
-    [SerializeField] float hiddenYOffset = -40f;    // start below the banner
+    [SerializeField] float hiddenYOffset = -40f;
     [SerializeField] AnimationCurve ease = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
     [Header("Clipping")]
@@ -76,7 +76,6 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
         {
             lockOverlay.raycastTarget = false;
             if (overlayBringToFront) lockOverlay.transform.SetAsLastSibling();
-            // start hidden
             SetOverlayAlpha(0f);
             lockOverlay.enabled = false;
         }
@@ -96,7 +95,6 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
 
         if (hover)
         {
-            // keep hover logic off only if locked, but still tell it about selection so it can hold selected scale
             hover.SetSelected(selected);
             hover.enabled = !IsLocked;
         }
@@ -108,13 +106,11 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
         IsLocked = true;
 
         if (_btn) _btn.interactable = false;
-        if (hover) hover.enabled = false; // stop hover from driving scale
+        if (hover) hover.enabled = false;
 
-        // Smoothly scale banner back to normal (not instant)
         float normal = (hover != null) ? hover.normalScale : 1f;
         StartScaleTo(Vector3.one * normal, lockScaleDuration, lockScaleCurve);
 
-        // Show lock overlay with fade + pop-in
         SetLockOverlayVisible(true);
     }
 
@@ -126,13 +122,11 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
         if (_btn) _btn.interactable = true;
         if (hover) hover.enabled = true;
 
-        // Hide lock overlay (fade out); keep icon size as-is
         SetLockOverlayVisible(false);
     }
 
     public Color GetFillColor() => fillImage ? fillImage.color : Color.white;
 
-    // ---------- Banner scale anim ----------
     void StartScaleTo(Vector3 target, float dur, AnimationCurve curve)
     {
         if (_scaleCo != null) StopCoroutine(_scaleCo);
@@ -165,12 +159,11 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
     {
         if (!lockOverlay) return;
 
-        lockOverlay.enabled = true; // can tweak alpha even if parent inactive
+        lockOverlay.enabled = true;
         if (_iconPopCo != null) { StopCoroutine(_iconPopCo); _iconPopCo = null; }
 
         float targetA = on ? Mathf.Clamp01(lockOverlayAlpha) : 0f;
 
-        // Icon pop-in
         if (on && iconPopIn && _iconRT)
         {
             if (isActiveAndEnabled)
@@ -180,7 +173,7 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
             }
             else
             {
-                _iconRT.localScale = Vector3.one; // immediate end-state
+                _iconRT.localScale = Vector3.one;
             }
         }
 
@@ -251,12 +244,11 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
     {
         if (!ownerText || !ownerRect || !ownerGroup) return;
 
-        // Auto-size to fit, no wrap, no overflow
         ownerText.enableAutoSizing = true;
-        ownerText.fontSizeMin = 8;     // tweak as you like
-        ownerText.fontSizeMax = 200;   // tweak as you like
+        ownerText.fontSizeMin = 8;
+        ownerText.fontSizeMax = 200;
         ownerText.textWrappingMode = TextWrappingModes.NoWrap;
-        ownerText.overflowMode = TextOverflowModes.Truncate; // never overflow visually
+        ownerText.overflowMode = TextOverflowModes.Truncate;
         ownerText.alignment = TextAlignmentOptions.MidlineLeft;
 
         var p = ownerRect.anchoredPosition;
@@ -272,7 +264,6 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
 
         SafeStart(ref _ownerCo, Co_ShowOwner(), () =>
         {
-            // immediate end-state if inactive
             var p = ownerRect.anchoredPosition; p.y = 0f;
             ownerRect.anchoredPosition = p;
             ownerGroup.alpha = 1f;
@@ -285,7 +276,6 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
 
         SafeStart(ref _ownerCo, Co_HideOwner(), () =>
         {
-            // immediate end-state if inactive
             var p = ownerRect.anchoredPosition; p.y = hiddenYOffset;
             ownerRect.anchoredPosition = p;
             ownerGroup.alpha = 0f;
@@ -296,17 +286,14 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
 
     IEnumerator Co_ShowOwner()
     {
-        // slide from hiddenYOffset -> 0, fade 0 -> 1
         float t = 0f;
         Vector2 from = ownerRect.anchoredPosition;
         from.y = hiddenYOffset;
         Vector2 to = ownerRect.anchoredPosition;
         to.y = 0f;
 
-        // put it at start, visible anim
         ownerRect.anchoredPosition = from;
 
-        // fade in slightly overlapped with slide
         float fadeOverlap = Mathf.Min(fadeDuration, slideDuration) * 0.75f;
 
         while (t < slideDuration)
@@ -326,7 +313,6 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
 
     IEnumerator Co_HideOwner()
     {
-        // fade 1 -> 0 while sliding a bit down
         float t = 0f;
         Vector2 from = ownerRect.anchoredPosition;
         Vector2 to = from; to.y = hiddenYOffset;
@@ -341,7 +327,7 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
         }
         ownerGroup.alpha = 0f;
         ownerRect.anchoredPosition = to;
-        ownerText.text = string.Empty; // “Otherwise don’t display the text.”
+        ownerText.text = string.Empty;
         _ownerCo = null;
     }
 
