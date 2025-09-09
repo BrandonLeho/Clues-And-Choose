@@ -6,51 +6,40 @@ public class ColorLockRegistry : NetworkBehaviour
 {
     public static ColorLockRegistry Instance;
 
-    // key: swatch index, value: owner player netId
+    // index -> ownerNetId
     public readonly SyncDictionary<int, uint> lockedBy = new SyncDictionary<int, uint>();
 
     public delegate void RegistryChanged();
     public event RegistryChanged OnRegistryChanged;
 
-    void Awake()
-    {
-        Instance = this;
-    }
+    void Awake() => Instance = this;
 
     public override void OnStartClient()
     {
         base.OnStartClient();
-
-        // ✅ Newer Mirror API:
         lockedBy.OnChange += OnDictChanged;
-
-        // Make sure late joiners get an immediate refresh
+        // Optional: remove this first invoke if you want to wait for initial sync
         OnRegistryChanged?.Invoke();
     }
 
     public override void OnStopClient()
     {
-        // Always unsubscribe to avoid leaks
         lockedBy.OnChange -= OnDictChanged;
         base.OnStopClient();
     }
 
-    // Newer Mirror signature for SyncDictionary change notifications:
     void OnDictChanged(SyncDictionary<int, uint>.Operation op, int key, uint value)
-    {
-        OnRegistryChanged?.Invoke();
-    }
+        => OnRegistryChanged?.Invoke();
 
-    // --- Server API ---
-
+    // -------- Server API (mutations) --------
     [Server]
     public bool TryConfirm(NetworkIdentity player, int newIndex)
     {
         if (newIndex < 0) return false;
-        if (lockedBy.ContainsKey(newIndex)) return false; // already taken
+        if (lockedBy.ContainsKey(newIndex)) return false;
 
-        // ensure each player can only hold a single color
-        int previous = FindIndexLockedBy(player.netId);
+        // one color per player
+        int previous = FindIndexLockedByServer(player.netId);
         if (previous >= 0) lockedBy.Remove(previous);
 
         lockedBy[newIndex] = player.netId;
@@ -68,10 +57,26 @@ public class ColorLockRegistry : NetworkBehaviour
     }
 
     [Server]
-    public int FindIndexLockedBy(uint netId)
+    public int FindIndexLockedByServer(uint netId)
     {
         foreach (var kv in lockedBy)
             if (kv.Value == netId) return kv.Key;
         return -1;
+    }
+
+    // -------- Client/any side READ-ONLY helper --------
+    // NOTE: no [Server] attribute here!
+    public int FindIndexLockedByLocal(uint netId)
+    {
+        foreach (var kv in lockedBy)
+            if (kv.Value == netId) return kv.Key;
+        return -1;
+    }
+
+    // Optional hygiene: clear when a new round/scene starts on server
+    public override void OnStartServer()
+    {
+        base.OnStartServer();
+        lockedBy.Clear();
     }
 }

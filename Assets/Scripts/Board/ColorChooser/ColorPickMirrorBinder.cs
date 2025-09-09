@@ -12,23 +12,26 @@ public class ColorPickerMirrorBinder : NetworkBehaviour
     {
         base.OnStartAuthority();
 
-        picker = Object.FindFirstObjectByType<SelectionController>(FindObjectsInactive.Include);
-        _registry = ColorLockRegistry.Instance;
+        if (!picker)
+        {
+#if UNITY_2023_1_OR_NEWER
+            picker = Object.FindFirstObjectByType<SelectionController>(FindObjectsInactive.Include);
+#else
+            picker = Object.FindObjectOfType<SelectionController>(true);
+#endif
+        }
 
+        _registry = ColorLockRegistry.Instance;
         if (!_registry || !picker) return;
 
-        // Run the local UI in network-authoritative mode (don’t lock instantly)
         picker.networkAuthoritative = true;
 
-        // When the local user presses Confirm, ask the server
         picker.onColorConfirmed.AddListener(OnLocalConfirm);
 
-        // Listen for server state changes (including late-join sync)
+        // Subscribe to server state changes; DON'T force an immediate refresh here.
         _registry.OnRegistryChanged += RefreshFromRegistry;
-
-        // Prime UI
-        RefreshFromRegistry();
     }
+
 
     void OnDestroy()
     {
@@ -56,18 +59,16 @@ public class ColorPickerMirrorBinder : NetworkBehaviour
     {
         if (!_registry || !picker) return;
 
-        // 1) Apply global lock/unlock state to each swatch
+        // 1) Apply lock visual for every swatch from the synced dictionary
         for (int i = 0; i < picker.swatches.Count; i++)
         {
             bool isLocked = _registry.lockedBy.ContainsKey(i);
             picker.SetSwatchLockedState(i, isLocked);
         }
 
-        // 2) If I have a lock, make sure my picker internally knows which one is mine
-        int myIndex = _registry.FindIndexLockedBy(netIdentity.netId);
+        // 2) If I hold one, reflect that
+        int myIndex = _registry.FindIndexLockedByLocal(netIdentity.netId);
         if (myIndex >= 0)
-        {
-            picker.SetLockedFromNetwork(myIndex); // sets _locked and keeps it visually selected
-        }
+            picker.SetLockedFromNetwork(myIndex);
     }
 }
