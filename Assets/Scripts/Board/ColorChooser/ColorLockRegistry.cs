@@ -6,9 +6,11 @@ public class ColorLockRegistry : NetworkBehaviour
 {
     public static ColorLockRegistry Instance;
 
-    // index -> ownerNetId
     public readonly SyncDictionary<int, uint> lockedBy = new SyncDictionary<int, uint>();
     public readonly SyncDictionary<int, string> labelByIndex = new SyncDictionary<int, string>();
+
+    public readonly SyncDictionary<uint, int> indexByOwner = new SyncDictionary<uint, int>();
+    public readonly SyncDictionary<uint, Color32> colorByOwner = new SyncDictionary<uint, Color32>();
 
     public delegate void RegistryChanged();
     public event RegistryChanged OnRegistryChanged;
@@ -20,6 +22,8 @@ public class ColorLockRegistry : NetworkBehaviour
         base.OnStartClient();
         lockedBy.OnChange += OnDictChanged;
         labelByIndex.OnChange += (_, __, ___) => OnRegistryChanged?.Invoke();
+        indexByOwner.OnChange += (_, __, ___) => OnRegistryChanged?.Invoke();
+        colorByOwner.OnChange += (_, __, ___) => OnRegistryChanged?.Invoke();
         OnRegistryChanged?.Invoke();
     }
 
@@ -27,33 +31,37 @@ public class ColorLockRegistry : NetworkBehaviour
     {
         lockedBy.OnChange -= OnDictChanged;
         labelByIndex.OnChange -= (_, __, ___) => OnRegistryChanged?.Invoke();
+        indexByOwner.OnChange -= (_, __, ___) => OnRegistryChanged?.Invoke();
+        colorByOwner.OnChange -= (_, __, ___) => OnRegistryChanged?.Invoke();
         base.OnStopClient();
     }
 
     void OnDictChanged(SyncDictionary<int, uint>.Operation op, int key, uint value)
         => OnRegistryChanged?.Invoke();
 
-    // -------- Server API (mutations) --------
     [Server]
-    public bool TryConfirm(NetworkIdentity player, int newIndex)
+    public bool TryConfirm(NetworkIdentity player, int newIndex, Color32 color)
     {
         if (newIndex < 0) return false;
         if (lockedBy.ContainsKey(newIndex)) return false;
 
-        // one color per player
         int previous = FindIndexLockedByServer(player.netId);
         if (previous >= 0)
         {
             lockedBy.Remove(previous);
             labelByIndex.Remove(previous);
+            indexByOwner.Remove(player.netId);
+            colorByOwner.Remove(player.netId);
         }
 
-        // who owns it?
         string owner = player.GetComponent<PlayerNameSync>()?.DisplayName;
         if (string.IsNullOrWhiteSpace(owner)) owner = $"Player {player.netId}";
 
         lockedBy[newIndex] = player.netId;
         labelByIndex[newIndex] = owner;
+
+        indexByOwner[player.netId] = newIndex;
+        colorByOwner[player.netId] = color;
         return true;
     }
 
@@ -70,6 +78,8 @@ public class ColorLockRegistry : NetworkBehaviour
             lockedBy.Remove(idx);
             labelByIndex.Remove(idx);
         }
+        indexByOwner.Remove(player.netId);
+        colorByOwner.Remove(player.netId);
     }
 
     [Server]
@@ -80,8 +90,6 @@ public class ColorLockRegistry : NetworkBehaviour
         return -1;
     }
 
-    // -------- Client/any side READ-ONLY helper --------
-    // NOTE: no [Server] attribute here!
     public int FindIndexLockedByLocal(uint netId)
     {
         foreach (var kv in lockedBy)
@@ -89,7 +97,6 @@ public class ColorLockRegistry : NetworkBehaviour
         return -1;
     }
 
-    // Optional hygiene: clear when a new round/scene starts on server
     public override void OnStartServer()
     {
         base.OnStartServer();

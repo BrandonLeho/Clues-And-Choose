@@ -167,35 +167,44 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
         _scaleCo = null;
     }
 
-    // ---------- Overlay (alpha + optional pop) ----------
     void SetLockOverlayVisible(bool on)
     {
         if (!lockOverlay) return;
 
-        lockOverlay.enabled = true; // enable to animate
-        if (_fadeCo != null) StopCoroutine(_fadeCo);
-        if (_iconPopCo != null) StopCoroutine(_iconPopCo);
+        lockOverlay.enabled = true; // can tweak alpha even if parent inactive
+        if (_iconPopCo != null) { StopCoroutine(_iconPopCo); _iconPopCo = null; }
 
         float targetA = on ? Mathf.Clamp01(lockOverlayAlpha) : 0f;
 
-        if (on)
+        // Icon pop-in
+        if (on && iconPopIn && _iconRT)
         {
-            // Start from pop scale if requested
-            if (iconPopIn && _iconRT)
+            if (isActiveAndEnabled)
             {
                 _iconRT.localScale = Vector3.one * iconPopScale;
                 _iconPopCo = StartCoroutine(IconPopInCo(iconPopDuration, iconPopCurve));
             }
+            else
+            {
+                _iconRT.localScale = Vector3.one; // immediate end-state
+            }
         }
 
         if (fadeOverlay)
-            _fadeCo = StartCoroutine(FadeOverlay(targetA, fadeDuration, on));
+        {
+            SafeStart(ref _fadeCo, FadeOverlay(targetA, fadeDuration, on), () =>
+            {
+                SetOverlayAlpha(targetA);
+                if (!on) lockOverlay.enabled = false;
+            });
+        }
         else
         {
             SetOverlayAlpha(targetA);
             if (!on) lockOverlay.enabled = false;
         }
     }
+
 
     IEnumerator IconPopInCo(float dur, AnimationCurve curve)
     {
@@ -267,17 +276,29 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
         if (!ownerText || !ownerRect || !ownerGroup) return;
         ownerText.text = displayName ?? string.Empty;
 
-        if (_ownerCo != null) StopCoroutine(_ownerCo);
-        _ownerCo = StartCoroutine(Co_ShowOwner());
+        SafeStart(ref _ownerCo, Co_ShowOwner(), () =>
+        {
+            // immediate end-state if inactive
+            var p = ownerRect.anchoredPosition; p.y = 0f;
+            ownerRect.anchoredPosition = p;
+            ownerGroup.alpha = 1f;
+        });
     }
 
-    // Called when unlocked or not owned
     public void HideOwnerName()
     {
         if (!ownerText || !ownerRect || !ownerGroup) return;
-        if (_ownerCo != null) StopCoroutine(_ownerCo);
-        _ownerCo = StartCoroutine(Co_HideOwner());
+
+        SafeStart(ref _ownerCo, Co_HideOwner(), () =>
+        {
+            // immediate end-state if inactive
+            var p = ownerRect.anchoredPosition; p.y = hiddenYOffset;
+            ownerRect.anchoredPosition = p;
+            ownerGroup.alpha = 0f;
+            ownerText.text = string.Empty;
+        });
     }
+
 
     IEnumerator Co_ShowOwner()
     {
@@ -328,5 +349,20 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
         ownerRect.anchoredPosition = to;
         ownerText.text = string.Empty; // “Otherwise don’t display the text.”
         _ownerCo = null;
+    }
+
+    void SafeStart(ref Coroutine handle, IEnumerator routine, System.Action immediateFallback)
+    {
+        if (handle != null) { StopCoroutine(handle); handle = null; }
+        if (isActiveAndEnabled) handle = StartCoroutine(routine);
+        else immediateFallback?.Invoke();
+    }
+
+    void OnDisable()
+    {
+        if (_fadeCo != null) { StopCoroutine(_fadeCo); _fadeCo = null; }
+        if (_iconPopCo != null) { StopCoroutine(_iconPopCo); _iconPopCo = null; }
+        if (_ownerCo != null) { StopCoroutine(_ownerCo); _ownerCo = null; }
+        if (_scaleCo != null) { StopCoroutine(_scaleCo); _scaleCo = null; }
     }
 }

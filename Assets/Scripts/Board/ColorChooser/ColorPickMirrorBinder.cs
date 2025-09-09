@@ -4,7 +4,7 @@ using UnityEngine;
 public class ColorPickerMirrorBinder : NetworkBehaviour
 {
     [Header("Refs")]
-    public SelectionController picker; // assign from scene if possible
+    public SelectionController picker;
 
     ColorLockRegistry _registry;
 
@@ -28,7 +28,6 @@ public class ColorPickerMirrorBinder : NetworkBehaviour
 
         picker.onColorConfirmed.AddListener(OnLocalConfirm);
 
-        // Subscribe to server state changes; DON'T force an immediate refresh here.
         _registry.OnRegistryChanged += RefreshFromRegistry;
     }
 
@@ -41,23 +40,19 @@ public class ColorPickerMirrorBinder : NetworkBehaviour
 
     void OnLocalConfirm(Color color, int index)
     {
-        // Ask the server to confirm our choice. The UI will reflect the result
-        // when the registry changes (success) or remain unchanged (fail).
-        CmdTryConfirm(index);
+        CmdTryConfirm(index, (Color32)color);
     }
 
     [Command]
-    void CmdTryConfirm(int index, NetworkConnectionToClient sender = null)
+    void CmdTryConfirm(int index, Color32 color, NetworkConnectionToClient sender = null)
     {
-        var ok = ColorLockRegistry.Instance && ColorLockRegistry.Instance.TryConfirm(netIdentity, index);
-        // optional: if you want immediate client feedback on failure, send a TargetRpc here
-        // TargetConfirmResult(sender, ok);
-        // Not strictly necessary because the UI only updates on success (registry change).
+        ColorLockRegistry.Instance?.TryConfirm(netIdentity, index, color);
     }
 
     void RefreshFromRegistry()
     {
         if (!_registry || !picker) return;
+        if (!picker || !picker.isActiveAndEnabled) return;
 
         for (int i = 0; i < picker.swatches.Count; i++)
         {
