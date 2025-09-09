@@ -1,6 +1,7 @@
-using System.Collections.Generic;
+// SelectionController.cs  (additions)
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections.Generic;
 using UnityEngine.Events;
 
 public class SelectionController : MonoBehaviour
@@ -11,6 +12,9 @@ public class SelectionController : MonoBehaviour
     [Header("UI")]
     public List<ColorSwatch> swatches = new List<ColorSwatch>();
     public Button confirmButton;
+
+    [Header("Cancel UI")]
+    [SerializeField] Button cancelButton;
 
     [Header("Events")]
     public ColorChosenEvent onColorConfirmed;
@@ -25,6 +29,7 @@ public class SelectionController : MonoBehaviour
     void Awake()
     {
         if (confirmButton) confirmButton.onClick.AddListener(ConfirmCurrent);
+        if (cancelButton) cancelButton.onClick.AddListener(CancelCurrent);
 
         for (int i = 0; i < swatches.Count; i++)
         {
@@ -57,7 +62,6 @@ public class SelectionController : MonoBehaviour
         {
             int idx = swatches.IndexOf(_current);
             onColorConfirmed?.Invoke(_current.GetFillColor(), idx);
-
             _current.SetSelected(true);
             return;
         }
@@ -80,6 +84,14 @@ public class SelectionController : MonoBehaviour
         UpdateConfirmInteractable();
     }
 
+    public void CancelCurrent()
+    {
+        if (!HasPendingSelection()) return;
+        _current.SetSelected(false);
+        _current = null;
+        UpdateConfirmInteractable();
+    }
+
     public void ClearSelection()
     {
         _current = null;
@@ -96,8 +108,11 @@ public class SelectionController : MonoBehaviour
 
     void UpdateConfirmInteractable()
     {
-        if (!confirmButton) return;
-        confirmButton.interactable = (_current != null && _current != _locked);
+        bool canConfirm = (_current != null && _current != _locked);
+
+        if (confirmButton) confirmButton.interactable = canConfirm;
+
+        if (cancelButton) cancelButton.gameObject.SetActive(canConfirm);
     }
 
     public void SetLockedFromNetwork(int index)
@@ -110,7 +125,6 @@ public class SelectionController : MonoBehaviour
             _locked.Unlock();
             _locked.SetSelected(false);
         }
-
 
         s.Lock();
         s.SetSelected(true);
@@ -146,6 +160,8 @@ public class SelectionController : MonoBehaviour
 
     public bool CanConfirmNow() => (_current != null && _current != _locked);
 
+    public bool HasPendingSelection() => (_current != null && _current != _locked);
+
     public void SetOwnerName(int index, string owner)
     {
         if (index < 0 || index >= swatches.Count || !swatches[index]) return;
@@ -156,5 +172,4 @@ public class SelectionController : MonoBehaviour
         if (index < 0 || index >= swatches.Count || !swatches[index]) return;
         swatches[index].HideOwnerName();
     }
-
 }

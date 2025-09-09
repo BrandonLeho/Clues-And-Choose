@@ -48,6 +48,7 @@
     <Analyzer Include="C:\Program Files\Unity\Hub\Editor\6000.2.0f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Scripts\Board\ColorChooser\BackgroundDeselect.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\RandomChildPaletteColor.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\BoardLabelsHighlighter.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorPickMirrorBinder.cs" />
