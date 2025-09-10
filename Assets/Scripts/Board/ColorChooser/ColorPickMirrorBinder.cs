@@ -6,6 +6,7 @@ public class ColorPickerMirrorBinder : NetworkBehaviour
 {
     public SelectionController picker;
     ColorLockRegistry _registry;
+    readonly System.Collections.Generic.Dictionary<int, string> _lastLabels = new System.Collections.Generic.Dictionary<int, string>();
 
     public override void OnStartAuthority()
     {
@@ -69,12 +70,22 @@ public class ColorPickerMirrorBinder : NetworkBehaviour
             picker.SetSwatchLockedState(i, isLocked);
 
             if (isLocked && _registry.labelByIndex.TryGetValue(i, out string owner))
-                picker.SetOwnerName(i, owner);
+            {
+                if (!_lastLabels.TryGetValue(i, out var prev) || prev != owner)
+                {
+                    picker.SetOwnerName(i, owner);
+                    _lastLabels[i] = owner;
+                }
+            }
             else
-                picker.ClearOwnerName(i);
+            {
+                if (_lastLabels.Remove(i))
+                    picker.ClearOwnerName(i);
+            }
         }
 
         int myIndex = _registry.FindIndexLockedByLocal(netIdentity.netId);
         if (myIndex >= 0) picker.SetLockedFromNetwork(myIndex);
     }
+
 }

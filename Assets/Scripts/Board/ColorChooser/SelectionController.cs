@@ -29,9 +29,6 @@ public class SelectionController : MonoBehaviour
     ColorSwatch _locked;
     bool _lastShowCancel;
 
-    public bool HasLockedColor => _locked != null;
-
-
     void Awake()
     {
         if (confirmButton) confirmButton.onClick.AddListener(ConfirmCurrent);
@@ -50,19 +47,13 @@ public class SelectionController : MonoBehaviour
 
     public void Select(ColorSwatch swatch)
     {
-        if (HasLockedColor) return;
-
-        if (swatch == null) return;
+        if (!swatch) return;
         if (swatch.IsLocked && swatch != _locked) return;
 
         _current = swatch;
-
-        foreach (var s in swatches)
-            if (s) s.SetSelected(s == swatch);
-
+        foreach (var s in swatches) if (s) s.SetSelected(s == swatch);
         UpdateConfirmCancelUI();
     }
-
 
     void ConfirmCurrent()
     {
@@ -117,8 +108,9 @@ public class SelectionController : MonoBehaviour
     {
         if (_locked == null) return;
 
-        if (_current) _current.ForceDeselectVisuals();
-        if (_locked) _locked.ForceDeselectVisuals();
+        if (_current) { _current.SetSelected(false); }
+        if (_locked) { _locked.SetSelected(false); }
+
         _current = null;
 
         UpdateConfirmCancelUI();
@@ -181,15 +173,14 @@ public class SelectionController : MonoBehaviour
 
         if (_locked != null && _locked != s)
         {
-            _locked.ForceDeselectVisuals();
             _locked.Unlock();
+            _locked.SetSelected(false);
         }
 
         s.Lock();
         s.SetSelected(true);
         _locked = s;
 
-        SetAllSwatchesInteractive(false);
         UpdateConfirmCancelUI();
     }
 
@@ -203,15 +194,14 @@ public class SelectionController : MonoBehaviour
 
         if (_current == s && locked && s != _locked)
         {
-            s.ForceDeselectVisuals();
+            s.SetSelected(false);
             _current = null;
         }
 
         if (!locked && _locked == s)
         {
-            s.ForceDeselectVisuals();
+            s.SetSelected(false);
             _locked = null;
-            SetAllSwatchesInteractive(true);
         }
 
         UpdateConfirmCancelUI();
@@ -241,16 +231,6 @@ public class SelectionController : MonoBehaviour
     {
         if (index < 0 || index >= swatches.Count || !swatches[index]) return;
         swatches[index].HideOwnerName();
-    }
-
-    void SetAllSwatchesInteractive(bool on)
-    {
-        foreach (var s in swatches)
-        {
-            if (!s) continue;
-            s.SetInteractive(on);
-            if (!on) s.ForceDeselectVisuals();
-        }
     }
 
 

@@ -44,10 +44,6 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
     [Header("Clipping")]
     [SerializeField] RectTransform clipArea;
 
-    [Header("Interactivity")]
-    [SerializeField] bool interactive = true;
-    [SerializeField] Behaviour[] extraHoverBehaviours;
-
     [Header("State (read-only)")]
     public bool IsSelected { get; private set; }
     public bool IsLocked { get; private set; }
@@ -61,6 +57,9 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
     Coroutine _iconPopCo;
     Coroutine _ownerCo;
     RectTransform _iconRT;
+
+    string _ownerShownText;
+    bool _ownerVisible;
 
     void Awake()
     {
@@ -89,7 +88,6 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
 
     public void OnPointerClick(PointerEventData e)
     {
-        if (!interactive) return;
         if (IsLocked) return;
         owner?.Select(this);
     }
@@ -197,19 +195,6 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
         }
     }
 
-    public void SetInteractive(bool on)
-    {
-        interactive = on;
-
-        var btn = GetComponent<Button>();
-        if (btn) btn.interactable = on;
-
-        if (extraHoverBehaviours != null)
-            foreach (var b in extraHoverBehaviours) if (b) b.enabled = on;
-
-        if (!on) ForceDeselectVisuals();
-    }
-
 
     IEnumerator IconPopInCo(float dur, AnimationCurve curve)
     {
@@ -278,27 +263,69 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
     public void ShowOwnerName(string displayName)
     {
         if (!ownerText || !ownerRect || !ownerGroup) return;
-        ownerText.text = displayName ?? string.Empty;
+        displayName = displayName ?? string.Empty;
 
-        SafeStart(ref _ownerCo, Co_ShowOwner(), () =>
+        // If we are already showing this exact text and it's visible: do nothing.
+        if (_ownerVisible && _ownerShownText == displayName && ownerGroup.alpha >= 0.99f)
+            return;
+
+        _ownerShownText = displayName;
+
+        // Stop any opposite animation
+        if (_ownerCo != null) { StopCoroutine(_ownerCo); _ownerCo = null; }
+
+        // If we're already visible with the same text but mid-fade/slide, just snap to end.
+        if (_ownerVisible && ownerText.text == displayName)
         {
-            var p = ownerRect.anchoredPosition; p.y = 0f;
-            ownerRect.anchoredPosition = p;
+            var to = ownerRect.anchoredPosition; to.y = 0f;
+            ownerRect.anchoredPosition = to;
             ownerGroup.alpha = 1f;
-        });
+            return;
+        }
+
+        ownerText.text = displayName;
+
+        // Start the entry animation only if we’re active; otherwise snap to end-state.
+        if (isActiveAndEnabled)
+            _ownerCo = StartCoroutine(Co_ShowOwner());
+        else
+            SnapOwnerShown();
     }
 
     public void HideOwnerName()
     {
         if (!ownerText || !ownerRect || !ownerGroup) return;
 
-        SafeStart(ref _ownerCo, Co_HideOwner(), () =>
+        if (_ownerCo != null) { StopCoroutine(_ownerCo); _ownerCo = null; }
+
+        // Already hidden? nothing to do.
+        if (!_ownerVisible && ownerGroup.alpha <= 0.01f)
         {
-            var p = ownerRect.anchoredPosition; p.y = hiddenYOffset;
-            ownerRect.anchoredPosition = p;
-            ownerGroup.alpha = 0f;
             ownerText.text = string.Empty;
-        });
+            return;
+        }
+
+        if (isActiveAndEnabled)
+            _ownerCo = StartCoroutine(Co_HideOwner());
+        else
+            SnapOwnerHidden();
+    }
+
+    void SnapOwnerShown()
+    {
+        var p = ownerRect.anchoredPosition; p.y = 0f;
+        ownerRect.anchoredPosition = p;
+        ownerGroup.alpha = 1f;
+        _ownerVisible = true;
+    }
+    void SnapOwnerHidden()
+    {
+        var p = ownerRect.anchoredPosition; p.y = hiddenYOffset;
+        ownerRect.anchoredPosition = p;
+        ownerGroup.alpha = 0f;
+        _ownerVisible = false;
+        _ownerShownText = null;
+        ownerText.text = string.Empty;
     }
 
 
@@ -327,6 +354,7 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
         ownerRect.anchoredPosition = to;
         ownerGroup.alpha = 1f;
         _ownerCo = null;
+        _ownerVisible = true;
     }
 
     IEnumerator Co_HideOwner()
@@ -347,6 +375,8 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
         ownerRect.anchoredPosition = to;
         ownerText.text = string.Empty;
         _ownerCo = null;
+        _ownerVisible = false;
+        _ownerShownText = null;
     }
 
     void SafeStart(ref Coroutine handle, IEnumerator routine, System.Action immediateFallback)
@@ -362,11 +392,5 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
         if (_iconPopCo != null) { StopCoroutine(_iconPopCo); _iconPopCo = null; }
         if (_ownerCo != null) { StopCoroutine(_ownerCo); _ownerCo = null; }
         if (_scaleCo != null) { StopCoroutine(_scaleCo); _scaleCo = null; }
-    }
-
-    public void ForceDeselectVisuals()
-    {
-        SetSelected(false);
-        if (scaleTarget) scaleTarget.localScale = Vector3.one;
     }
 }
