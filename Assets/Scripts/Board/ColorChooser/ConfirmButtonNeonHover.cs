@@ -62,19 +62,34 @@ public class ConfirmButtonNeonHover : MonoBehaviour, IPointerEnterHandler, IPoin
         }
 
         _targetScale = Vector3.one * normalScale;
-        scaleTarget.localScale = _targetScale;
+        if (scaleTarget) scaleTarget.localScale = _targetScale;
+
+        if (!picker)
+        {
+#if UNITY_2023_1_OR_NEWER
+            picker = Object.FindFirstObjectByType<SelectionController>(FindObjectsInactive.Include);
+#else
+            picker = Object.FindObjectOfType<SelectionController>(true);
+#endif
+        }
     }
 
     void Update()
     {
-        if (!button || !glow || !picker) { SmoothScaleOnly(); return; }
+        if (!button || !picker || !glow) { SmoothScaleOnly(); return; }
 
-        bool canConfirm = picker.CanConfirmNow();
-        bool canGlow = _hovering && canConfirm && button.interactable;
+        bool buttonVisible = button.gameObject.activeInHierarchy;
+        bool canConfirmNow = picker.CanConfirmNow();
+        bool hoveringAndLive = _hovering && buttonVisible && button.interactable;
 
-        if (canGlow && picker.TryGetCurrentSwatch(out var swatch))
+        bool hasSelectable = picker.TryGetCurrentSwatch(out var swatch);
+        bool swatchOpen = hasSelectable && swatch != null && !swatch.IsLocked;
+
+        bool canGlow = hoveringAndLive && canConfirmNow && swatchOpen;
+
+        if (canGlow)
         {
-            var selColor = swatch.fillImage ? swatch.fillImage.color : Color.white;
+            var selColor = swatch.GetFillColor();
             if (!_hasColor || selColor != _lastAppliedColor)
             {
                 _lastAppliedColor = selColor;

@@ -104,8 +104,12 @@ public class SelectionController : MonoBehaviour
     void CancelLockClicked()
     {
         if (_locked == null) return;
-        cancelButton.interactable = false;      // prevent double taps while we wait
-        onCancelLockRequested?.Invoke();        // binder will send Cmd to server
+        if (_current) _current.SetSelected(false);
+        _current = null;
+        UpdateConfirmCancelUI();
+
+        cancelButton.interactable = false;
+        onCancelLockRequested?.Invoke();
     }
 
     void UpdateConfirmInteractable()
@@ -161,7 +165,15 @@ public class SelectionController : MonoBehaviour
         if (locked && !s.IsLocked) s.Lock();
         if (!locked && s.IsLocked) s.Unlock();
 
-        if (!locked && _locked == s) _locked = null;
+        if (_current == s && locked && s != _locked)
+        {
+            s.SetSelected(false);
+            _current = null;
+        }
+
+        if (!locked && _locked == s)
+            _locked = null;
+
         UpdateConfirmCancelUI();
     }
 
