@@ -36,6 +36,7 @@ public class SelectionController : MonoBehaviour
         {
             var s = swatches[i];
             if (!s) continue;
+            s.owner = this;
             s.SetSelected(false);
         }
 
