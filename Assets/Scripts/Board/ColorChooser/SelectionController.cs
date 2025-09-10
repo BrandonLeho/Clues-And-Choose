@@ -89,6 +89,7 @@ public class SelectionController : MonoBehaviour
 
     public void ClearSelection()
     {
+        if (_current) _current.SetSelected(false);
         _current = null;
         foreach (var s in swatches) if (s) s.SetSelected(false);
         UpdateConfirmCancelUI();
@@ -104,10 +105,13 @@ public class SelectionController : MonoBehaviour
     void CancelLockClicked()
     {
         if (_locked == null) return;
-        if (_current) _current.SetSelected(false);
-        _current = null;
-        UpdateConfirmCancelUI();
 
+        if (_current) { _current.SetSelected(false); }
+        if (_locked) { _locked.SetSelected(false); }
+
+        _current = null;
+
+        UpdateConfirmCancelUI();
         cancelButton.interactable = false;
         onCancelLockRequested?.Invoke();
     }
@@ -172,7 +176,10 @@ public class SelectionController : MonoBehaviour
         }
 
         if (!locked && _locked == s)
+        {
+            s.SetSelected(false);
             _locked = null;
+        }
 
         UpdateConfirmCancelUI();
     }
