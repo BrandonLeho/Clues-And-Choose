@@ -15,6 +15,8 @@ public class SelectionController : MonoBehaviour
 
     [Header("Cancel UI")]
     [SerializeField] Button cancelButton;
+    [SerializeField] ConfirmCancelSwapAnimator swapper;
+
 
     [Header("Events")]
     public ColorChosenEvent onColorConfirmed;
@@ -130,16 +132,23 @@ public class SelectionController : MonoBehaviour
         bool hasLocked = (_locked != null);
         bool canConfirm = (!hasLocked && _current != null);
 
-        if (confirmButton)
+        if (swapper)
         {
-            confirmButton.gameObject.SetActive(!hasLocked);
-            confirmButton.interactable = canConfirm;
+            if (hasLocked) swapper.SwapToCancel(animate: true);
+            else swapper.SwapToConfirm(animate: true, confirmInteractable: canConfirm);
         }
-
-        if (cancelButton)
+        else
         {
-            cancelButton.gameObject.SetActive(hasLocked);
-            cancelButton.interactable = hasLocked;
+            if (confirmButton)
+            {
+                confirmButton.gameObject.SetActive(!hasLocked);
+                confirmButton.interactable = canConfirm;
+            }
+            if (cancelButton)
+            {
+                cancelButton.gameObject.SetActive(hasLocked);
+                cancelButton.interactable = hasLocked;
+            }
         }
     }
 

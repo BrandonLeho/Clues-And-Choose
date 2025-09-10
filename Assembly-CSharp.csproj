@@ -81,6 +81,7 @@
     <Compile Include="Assets\Scripts\Controller\DraggableItem.cs" />
     <Compile Include="Assets\Scripts\Controller\Slot.cs" />
     <Compile Include="Assets\Scripts\UI\LobbyUIManager.cs" />
+    <Compile Include="Assets\Scripts\Board\ColorChooser\ConfirmCancelSwapAnimator.cs" />
     <Compile Include="Assets\Scripts\Steam\SteamLobby.cs" />
     <Compile Include="Assets\Scripts\Steam\CustomNetworkManager.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorSwatch.cs" />
