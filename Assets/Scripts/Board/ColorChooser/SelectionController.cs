@@ -43,6 +43,7 @@ public class SelectionController : MonoBehaviour
         }
 
         UpdateConfirmCancelUI();
+        ApplyGlobalSwatchGating();
     }
 
     public void Select(ColorSwatch swatch)
@@ -95,6 +96,7 @@ public class SelectionController : MonoBehaviour
         _current = null;
         foreach (var s in swatches) if (s) s.SetSelected(false);
         UpdateConfirmCancelUI();
+        ApplyGlobalSwatchGating();
     }
 
     public void ClearLock()
@@ -102,6 +104,7 @@ public class SelectionController : MonoBehaviour
         if (_locked != null) _locked.Unlock();
         _locked = null;
         UpdateConfirmCancelUI();
+        ApplyGlobalSwatchGating();
     }
 
     void CancelLockClicked()
@@ -114,23 +117,22 @@ public class SelectionController : MonoBehaviour
         _current = null;
 
         UpdateConfirmCancelUI();
+        ApplyGlobalSwatchGating();
         cancelButton.interactable = false;
         onCancelLockRequested?.Invoke();
     }
 
     void UpdateConfirmInteractable()
     {
-        bool canConfirm = (_current != null && _current != _locked);
-
+        bool canConfirm = _current != null && _current != _locked;
         if (confirmButton) confirmButton.interactable = canConfirm;
-
         if (cancelButton) cancelButton.gameObject.SetActive(canConfirm);
     }
 
     void UpdateConfirmCancelUI()
     {
-        bool hasLocked = (_locked != null);
-        bool canConfirm = (!hasLocked && _current != null);
+        bool hasLocked = _locked != null;
+        bool canConfirm = !hasLocked && _current != null;
 
         if (swapper && _lastShowCancel != hasLocked)
         {
@@ -182,6 +184,7 @@ public class SelectionController : MonoBehaviour
         _locked = s;
 
         UpdateConfirmCancelUI();
+        ApplyGlobalSwatchGating();
     }
 
     public void SetSwatchLockedState(int index, bool locked)
@@ -205,6 +208,7 @@ public class SelectionController : MonoBehaviour
         }
 
         UpdateConfirmCancelUI();
+        ApplyGlobalSwatchGating();
     }
 
     public bool TryGetCurrentSwatch(out ColorSwatch swatch)
@@ -239,5 +243,21 @@ public class SelectionController : MonoBehaviour
         if (_locked) return _locked.GetFillColor();
         if (_current) return _current.GetFillColor();
         return Color.white;
+    }
+
+    void ApplyGlobalSwatchGating()
+    {
+        bool gate = _locked != null;
+        foreach (var s in swatches)
+        {
+            if (!s) continue;
+            s.SetGlobalInteractable(!gate);
+        }
+
+        if (gate && _current)
+        {
+            _current.SetSelected(false);
+            _current = null;
+        }
     }
 }

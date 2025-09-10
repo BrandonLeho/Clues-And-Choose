@@ -60,6 +60,7 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
 
     string _ownerShownText;
     bool _ownerVisible;
+    bool _globalDisabled;
 
     void Awake()
     {
@@ -88,18 +89,20 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
 
     public void OnPointerClick(PointerEventData e)
     {
+        if (_globalDisabled) return;
         if (IsLocked) return;
         owner?.Select(this);
     }
 
     internal void SetSelected(bool selected)
     {
-        IsSelected = selected;
+        bool on = selected && !_globalDisabled && !IsLocked;
+        IsSelected = on;
 
         if (hover)
         {
-            hover.SetSelected(selected);
-            hover.enabled = !IsLocked;
+            hover.SetSelected(on);
+            hover.enabled = !_globalDisabled && !IsLocked;
         }
     }
 
@@ -113,7 +116,6 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
 
         float normal = (hover != null) ? hover.normalScale : 1f;
         StartScaleTo(Vector3.one * normal, lockScaleDuration, lockScaleCurve);
-
         SetLockOverlayVisible(true);
     }
 
@@ -122,8 +124,8 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
         if (!IsLocked) return;
         IsLocked = false;
 
-        if (_btn) _btn.interactable = true;
-        if (hover) hover.enabled = true;
+        if (_btn) _btn.interactable = !_globalDisabled;
+        if (hover) hover.enabled = !_globalDisabled;
 
         SetLockOverlayVisible(false);
     }
@@ -392,5 +394,24 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
         if (_iconPopCo != null) { StopCoroutine(_iconPopCo); _iconPopCo = null; }
         if (_ownerCo != null) { StopCoroutine(_ownerCo); _ownerCo = null; }
         if (_scaleCo != null) { StopCoroutine(_scaleCo); _scaleCo = null; }
+    }
+
+    public void SetGlobalInteractable(bool enabled)
+    {
+        _globalDisabled = !enabled;
+        RefreshInteractivity();
+    }
+
+    void RefreshInteractivity()
+    {
+        bool allow = !_globalDisabled && !IsLocked;
+        if (_btn) _btn.interactable = allow;
+        if (hover) hover.enabled = allow;
+
+        // If we’re disabling, also clear any selected visuals
+        if (!allow && IsSelected)
+        {
+            SetSelected(false);
+        }
     }
 }
