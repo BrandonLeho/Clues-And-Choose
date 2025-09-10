@@ -1,16 +1,16 @@
+// ColorPickMirrorBinder.cs (relevant additions)
 using Mirror;
 using UnityEngine;
 
 public class ColorPickerMirrorBinder : NetworkBehaviour
 {
-    [Header("Refs")]
     public SelectionController picker;
-
     ColorLockRegistry _registry;
 
     public override void OnStartAuthority()
     {
         base.OnStartAuthority();
+
         if (!picker)
         {
 #if UNITY_2023_1_OR_NEWER
@@ -24,11 +24,12 @@ public class ColorPickerMirrorBinder : NetworkBehaviour
         if (!_registry || !picker) return;
 
         picker.networkAuthoritative = true;
+
         picker.onColorConfirmed.AddListener(OnLocalConfirm);
-
-        picker.onCancelLockRequested.AddListener(OnCancelLockRequested);
-
         _registry.OnRegistryChanged += RefreshFromRegistry;
+
+        picker.onCancelLockRequested.AddListener(OnLocalCancelLock);
+
     }
 
     public override void OnStopAuthority()
@@ -36,28 +37,15 @@ public class ColorPickerMirrorBinder : NetworkBehaviour
         if (picker)
         {
             picker.onColorConfirmed.RemoveListener(OnLocalConfirm);
-            picker.onCancelLockRequested.RemoveListener(OnCancelLockRequested);
+            picker.onCancelLockRequested.RemoveListener(OnLocalCancelLock);
         }
         if (_registry != null) _registry.OnRegistryChanged -= RefreshFromRegistry;
         base.OnStopAuthority();
     }
 
+    void OnLocalConfirm(Color color, int index) => CmdTryConfirm(index, (Color32)color);
 
-    void OnDestroy()
-    {
-        if (isLocalPlayer && picker) picker.onColorConfirmed.RemoveListener(OnLocalConfirm);
-        if (_registry != null) _registry.OnRegistryChanged -= RefreshFromRegistry;
-    }
-
-    void OnLocalConfirm(Color color, int index)
-    {
-        CmdTryConfirm(index, (Color32)color);
-    }
-
-    void OnCancelLockRequested()
-    {
-        CmdUnlockMine();
-    }
+    void OnLocalCancelLock() => CmdCancelMyLock();
 
     [Command]
     void CmdTryConfirm(int index, Color32 color, NetworkConnectionToClient sender = null)
@@ -66,15 +54,14 @@ public class ColorPickerMirrorBinder : NetworkBehaviour
     }
 
     [Command]
-    void CmdUnlockMine(NetworkConnectionToClient sender = null)
+    void CmdCancelMyLock(NetworkConnectionToClient sender = null)
     {
         ColorLockRegistry.Instance?.UnlockAllFor(netIdentity);
     }
 
     void RefreshFromRegistry()
     {
-        if (!_registry || !picker) return;
-        if (!picker || !picker.isActiveAndEnabled) return;
+        if (!_registry || !picker || !picker.isActiveAndEnabled) return;
 
         for (int i = 0; i < picker.swatches.Count; i++)
         {
