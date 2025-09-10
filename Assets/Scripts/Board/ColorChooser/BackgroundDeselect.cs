@@ -13,7 +13,7 @@ public class BackgroundDeselect : MonoBehaviour, IPointerClickHandler
     public void OnPointerClick(PointerEventData eventData)
     {
         if (!picker) return;
-
+        if (picker.HasLockedColor) return;
         if (picker.HasPendingSelection())
             picker.CancelCurrent();
     }

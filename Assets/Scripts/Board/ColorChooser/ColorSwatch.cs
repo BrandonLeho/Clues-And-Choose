@@ -44,6 +44,10 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
     [Header("Clipping")]
     [SerializeField] RectTransform clipArea;
 
+    [Header("Interactivity")]
+    [SerializeField] bool interactive = true;
+    [SerializeField] Behaviour[] extraHoverBehaviours;
+
     [Header("State (read-only)")]
     public bool IsSelected { get; private set; }
     public bool IsLocked { get; private set; }
@@ -85,6 +89,7 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
 
     public void OnPointerClick(PointerEventData e)
     {
+        if (!interactive) return;
         if (IsLocked) return;
         owner?.Select(this);
     }
@@ -190,6 +195,19 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
             SetOverlayAlpha(targetA);
             if (!on) lockOverlay.enabled = false;
         }
+    }
+
+    public void SetInteractive(bool on)
+    {
+        interactive = on;
+
+        var btn = GetComponent<Button>();
+        if (btn) btn.interactable = on;
+
+        if (extraHoverBehaviours != null)
+            foreach (var b in extraHoverBehaviours) if (b) b.enabled = on;
+
+        if (!on) ForceDeselectVisuals();
     }
 
 
@@ -344,5 +362,11 @@ public class ColorSwatch : MonoBehaviour, IPointerClickHandler
         if (_iconPopCo != null) { StopCoroutine(_iconPopCo); _iconPopCo = null; }
         if (_ownerCo != null) { StopCoroutine(_ownerCo); _ownerCo = null; }
         if (_scaleCo != null) { StopCoroutine(_scaleCo); _scaleCo = null; }
+    }
+
+    public void ForceDeselectVisuals()
+    {
+        SetSelected(false);
+        if (scaleTarget) scaleTarget.localScale = Vector3.one;
     }
 }
