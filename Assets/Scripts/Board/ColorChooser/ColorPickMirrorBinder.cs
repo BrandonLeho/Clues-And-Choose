@@ -11,7 +11,6 @@ public class ColorPickerMirrorBinder : NetworkBehaviour
     public override void OnStartAuthority()
     {
         base.OnStartAuthority();
-
         if (!picker)
         {
 #if UNITY_2023_1_OR_NEWER
@@ -25,10 +24,22 @@ public class ColorPickerMirrorBinder : NetworkBehaviour
         if (!_registry || !picker) return;
 
         picker.networkAuthoritative = true;
-
         picker.onColorConfirmed.AddListener(OnLocalConfirm);
 
+        picker.onCancelLockRequested.AddListener(OnCancelLockRequested);
+
         _registry.OnRegistryChanged += RefreshFromRegistry;
+    }
+
+    public override void OnStopAuthority()
+    {
+        if (picker)
+        {
+            picker.onColorConfirmed.RemoveListener(OnLocalConfirm);
+            picker.onCancelLockRequested.RemoveListener(OnCancelLockRequested);
+        }
+        if (_registry != null) _registry.OnRegistryChanged -= RefreshFromRegistry;
+        base.OnStopAuthority();
     }
 
 
@@ -43,10 +54,21 @@ public class ColorPickerMirrorBinder : NetworkBehaviour
         CmdTryConfirm(index, (Color32)color);
     }
 
+    void OnCancelLockRequested()
+    {
+        CmdUnlockMine();
+    }
+
     [Command]
     void CmdTryConfirm(int index, Color32 color, NetworkConnectionToClient sender = null)
     {
         ColorLockRegistry.Instance?.TryConfirm(netIdentity, index, color);
+    }
+
+    [Command]
+    void CmdUnlockMine(NetworkConnectionToClient sender = null)
+    {
+        ColorLockRegistry.Instance?.UnlockAllFor(netIdentity);
     }
 
     void RefreshFromRegistry()

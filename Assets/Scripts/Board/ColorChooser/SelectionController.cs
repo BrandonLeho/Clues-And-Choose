@@ -16,8 +16,10 @@ public class SelectionController : MonoBehaviour
     [Header("Cancel UI")]
     [SerializeField] Button cancelButton;
 
+    [System.Serializable] public class VoidEvent : UnityEvent { }
     [Header("Events")]
     public ColorChosenEvent onColorConfirmed;
+    public VoidEvent onCancelLockRequested;
 
     [Header("Multiplayer")]
     [Tooltip("When true, Confirm only requests a lock from server; actual lock is applied from network callbacks.")]
@@ -33,12 +35,12 @@ public class SelectionController : MonoBehaviour
 
         for (int i = 0; i < swatches.Count; i++)
         {
-            if (!swatches[i]) continue;
-            swatches[i].owner = this;
-            swatches[i].SetSelected(false);
+            var s = swatches[i];
+            if (!s) continue;
+            s.SetSelected(false);
         }
 
-        UpdateConfirmInteractable();
+        UpdateConfirmCancelVisibility();
     }
 
     public void Select(ColorSwatch swatch)
@@ -108,11 +110,19 @@ public class SelectionController : MonoBehaviour
 
     void UpdateConfirmInteractable()
     {
+        if (!confirmButton) return;
         bool canConfirm = (_current != null && _current != _locked);
+        confirmButton.interactable = canConfirm;
+    }
 
-        if (confirmButton) confirmButton.interactable = canConfirm;
+    void UpdateConfirmCancelVisibility()
+    {
+        bool hasLock = (_locked != null);
 
-        if (cancelButton) cancelButton.gameObject.SetActive(canConfirm);
+        if (cancelButton) cancelButton.gameObject.SetActive(hasLock);
+        if (confirmButton) confirmButton.gameObject.SetActive(!hasLock);
+
+        UpdateConfirmInteractable();
     }
 
     public void SetLockedFromNetwork(int index)
@@ -130,7 +140,7 @@ public class SelectionController : MonoBehaviour
         s.SetSelected(true);
         _locked = s;
 
-        UpdateConfirmInteractable();
+        UpdateConfirmCancelVisibility();
     }
 
     public void SetSwatchLockedState(int index, bool locked)
@@ -142,9 +152,12 @@ public class SelectionController : MonoBehaviour
         if (locked && !s.IsLocked) s.Lock();
         if (!locked && s.IsLocked) s.Unlock();
 
-        if (!locked && _locked == s) _locked = null;
+        if (!locked && _locked == s)
+        {
+            _locked = null;
+        }
 
-        UpdateConfirmInteractable();
+        UpdateConfirmCancelVisibility();
     }
 
     public bool TryGetCurrentSwatch(out ColorSwatch swatch)
