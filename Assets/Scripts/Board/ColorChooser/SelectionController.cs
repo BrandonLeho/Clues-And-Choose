@@ -15,8 +15,7 @@ public class SelectionController : MonoBehaviour
 
     [Header("Cancel UI")]
     [SerializeField] Button cancelButton;
-    [SerializeField] ConfirmCancelSwapAnimator swapper;
-
+    [SerializeField] ButtonSwapFlash swapper;
 
     [Header("Events")]
     public ColorChosenEvent onColorConfirmed;
@@ -28,6 +27,7 @@ public class SelectionController : MonoBehaviour
 
     ColorSwatch _current;
     ColorSwatch _locked;
+    bool _lastShowCancel;
 
     void Awake()
     {
@@ -132,10 +132,22 @@ public class SelectionController : MonoBehaviour
         bool hasLocked = (_locked != null);
         bool canConfirm = (!hasLocked && _current != null);
 
-        if (swapper)
+        if (swapper && _lastShowCancel != hasLocked)
         {
-            if (hasLocked) swapper.SwapToCancel(animate: true);
-            else swapper.SwapToConfirm(animate: true, confirmInteractable: canConfirm);
+
+            var flashColor = GetFlashColor();
+
+            swapper.SwapTo(showCancel: hasLocked, color: flashColor, afterSwap: () =>
+            {
+                if (confirmButton)
+                {
+                    confirmButton.interactable = canConfirm;
+                }
+                if (cancelButton)
+                {
+                    cancelButton.interactable = hasLocked;
+                }
+            });
         }
         else
         {
@@ -150,6 +162,8 @@ public class SelectionController : MonoBehaviour
                 cancelButton.interactable = hasLocked;
             }
         }
+
+        _lastShowCancel = hasLocked;
     }
 
     public void SetLockedFromNetwork(int index)
@@ -217,5 +231,13 @@ public class SelectionController : MonoBehaviour
     {
         if (index < 0 || index >= swatches.Count || !swatches[index]) return;
         swatches[index].HideOwnerName();
+    }
+
+
+    Color GetFlashColor()
+    {
+        if (_locked) return _locked.GetFillColor();
+        if (_current) return _current.GetFillColor();
+        return Color.white;
     }
 }

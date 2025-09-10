@@ -81,7 +81,6 @@
     <Compile Include="Assets\Scripts\Controller\DraggableItem.cs" />
     <Compile Include="Assets\Scripts\Controller\Slot.cs" />
     <Compile Include="Assets\Scripts\UI\LobbyUIManager.cs" />
-    <Compile Include="Assets\Scripts\Board\ColorChooser\ConfirmCancelSwapAnimator.cs" />
     <Compile Include="Assets\Scripts\Steam\SteamLobby.cs" />
     <Compile Include="Assets\Scripts\Steam\CustomNetworkManager.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorSwatch.cs" />
@@ -94,6 +93,7 @@
     <Compile Include="Assets\Scripts\Board\ColorBoard\BoardLabels.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\GameScenePlayerList.cs" />
     <Compile Include="Assets\Scripts\UI\PanelSwapper.cs" />
+    <Compile Include="Assets\Scripts\Board\ColorChooser\ButtonSwapFlash.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\GridCellHoverWithCoords.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\SelectionController.cs" />
   </ItemGroup>
