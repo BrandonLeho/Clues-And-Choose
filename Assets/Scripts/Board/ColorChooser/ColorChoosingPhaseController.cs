@@ -16,7 +16,12 @@ public class ColorChoosingPhaseController : NetworkBehaviour
     public AnimationCurve ease = AnimationCurve.EaseInOut(0, 0, 1, 1);
     public bool deactivateChooserOnEnd = true;
 
-    [Header("Handoff")]
+    [Header("Game Group (enable after choosing)")]
+    public CanvasGroup gameGroup;
+    public bool hideGameWhileChoosing = true;
+    public bool deactivateGameWhileChoosing = false;
+
+    [Header("Handoff (legacy toggle)")]
     public bool activateGameRootsOnEnd = false;
     public GameObject[] gameRoots;
     public UnityEvent onPhaseStarted;
@@ -25,7 +30,6 @@ public class ColorChoosingPhaseController : NetworkBehaviour
     [Header("Exit Timing")]
     public float exitDelaySeconds = 1f;
     bool _exitStarted;
-
 
     ColorLockRegistry registry;
     bool serverPhaseEnded;
@@ -53,21 +57,17 @@ public class ColorChoosingPhaseController : NetworkBehaviour
             }
         }
 
-        if (!chooserGroup)
-        {
-            return;
-        }
+        if (!chooserGroup) return;
 
         chooserGroup.ignoreParentGroups = true;
         chooserGroup.gameObject.SetActive(true);
         chooserGroup.interactable = false;
         chooserGroup.blocksRaycasts = false;
 
+        InitGameGroupDisabled();
+
         wrapperRT = chooserGroup.GetComponent<RectTransform>();
-        if (!wrapperRT)
-        {
-            return;
-        }
+        if (!wrapperRT) return;
 
         wrapperRT.anchorMin = Vector2.zero;
         wrapperRT.anchorMax = Vector2.one;
@@ -162,6 +162,8 @@ public class ColorChoosingPhaseController : NetworkBehaviour
         float wait = Mathf.Max(0f, exitDelaySeconds);
         if (wait > 0f) yield return new WaitForSecondsRealtime(wait);
 
+        EnableGameGroup();
+
         SlideTo(OffscreenBelow(wrapperHome), () =>
         {
             if (deactivateChooserOnEnd) chooserGroup.gameObject.SetActive(false);
@@ -172,6 +174,34 @@ public class ColorChoosingPhaseController : NetworkBehaviour
             onPhaseEnded?.Invoke();
         });
     }
+
+    void InitGameGroupDisabled()
+    {
+        if (!gameGroup) return;
+
+        if (!gameGroup.gameObject.activeSelf && !deactivateGameWhileChoosing)
+            gameGroup.gameObject.SetActive(true);
+
+        if (hideGameWhileChoosing) gameGroup.alpha = 0f;
+        gameGroup.interactable = false;
+        gameGroup.blocksRaycasts = false;
+
+        if (deactivateGameWhileChoosing)
+            gameGroup.gameObject.SetActive(false);
+    }
+
+    void EnableGameGroup()
+    {
+        if (!gameGroup) return;
+
+        if (!gameGroup.gameObject.activeSelf)
+            gameGroup.gameObject.SetActive(true);
+
+        if (hideGameWhileChoosing) gameGroup.alpha = 1f;
+        gameGroup.interactable = true;
+        gameGroup.blocksRaycasts = true;
+    }
+
 
     Vector2 OffscreenBelow(Vector2 home)
     {

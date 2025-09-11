@@ -86,6 +86,7 @@
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorSwatch.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\GridPalettePainter.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardFitter.cs" />
+    <Compile Include="Assets\Scripts\Board\ColorBoard\GameGroupEntryAnimator.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandlerGame.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerRow.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardAttachToBoard.cs" />
@@ -93,6 +94,7 @@
     <Compile Include="Assets\Scripts\Board\ColorBoard\BoardLabels.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\GameScenePlayerList.cs" />
     <Compile Include="Assets\Scripts\UI\PanelSwapper.cs" />
+    <Compile Include="Assets\Scripts\Board\MarkerCorner\CoinGridSpawner.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ButtonSwapFlash.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\GridCellHoverWithCoords.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\SelectionController.cs" />
