@@ -2,10 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
 [DisallowMultipleComponent]
-public class GridDropInAnimator : MonoBehaviour
+public class ColorGridAnimator : MonoBehaviour
 {
     public enum ScheduleMode { UsePerCellMaxDelay, TotalDurationRandom, TotalDurationEven }
     public enum OffsetMode { RadialNormalized, Componentwise }
@@ -60,14 +59,11 @@ public class GridDropInAnimator : MonoBehaviour
         public float fadeEndTime;
         public bool started;
         public bool finished;
-
         public Canvas tempCanvas;
         public bool hadCanvasBefore;
         public bool prevOverrideSorting;
         public int prevSortingOrder;
-
         public CanvasGroup cg;
-
         public LayoutElement le;
         public bool hadLEBefore;
         public bool prevIgnoreLayout;
@@ -117,9 +113,19 @@ public class GridDropInAnimator : MonoBehaviour
             var s = _cells[i];
             RestoreCanvas(ref s);
             RestoreLayoutElement(ref s);
+            if (s.cg)
+            {
+                s.cg.alpha = 1f;
+                s.cg.interactable = true;
+                s.cg.blocksRaycasts = true;
+            }
             _cells[i] = s;
         }
+
         EndFreezeLayout();
+        Canvas.ForceUpdateCanvases();
+        if (gridRoot) LayoutRebuilder.ForceRebuildLayoutImmediate(gridRoot);
+        Canvas.ForceUpdateCanvases();
         _running = false;
     }
 
@@ -165,15 +171,8 @@ public class GridDropInAnimator : MonoBehaviour
             Vector2 dirN = dist > 1e-3f ? dir / dist : Vector2.zero;
 
             float ox, oy;
-            if (offsetMode == OffsetMode.RadialNormalized)
-                ox = dirN.x * dist * distanceOffsetScaleX;
-            else
-                ox = dir.x * distanceOffsetScaleX;
-
-            if (offsetMode == OffsetMode.RadialNormalized)
-                oy = dirN.y * dist * distanceOffsetScaleY;
-            else
-                oy = dir.y * distanceOffsetScaleY;
+            if (offsetMode == OffsetMode.RadialNormalized) ox = dirN.x * dist * distanceOffsetScaleX; else ox = dir.x * distanceOffsetScaleX;
+            if (offsetMode == OffsetMode.RadialNormalized) oy = dirN.y * dist * distanceOffsetScaleY; else oy = dir.y * distanceOffsetScaleY;
 
             if (maxOffsetX > 0f) ox = Mathf.Clamp(ox, -maxOffsetX, maxOffsetX);
             if (maxOffsetY > 0f) oy = Mathf.Clamp(oy, -maxOffsetY, maxOffsetY);
@@ -377,8 +376,12 @@ public class GridDropInAnimator : MonoBehaviour
             {
                 s.rt.anchoredPosition = s.basePos;
                 s.rt.localScale = s.baseScale;
-                if (hideUntilDropStart && s.cg) s.cg.alpha = 1f;
-
+                if (s.cg)
+                {
+                    s.cg.alpha = 1f;
+                    s.cg.interactable = true;
+                    s.cg.blocksRaycasts = true;
+                }
                 RestoreCanvas(ref s);
                 RestoreLayoutElement(ref s);
                 s.finished = true;
@@ -396,7 +399,6 @@ public class GridDropInAnimator : MonoBehaviour
         if (!bringToFrontWithCanvas || s.rt == null) return;
         var c = s.tempCanvas;
         if (!c) return;
-
         if (s.hadCanvasBefore)
         {
             c.overrideSorting = s.prevOverrideSorting;
@@ -413,10 +415,8 @@ public class GridDropInAnimator : MonoBehaviour
     {
         if (!freezeLayoutDuringAnimation || freezeByDisablingGrid) return;
         if (!s.rt) return;
-
         var le = s.le;
         if (!le) return;
-
         le.ignoreLayout = s.prevIgnoreLayout;
     }
 
