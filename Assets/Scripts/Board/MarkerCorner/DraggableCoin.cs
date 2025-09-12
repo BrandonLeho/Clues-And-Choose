@@ -35,7 +35,8 @@ public class DraggableCoin : MonoBehaviour,
     Vector2 _startAnchored;
     DropCellUI _currentCell;
     CoinMakerUI _coinFX;
-
+    CoinDragSync _net;
+    float _nextSend;
     bool _dragging;
 
     void Awake()
@@ -43,6 +44,7 @@ public class DraggableCoin : MonoBehaviour,
         _rt = GetComponent<RectTransform>();
         _cg = GetComponent<CanvasGroup>();
         _coinFX = GetComponent<CoinMakerUI>();
+        _net = GetComponent<CoinDragSync>();
 
         if (!rootCanvas) rootCanvas = GetComponentInParent<Canvas>();
         if (!raycaster && rootCanvas) raycaster = rootCanvas.GetComponent<GraphicRaycaster>();
@@ -109,20 +111,25 @@ public class DraggableCoin : MonoBehaviour,
 
         _coinFX?.SetHover(true);
         if (_currentCell) { _currentCell.Release(this, this); }
+        _net?.OwnerBeginDrag();
+        _nextSend = 0f;
     }
 
     public void OnDrag(PointerEventData eventData)
     {
         if (!_dragging || !IsLocalOwner()) return;
         if (!rootCanvas) return;
-        var canvasRT = rootCanvas.transform as RectTransform;
 
-        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                canvasRT, eventData.position, _uiCam, out var local))
+        var canvasRT = rootCanvas.transform as RectTransform;
+        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRT, eventData.position, _uiCam, out var local))
         {
             _rt.anchoredPosition = local;
+            if (Time.unscaledTime >= _nextSend)
+            {
+                _net?.OwnerUpdateDrag(local);
+                _nextSend = Time.unscaledTime + (1f / 30f);
+            }
         }
-
         HighlightCellUnderPointer(eventData);
     }
 
@@ -152,10 +159,12 @@ public class DraggableCoin : MonoBehaviour,
 
             _coinFX?.FlashOnPlace();
             _coinFX?.SetHover(false);
+            _net?.OwnerEndDrag(_rt.anchoredPosition);
             return;
         }
 
         StartCoroutine(EaseBack(_startParent as RectTransform, _startAnchored, 0f));
+        _net?.OwnerEndDrag(_rt.anchoredPosition);
     }
 
     public void OnPointerEnter(PointerEventData eventData)

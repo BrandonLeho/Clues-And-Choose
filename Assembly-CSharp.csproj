@@ -72,6 +72,7 @@
     <Compile Include="Assets\Scripts\Board\ColorBoard\PaletteGrid.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerListBinder.cs" />
     <Compile Include="Assets\Scripts\GameNetworking\NetworkChat.cs" />
+    <Compile Include="Assets\Scripts\Board\MarkerCorner\CoinDragSync.cs" />
     <Compile Include="Assets\Scripts\Board\GameChat\ChatUI.cs" />
     <Compile Include="Assets\Scripts\Board\MarkerCorner\DropCellUI.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\PlayerNameSync.cs" />
