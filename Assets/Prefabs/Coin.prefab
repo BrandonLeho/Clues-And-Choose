@@ -314,11 +314,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3ff24d48308d0c545921a7cb07c93db6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CoinDragSync
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0
   ownerNetId: 0
-  remoteLerpSpeed: 18
+  slotIndex: -2
+  _key: 
+  rt: {fileID: 0}
+  cg: {fileID: 0}
+  draggable: {fileID: 0}
 --- !u!1 &3619437409042461286
 GameObject:
   m_ObjectHideFlags: 0

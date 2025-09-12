@@ -121,7 +121,12 @@ public class CoinGridSpawner : MonoBehaviour
             if (dr) dr.ownerNetId = entry.Key;
 
             var sync = coin.GetComponent<CoinDragSync>();
-            if (sync) sync.ownerNetId = entry.Key;
+            if (sync)
+            {
+                sync.ownerNetId = entry.Key;
+                sync.slotIndex = i;
+            }
+
 
             var rt = coin.transform as RectTransform;
             if (rt)

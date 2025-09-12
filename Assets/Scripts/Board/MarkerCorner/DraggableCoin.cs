@@ -159,12 +159,12 @@ public class DraggableCoin : MonoBehaviour,
 
             _coinFX?.FlashOnPlace();
             _coinFX?.SetHover(false);
-            _net?.OwnerEndDrag(_rt.anchoredPosition);
+            _net?.OwnerEndDrag(_rt.anchoredPosition, BuildTransformPath(draggableRootForPath, cell.GetSnapAnchor()));
             return;
         }
 
         StartCoroutine(EaseBack(_startParent as RectTransform, _startAnchored, 0f));
-        _net?.OwnerEndDrag(_rt.anchoredPosition);
+        _net?.OwnerEndDrag(_rt.anchoredPosition, BuildTransformPath(draggableRootForPath, _rt.parent as RectTransform));
     }
 
     public void OnPointerEnter(PointerEventData eventData)
@@ -254,4 +254,21 @@ public class DraggableCoin : MonoBehaviour,
             out var local);
         return local;
     }
+
+    Transform draggableRootForPath => rootCanvas ? rootCanvas.transform : transform.root;
+
+    static string BuildTransformPath(Transform root, Transform target)
+    {
+        if (!root || !target) return "";
+        Stack<string> stack = new Stack<string>();
+        var t = target;
+        while (t && t != root)
+        {
+            stack.Push(t.name);
+            t = t.parent;
+        }
+        if (t != root) return "";
+        return string.Join("/", stack.ToArray());
+    }
+
 }

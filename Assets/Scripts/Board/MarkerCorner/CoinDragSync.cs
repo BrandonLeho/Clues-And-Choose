@@ -1,109 +1,123 @@
-using Mirror;
 using UnityEngine;
+using UnityEngine.UI;
 
-[DisallowMultipleComponent]
-public class CoinDragSync : NetworkBehaviour
+public class CoinDragSync : MonoBehaviour
 {
-    [Header("Authority & Owner")]
-    [SyncVar] public uint ownerNetId;
-    [SerializeField] float remoteLerpSpeed = 18f;
+    [Header("Identity / Key")]
+    public uint ownerNetId;     // filled by spawner (already done in your code)
+    public int slotIndex = -1;  // we’ll set this in the spawner
+    [SerializeField] string _key; // debug view
 
-    [Header("State (replicated)")]
-    [SyncVar(hook = nameof(OnPosChanged))] Vector2 syncedAnchoredPos;
-    [SyncVar] bool syncedDragging;
-
-    RectTransform _rt;
-    Canvas _canvas;
-    Camera _uiCam;
-
-    Vector2 _displayPos;
-    bool _haveDisplay;
+    [Header("Refs")]
+    [SerializeField] RectTransform rt;
+    [SerializeField] CanvasGroup cg;          // to disable raycasts while dragging
+    [SerializeField] DraggableCoin draggable; // to access dragLayer/rootCanvas
 
     void Awake()
     {
-        _rt = GetComponent<RectTransform>();
-        _canvas = GetComponentInParent<Canvas>();
-        _uiCam = _canvas && _canvas.renderMode != RenderMode.ScreenSpaceOverlay ? _canvas.worldCamera : null;
+        if (!rt) rt = transform as RectTransform;
+        if (!cg) cg = GetComponent<CanvasGroup>();
+        if (!draggable) draggable = GetComponent<DraggableCoin>();
     }
 
-    public override void OnStartClient()
+    void OnEnable() { TryRegister(); }
+    void OnDisable() { TryUnregister(); }
+
+    void TryRegister()
     {
-        base.OnStartClient();
-        if (_rt)
-        {
-            _displayPos = _rt.anchoredPosition;
-            _haveDisplay = true;
-        }
+        _key = BuildKey(ownerNetId, slotIndex);
+        if (CoinDragRelay.Instance) CoinDragRelay.Register(_key, this);
     }
 
-    void Update()
+    void TryUnregister()
     {
-        if (IsLocalOwner()) return;
-        if (!_haveDisplay || !_rt) return;
-
-        _displayPos = Vector2.Lerp(_displayPos, syncedAnchoredPos, 1f - Mathf.Exp(-remoteLerpSpeed * Time.unscaledDeltaTime));
-        _rt.anchoredPosition = _displayPos;
+        if (CoinDragRelay.Instance) CoinDragRelay.Unregister(_key, this);
     }
 
-    bool IsLocalOwner()
-    {
-        if (!NetworkClient.active) return true;
-        var local = NetworkClient.localPlayer;
-        return local && local.netId == ownerNetId;
-    }
+    static string BuildKey(uint owner, int slot) => $"{owner}:{slot}";
+
+    // ---------------- called by DraggableCoin (local owner only) ----------------
 
     public void OwnerBeginDrag()
     {
-        if (!IsLocalOwner()) return;
-        CmdBeginDrag();
+        if (!CoinDragRelay.Instance) return;
+        CoinDragRelay.Instance.CmdBegin(_key, ownerNetId);
     }
 
-    public void OwnerUpdateDrag(Vector2 anchoredPos)
+    public void OwnerUpdateDrag(Vector2 anchored)
     {
-        if (!IsLocalOwner()) return;
-        if (_rt) _rt.anchoredPosition = anchoredPos;
-        CmdUpdatePos(anchoredPos);
+        if (!CoinDragRelay.Instance) return;
+        CoinDragRelay.Instance.CmdUpdate(_key, anchored);
     }
 
-    public void OwnerEndDrag(Vector2 anchoredPos)
+    // parentPath is relative to the root canvas; we’ll compute it in DraggableCoin when dropping.
+    public void OwnerEndDrag(Vector2 anchored, string parentPath)
     {
-        if (!IsLocalOwner()) return;
-        CmdEndDrag(anchoredPos);
-    }
-    bool IsSenderOwner()
-    {
-        var sender = connectionToClient?.identity;
-        return sender && sender.netId == ownerNetId;
+        if (!CoinDragRelay.Instance) return;
+        CoinDragRelay.Instance.CmdEnd(_key, anchored, parentPath);
     }
 
-    [Command]
-    void CmdBeginDrag()
+    // ---------------- incoming network updates (apply on non-owners) ----------------
+
+    public void RemoteBeginDrag()
     {
-        if (!IsSenderOwner()) return;
-        syncedDragging = true;
+        if (!cg) return;
+        cg.blocksRaycasts = false;
+
+        // Move on top while being dragged so it visually overlaps settled coins.
+        if (draggable && draggable.dragLayer)
+            rt.SetParent(draggable.dragLayer, worldPositionStays: true);
     }
 
-    [Command]
-    void CmdUpdatePos(Vector2 anchoredPos)
+    public void RemoteUpdateDrag(Vector2 anchored)
     {
-        if (!IsSenderOwner()) return;
-        syncedAnchoredPos = anchoredPos;
+        if (rt) rt.anchoredPosition = anchored;
     }
 
-    [Command]
-    void CmdEndDrag(Vector2 anchoredPos)
+    public void RemoteEndDrag(Vector2 anchored, string parentPath)
     {
-        if (!IsSenderOwner()) return;
-        syncedAnchoredPos = anchoredPos;
-        syncedDragging = false;
-    }
+        if (!rt) return;
 
-    void OnPosChanged(Vector2 _, Vector2 newPos)
-    {
-        if (IsLocalOwner()) return;
-        if (_rt)
+        // Try to reparent to the exact same snap anchor as the owner used:
+        var parent = FindTransformByPath(GetRootForPath(), parentPath);
+        if (parent)
         {
-            if (!_haveDisplay) { _displayPos = newPos; _haveDisplay = true; }
+            rt.SetParent(parent as RectTransform, worldPositionStays: false);
+            rt.anchoredPosition = Vector2.zero; // snapped
         }
+        else
+        {
+            // Fallback: keep whatever parent we had and place by anchored position
+            rt.anchoredPosition = anchored;
+        }
+
+        if (cg) cg.blocksRaycasts = true;
+    }
+
+    // ---------------- path helpers ----------------
+
+    Transform GetRootForPath()
+    {
+        // We’ll use the root canvas as a stable root; matches how we build the path in DraggableCoin
+        return draggable && draggable.rootCanvas ? draggable.rootCanvas.transform : transform.root;
+    }
+
+    static Transform FindTransformByPath(Transform root, string path)
+    {
+        if (!root || string.IsNullOrEmpty(path)) return null;
+        var current = root;
+        var parts = path.Split('/');
+        foreach (var part in parts)
+        {
+            if (string.IsNullOrEmpty(part)) continue;
+            bool found = false;
+            for (int i = 0; i < current.childCount; i++)
+            {
+                var c = current.GetChild(i);
+                if (c.name == part) { current = c; found = true; break; }
+            }
+            if (!found) return null;
+        }
+        return current;
     }
 }
