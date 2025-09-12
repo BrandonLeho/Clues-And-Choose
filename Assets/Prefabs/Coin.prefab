@@ -110,6 +110,7 @@ GameObject:
   - component: {fileID: 254787320460702440}
   - component: {fileID: 3611043173122093176}
   - component: {fileID: 8418599517027463651}
+  - component: {fileID: 8020690437672755268}
   m_Layer: 5
   m_Name: Coin
   m_TagString: Untagged
@@ -154,7 +155,7 @@ MonoBehaviour:
   fill: {fileID: 6008267758076079580}
   neonRing: {fileID: 5729457874262562679}
   shadow: {fileID: 5041998803303693771}
-  playerColor: {r: 1, g: 0, b: 0, a: 1}
+  playerColor: {r: 1, g: 1, b: 1, a: 1}
   faceDarken: 0.756
   glowIntensity: 5.23
   ringThickness: 0.02
@@ -284,6 +285,20 @@ MonoBehaviour:
   rotationSensitivity: 0.01
   positionPrecision: 0.01
   scalePrecision: 0.01
+--- !u!114 &8020690437672755268
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2807909767930187507}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a5dd882baa0c854d9fc09f5c20fe6a2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CoinPlayerBinding
+  ownerNetId: 0
+  ui: {fileID: 7182504145884567655}
 --- !u!1 &3619437409042461286
 GameObject:
   m_ObjectHideFlags: 0
@@ -342,7 +357,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.03773582, g: 0.03773582, b: 0.03773582, a: 0}
+  m_Color: {r: 0, g: 0, b: 0, a: 0.25}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -417,7 +432,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.756, g: 0.756, b: 0.756, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1

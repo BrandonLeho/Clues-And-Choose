@@ -15,6 +15,18 @@ public class ColorLockRegistry : NetworkBehaviour
     public delegate void RegistryChanged();
     public event RegistryChanged OnRegistryChanged;
 
+    public static ColorLockRegistry GetOrFind()
+    {
+        if (Instance) return Instance;
+#if UNITY_2023_1_OR_NEWER
+        Instance = FindFirstObjectByType<ColorLockRegistry>(FindObjectsInactive.Include);
+#else
+        Instance = Object.FindObjectOfType<ColorLockRegistry>(true);
+#endif
+        return Instance;
+    }
+
+
     void Awake() => Instance = this;
 
     public override void OnStartClient()

@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Mirror;
@@ -23,10 +24,41 @@ public class CoinGridSpawner : MonoBehaviour
     public bool spawnOnEnable = false;
 
     readonly List<Transform> _slots = new List<Transform>();
+    readonly List<CoinPlayerBinding> _spawned = new List<CoinPlayerBinding>();
 
     void OnEnable()
     {
-        if (spawnOnEnable) SpawnNow();
+        if (spawnOnEnable)
+            StartCoroutine(WaitForRegistryThenSpawn());
+        StartCoroutine(HookRegistryWhenReady());
+    }
+
+    IEnumerator WaitForRegistryThenSpawn()
+    {
+        float timeout = 3f;
+        ColorLockRegistry reg = null;
+        while (timeout > 0f && (reg = ColorLockRegistry.GetOrFind()) == null)
+        {
+            timeout -= Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        if (reg != null) SpawnNow();
+        else Debug.LogWarning("[CoinGridSpawner] Timed out waiting for ColorLockRegistry.");
+    }
+
+
+    IEnumerator HookRegistryWhenReady()
+    {
+        ColorLockRegistry reg = null;
+        while ((reg = ColorLockRegistry.GetOrFind()) == null) yield return null;
+        reg.OnRegistryChanged += RefreshAllColors;
+    }
+
+    void OnDisable()
+    {
+        var reg = ColorLockRegistry.GetOrFind();
+        if (reg) reg.OnRegistryChanged -= RefreshAllColors;
     }
 
     public void SpawnNow()
@@ -44,13 +76,7 @@ public class CoinGridSpawner : MonoBehaviour
 
         BuildSlotList();
 
-        if (_slots.Count == 0)
-        {
-            Debug.LogWarning("[CoinGridSpawner] No slots found under gridSlotsRoot.");
-            return;
-        }
-
-        var reg = ColorLockRegistry.Instance;
+        var reg = ColorLockRegistry.GetOrFind();
         if (!reg)
         {
             Debug.LogWarning("[CoinGridSpawner] No ColorLockRegistry in scene.");
@@ -60,7 +86,6 @@ public class CoinGridSpawner : MonoBehaviour
         var entries = reg.colorByOwner.ToArray();
         int playerCount = entries.Length;
         int need = Mathf.Min(_slots.Count, playerCount * 2);
-
         if (need == 0) return;
 
         if (clearExistingCoins)
@@ -73,6 +98,8 @@ public class CoinGridSpawner : MonoBehaviour
             }
         }
 
+        _spawned.Clear();
+
         for (int i = 0; i < need; i++)
         {
             int playerIndex = i / 2;
@@ -80,16 +107,15 @@ public class CoinGridSpawner : MonoBehaviour
             var slot = _slots[i];
 
             var coin = Instantiate(coinPrefab, slot, false);
+
             var ui = coin.GetComponent<CoinMakerUI>();
-            if (!ui)
-            {
-                Debug.LogWarning("[CoinGridSpawner] coinPrefab missing CoinMakerUI component.");
-            }
-            else
-            {
-                ui.SetPlayerColor(entry.Value);
-                ui.FlashOnPlace();
-            }
+            if (ui) ui.SetPlayerColor(entry.Value);
+
+            var bind = coin.GetComponent<CoinPlayerBinding>() ?? coin.AddComponent<CoinPlayerBinding>();
+            bind.ownerNetId = entry.Key;
+            bind.ui = ui;
+            bind.RefreshColor();
+            _spawned.Add(bind);
 
             var rt = coin.transform as RectTransform;
             if (rt)
@@ -107,18 +133,20 @@ public class CoinGridSpawner : MonoBehaviour
     void BuildSlotList()
     {
         _slots.Clear();
-
         if (!gridSlotsRoot) return;
+        for (int i = 0; i < gridSlotsRoot.childCount; i++)
+            _slots.Add(gridSlotsRoot.GetChild(i));
+    }
 
-        if (autoDiscoverSlots)
+    void RefreshAllColors()
+    {
+        for (int i = _spawned.Count - 1; i >= 0; i--)
         {
-            for (int i = 0; i < gridSlotsRoot.childCount; i++)
-                _slots.Add(gridSlotsRoot.GetChild(i));
+            var b = _spawned[i];
+            if (!b) { _spawned.RemoveAt(i); continue; }
+            b.RefreshColor();
         }
-        else
-        {
-            for (int i = 0; i < gridSlotsRoot.childCount; i++)
-                _slots.Add(gridSlotsRoot.GetChild(i));
-        }
+
+        SpawnNow();
     }
 }
