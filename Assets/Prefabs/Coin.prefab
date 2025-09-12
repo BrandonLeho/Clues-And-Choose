@@ -111,6 +111,7 @@ GameObject:
   - component: {fileID: 3611043173122093176}
   - component: {fileID: 8418599517027463651}
   - component: {fileID: 8020690437672755268}
+  - component: {fileID: 3066091543009407545}
   m_Layer: 5
   m_Name: Coin
   m_TagString: Untagged
@@ -231,6 +232,8 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  restrictToOwner: 1
+  ownerNetId: 0
   uiLayerMask:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -299,6 +302,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CoinPlayerBinding
   ownerNetId: 0
   ui: {fileID: 7182504145884567655}
+--- !u!114 &3066091543009407545
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2807909767930187507}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ff24d48308d0c545921a7cb07c93db6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CoinDragSync
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  ownerNetId: 0
+  remoteLerpSpeed: 18
 --- !u!1 &3619437409042461286
 GameObject:
   m_ObjectHideFlags: 0
