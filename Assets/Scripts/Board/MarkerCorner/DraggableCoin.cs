@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Mirror;
 
 [RequireComponent(typeof(RectTransform))]
 [RequireComponent(typeof(CanvasGroup))]
@@ -20,9 +21,13 @@ public class DraggableCoin : MonoBehaviour,
     [SerializeField] float returnSpeed = 1200f;
     [SerializeField] AnimationCurve returnEase = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
+    [Header("Ownership")]
+    public bool restrictToOwner = true;
+    public uint ownerNetId;
 
     [Header("Filters (optional)")]
     public LayerMask uiLayerMask = ~0;
+
     RectTransform _rt;
     CanvasGroup _cg;
     Camera _uiCam;
@@ -42,10 +47,57 @@ public class DraggableCoin : MonoBehaviour,
         if (!rootCanvas) rootCanvas = GetComponentInParent<Canvas>();
         if (!raycaster && rootCanvas) raycaster = rootCanvas.GetComponent<GraphicRaycaster>();
         _uiCam = rootCanvas && rootCanvas.renderMode != RenderMode.ScreenSpaceOverlay ? rootCanvas.worldCamera : null;
+
+        var bind = GetComponent<CoinPlayerBinding>();
+        if (bind && bind.ownerNetId != 0) ownerNetId = bind.ownerNetId;
+    }
+
+    bool IsLocalOwner()
+    {
+        if (!restrictToOwner) return true;
+        if (!NetworkClient.active) return true;
+        var local = NetworkClient.localPlayer;
+        if (!local) return false;
+        uint localId = local.netId;
+        uint id = ownerNetId != 0 ? ownerNetId : TryReadOwnerFromBinding();
+        return id != 0 && id == localId;
+    }
+
+    uint TryReadOwnerFromBinding()
+    {
+        var bind = GetComponent<CoinPlayerBinding>();
+        return bind ? bind.ownerNetId : 0u;
+    }
+
+    void DenyFeedback()
+    {
+        if (!_rt) return;
+        StopAllCoroutines();
+        StartCoroutine(Nudge());
+        IEnumerator Nudge()
+        {
+            Vector2 start = _rt.anchoredPosition;
+            float amp = 6f, t = 0f, dur = 0.12f;
+            while (t < dur)
+            {
+                t += Time.unscaledDeltaTime;
+                float s = Mathf.Sin(t / dur * Mathf.PI * 2f);
+                _rt.anchoredPosition = start + new Vector2(s * amp, 0);
+                yield return null;
+            }
+            _rt.anchoredPosition = start;
+        }
     }
 
     public void OnBeginDrag(PointerEventData eventData)
     {
+        if (!IsLocalOwner())
+        {
+            eventData.pointerDrag = null;
+            DenyFeedback();
+            return;
+        }
+
         _dragging = true;
 
         _startParent = _rt.parent;
@@ -61,6 +113,7 @@ public class DraggableCoin : MonoBehaviour,
 
     public void OnDrag(PointerEventData eventData)
     {
+        if (!_dragging || !IsLocalOwner()) return;
         if (!rootCanvas) return;
         var canvasRT = rootCanvas.transform as RectTransform;
 
@@ -75,6 +128,7 @@ public class DraggableCoin : MonoBehaviour,
 
     public void OnEndDrag(PointerEventData eventData)
     {
+        if (!_dragging) return;
         _dragging = false;
         _cg.blocksRaycasts = true;
         ClearHighlights();
@@ -102,11 +156,16 @@ public class DraggableCoin : MonoBehaviour,
         }
 
         StartCoroutine(EaseBack(_startParent as RectTransform, _startAnchored, 0f));
-
     }
 
-    public void OnPointerEnter(PointerEventData eventData) => _coinFX?.SetHover(true);
-    public void OnPointerExit(PointerEventData eventData) { if (!_dragging) _coinFX?.SetHover(false); }
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        if (IsLocalOwner()) _coinFX?.SetHover(true);
+    }
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        if (!_dragging) _coinFX?.SetHover(false);
+    }
 
     DropCellUI RaycastForCell(PointerEventData eventData)
     {

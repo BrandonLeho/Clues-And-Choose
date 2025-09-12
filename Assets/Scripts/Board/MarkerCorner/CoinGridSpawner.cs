@@ -117,6 +117,9 @@ public class CoinGridSpawner : MonoBehaviour
             bind.RefreshColor();
             _spawned.Add(bind);
 
+            var dr = coin.GetComponent<DraggableCoin>();
+            if (dr) dr.ownerNetId = entry.Key;
+
             var rt = coin.transform as RectTransform;
             if (rt)
             {
