@@ -89,6 +89,7 @@
     <Compile Include="Assets\Scripts\Board\ColorBoard\GameGroupEntryAnimator.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandlerGame.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerRow.cs" />
+    <Compile Include="Assets\Scripts\Board\ColorBoard\GridDropInAnimator.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardAttachToBoard.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\SwatchHoverNeon.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\BoardLabels.cs" />

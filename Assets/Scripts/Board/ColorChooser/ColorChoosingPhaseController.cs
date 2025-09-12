@@ -20,6 +20,7 @@ public class ColorChoosingPhaseController : NetworkBehaviour
     public CanvasGroup gameGroup;
     public bool hideGameWhileChoosing = true;
     public bool deactivateGameWhileChoosing = false;
+    public bool letEntryAnimatorControlVisibility = true;
 
     [Header("Handoff (legacy toggle)")]
     public bool activateGameRootsOnEnd = false;
@@ -197,9 +198,18 @@ public class ColorChoosingPhaseController : NetworkBehaviour
         if (!gameGroup.gameObject.activeSelf)
             gameGroup.gameObject.SetActive(true);
 
-        if (hideGameWhileChoosing) gameGroup.alpha = 1f;
-        gameGroup.interactable = true;
-        gameGroup.blocksRaycasts = true;
+        if (letEntryAnimatorControlVisibility)
+        {
+            if (hideGameWhileChoosing) gameGroup.alpha = 0f;
+            gameGroup.interactable = false;
+            gameGroup.blocksRaycasts = false;
+        }
+        else
+        {
+            if (hideGameWhileChoosing) gameGroup.alpha = 1f;
+            gameGroup.interactable = true;
+            gameGroup.blocksRaycasts = true;
+        }
     }
 
 

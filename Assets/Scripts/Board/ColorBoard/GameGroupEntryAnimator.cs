@@ -2,375 +2,149 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
+[DisallowMultipleComponent]
 public class GameGroupEntryAnimator : MonoBehaviour
 {
-    [Header("Root (optional)")]
-    [Tooltip("Optional root CanvasGroup. Not required, but if present we keep it enabled and let children stage-in.")]
-    public CanvasGroup rootGroup;
+    [Header("Root (usually the Game Group)")]
+    [Tooltip("CanvasGroup on the Game Group root. If null, one will be added.")]
+    public CanvasGroup group;
 
-    [Header("Global Defaults")]
-    public float defaultDuration = 0.45f;
-    public AnimationCurve defaultEase = AnimationCurve.EaseInOut(0, 0, 1, 1);
-    [Tooltip("If true, we set targets invisible and/or inactive until their stage begins.")]
-    public bool prepareTargetsHiddenOnAwake = true;
+    [Header("Entry Motion")]
+    public float delay = 0.0f;
+    public float duration = 0.6f;
+    public AnimationCurve ease = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
-    [Header("Stages (edit in Inspector)")]
-    public List<Stage> stages = new List<Stage>();
+    [Tooltip("Start offset in anchored pixels (e.g., (0, -200) to slide up).")]
+    public Vector2 startOffset = new Vector2(0f, -200f);
+    public bool alsoScale = true;
+    public Vector2 scaleRange = new Vector2(0.98f, 1.00f);
 
-    [Header("Diagnostics")]
-    public bool logProgress = false;
+    [Header("Optional: Staggered child reveals")]
+    public bool staggerChildren = false;
+    [Tooltip("If empty, Graphics/TextMeshProUGUI under this object will be auto-collected.")]
+    public List<Graphic> childGraphics = new List<Graphic>();
+    public float childStaggerStep = 0.03f;
+    public float childFadeTime = 0.25f;
 
-    bool _isPlaying;
+    RectTransform rt;
+    Vector2 homePos;
+    public bool manageInput = true;
+    public bool resetOnEnable = true;
+    bool _prepared;
 
-    [System.Serializable]
-    public class Stage
+    void OnEnable()
     {
-        public string name = "Stage";
-        [Tooltip("Delay before this stage begins (from when the previous stage started or finished; see StartMode).")]
-        public float startDelay = 0f;
-
-        public StartMode stageStartMode = StartMode.AfterPreviousFinishes;
-
-        [Tooltip("If true, items in this stage play together (with optional per-item stagger). If false, they play sequentially.")]
-        public bool playItemsInParallel = true;
-
-        [Tooltip("Extra delay between items when playing in parallel (stagger) or sequential (gap).")]
-        public float perItemOffset = 0.03f;
-
-        public List<Item> items = new List<Item>();
+        if (resetOnEnable && !_prepared) PrepareHidden();
     }
 
-    public enum StartMode
+    void Reset()
     {
-        /// <summary>Wait until the previous stage finishes, then apply startDelay.</summary>
-        AfterPreviousFinishes,
-        /// <summary>Start relative to previous stage start time (lets you overlap stages by using a negative startDelay).</summary>
-        RelativeToPreviousStart
-    }
-
-    [System.Serializable]
-    public class Item
-    {
-        public string note;
-
-        [Tooltip("The object to animate in. Usually a UI element under the Game group.")]
-        public GameObject target;
-
-        [Tooltip("High-level preset. You can add more types later without changing the conductor.")]
-        public Preset preset = Preset.FadeInCanvasGroup;
-
-        [Tooltip("Override duration; 0 = use global default.")]
-        public float durationOverride = 0f;
-
-        public AnimationCurve easeOverride;
-
-        [Tooltip("If true, the GameObject is SetActive(false) until the item’s animation begins, then SetActive(true).")]
-        public bool deactivateUntilStage = true;
-
-        [Tooltip("Extra delay applied on top of stage timing for this specific item.")]
-        public float extraDelay = 0f;
-
-        [Header("Preset Tunables")]
-        [Tooltip("Only for SlideFromBottom/Top/Left/Right; in pixels.")]
-        public float slideDistance = 200f;
-
-        [Tooltip("Only for ScaleIn; starting scale factor.")]
-        public float scaleFrom = 0.85f;
-
-        [Tooltip("If target has a CanvasGroup, enable raycasts at the end.")]
-        public bool enableRaycastsOnComplete = true;
-    }
-
-    public enum Preset
-    {
-        None,                 // Just enable (no tween). Useful for instant reveals.
-        FadeInCanvasGroup,    // Requires/auto-adds CanvasGroup
-        SlideFromBottom,      // Uses RectTransform (anchoredPosition)
-        SlideFromTop,
-        SlideFromLeft,
-        SlideFromRight,
-        ScaleIn               // localScale tween
+        group = GetComponent<CanvasGroup>();
     }
 
     void Awake()
     {
-        if (prepareTargetsHiddenOnAwake)
-            PrepareAllTargetsHidden();
-    }
+        rt = GetComponent<RectTransform>();
+        if (!group) group = GetComponent<CanvasGroup>();
+        if (!group) group = gameObject.AddComponent<CanvasGroup>();
 
-    /// <summary>Prime everything to a hidden/not-interactive state so we can reveal by stage.</summary>
-    public void PrepareAllTargetsHidden()
-    {
-        foreach (var s in stages)
+        homePos = rt.anchoredPosition;
+        rt.anchoredPosition = homePos + startOffset;
+        if (alsoScale) transform.localScale = Vector3.one * scaleRange.x;
+        group.alpha = 0f;
+
+        if (staggerChildren && (childGraphics == null || childGraphics.Count == 0))
         {
-            foreach (var it in s.items)
-            {
-                if (!it.target) continue;
-
-                if (it.deactivateUntilStage)
-                    it.target.SetActive(false);
-
-                // Make invisible without changing active state (so layout stays stable if needed)
-                switch (it.preset)
-                {
-                    case Preset.FadeInCanvasGroup:
-                        {
-                            var cg = GetOrAddCanvasGroup(it.target);
-                            cg.alpha = 0f;
-                            cg.interactable = false;
-                            cg.blocksRaycasts = false;
-                            break;
-                        }
-                    case Preset.SlideFromBottom:
-                    case Preset.SlideFromTop:
-                    case Preset.SlideFromLeft:
-                    case Preset.SlideFromRight:
-                        {
-                            var rt = it.target.GetComponent<RectTransform>();
-                            if (rt)
-                            {
-                                rt.anchoredPosition = GetSlideStart(rt, it);
-                                SetAlphaIfCanvasGroup(it.target, 1f); // visible while offscreen
-                            }
-                            break;
-                        }
-                    case Preset.ScaleIn:
-                        {
-                            it.target.transform.localScale = Vector3.one * Mathf.Max(0.0001f, it.scaleFrom);
-                            SetAlphaIfCanvasGroup(it.target, 1f);
-                            break;
-                        }
-                    case Preset.None:
-                    default:
-                        {
-                            SetAlphaIfCanvasGroup(it.target, 0f);
-                            break;
-                        }
-                }
-            }
+            childGraphics = new List<Graphic>(GetComponentsInChildren<Graphic>(true));
+        }
+        if (staggerChildren)
+        {
+            foreach (var g in childGraphics) if (g) SetGraphicAlpha(g, 0f);
         }
     }
 
-    [ContextMenu("Play")]
     public void Play()
     {
-        if (!_isPlaying) StartCoroutine(Co_Play());
+        StopAllCoroutines();
+        StartCoroutine(Co_Play());
     }
 
-    public IEnumerator Co_Play()
-    {
-        _isPlaying = true;
-
-        // One frame to ensure layout is settled before measuring RectTransforms
-        yield return null;
-        Canvas.ForceUpdateCanvases();
-
-        float timelineStart = Time.unscaledTime;
-        float lastStageEnd = timelineStart;
-
-        for (int si = 0; si < stages.Count; si++)
-        {
-            var stage = stages[si];
-
-            // Compute when this stage should start
-            float baseStart =
-                (stage.stageStartMode == StartMode.AfterPreviousFinishes ? lastStageEnd : timelineStart);
-            float stageStartAt = baseStart + stage.startDelay;
-
-            float now = Time.unscaledTime;
-            if (stageStartAt > now)
-                yield return new WaitForSecondsRealtime(stageStartAt - now);
-
-            if (logProgress) Debug.Log($"[EntryAnimator] BEGIN Stage {si}: '{stage.name}'");
-
-            if (stage.playItemsInParallel)
-            {
-                // Parallel with optional per-item offset (stagger)
-                List<Coroutine> running = new List<Coroutine>();
-                for (int i = 0; i < stage.items.Count; i++)
-                {
-                    var it = stage.items[i];
-                    if (it.target == null) continue;
-
-                    float delay = i * Mathf.Max(0f, stage.perItemOffset) + Mathf.Max(0f, it.extraDelay);
-                    running.Add(StartCoroutine(Co_PlayItemDelayed(it, delay)));
-                }
-                // Wait for all
-                foreach (var c in running) if (c != null) yield return c;
-            }
-            else
-            {
-                // Sequential
-                for (int i = 0; i < stage.items.Count; i++)
-                {
-                    var it = stage.items[i];
-                    if (it.target == null) continue;
-
-                    float delay = Mathf.Max(0f, (i == 0 ? 0f : stage.perItemOffset)) + Mathf.Max(0f, it.extraDelay);
-                    yield return Co_PlayItemDelayed(it, delay);
-                }
-            }
-
-            lastStageEnd = Time.unscaledTime;
-            if (logProgress) Debug.Log($"[EntryAnimator] END Stage {si}: '{stage.name}'");
-        }
-
-        _isPlaying = false;
-    }
-
-    IEnumerator Co_PlayItemDelayed(Item it, float delay)
+    IEnumerator Co_Play()
     {
         if (delay > 0f) yield return new WaitForSecondsRealtime(delay);
 
-        if (it.deactivateUntilStage) it.target.SetActive(true);
-
-        float duration = it.durationOverride > 0f ? it.durationOverride : defaultDuration;
-        var ease = (it.easeOverride != null && it.easeOverride.keys != null && it.easeOverride.keys.Length > 0)
-            ? it.easeOverride
-            : defaultEase;
-
-        switch (it.preset)
-        {
-            case Preset.FadeInCanvasGroup:
-                yield return Co_FadeIn(it.target, duration, ease, it.enableRaycastsOnComplete);
-                break;
-
-            case Preset.SlideFromBottom:
-            case Preset.SlideFromTop:
-            case Preset.SlideFromLeft:
-            case Preset.SlideFromRight:
-                yield return Co_SlideIn(it, duration, ease);
-                break;
-
-            case Preset.ScaleIn:
-                yield return Co_ScaleIn(it, duration, ease);
-                break;
-
-            case Preset.None:
-            default:
-                // Instant enable + alpha 1 if CanvasGroup present
-                SetAlphaIfCanvasGroup(it.target, 1f, it.enableRaycastsOnComplete);
-                break;
-        }
-    }
-
-    IEnumerator Co_FadeIn(GameObject go, float duration, AnimationCurve ease, bool enableRaycasts)
-    {
-        var cg = GetOrAddCanvasGroup(go);
-        cg.interactable = false;
-        cg.blocksRaycasts = false;
-
         float t = 0f;
-        float start = cg.alpha;
+        Vector2 start = homePos + startOffset;
+        Vector2 end = homePos;
+        float startScale = alsoScale ? scaleRange.x : 1f;
+        float endScale = 1f;
+
+        if (staggerChildren && childGraphics != null && childGraphics.Count > 0)
+        {
+            StartCoroutine(Co_StaggerChildren());
+        }
+
         while (t < duration)
         {
             t += Time.unscaledDeltaTime;
-            float p = Mathf.Clamp01(t / Mathf.Max(0.0001f, duration));
-            cg.alpha = Mathf.LerpUnclamped(start, 1f, ease.Evaluate(p));
+            float p = ease.Evaluate(Mathf.Clamp01(t / duration));
+
+            rt.anchoredPosition = Vector2.LerpUnclamped(start, end, p);
+            group.alpha = p;
+            if (alsoScale) transform.localScale = Vector3.one * Mathf.LerpUnclamped(startScale, endScale, p);
+
             yield return null;
         }
-        cg.alpha = 1f;
-        if (enableRaycasts)
-        {
-            cg.interactable = true;
-            cg.blocksRaycasts = true;
-        }
-    }
 
-    IEnumerator Co_SlideIn(Item it, float duration, AnimationCurve ease)
-    {
-        var rt = it.target.GetComponent<RectTransform>();
-        if (!rt)
-        {
-            // Fallback to simple fade if no RectTransform
-            yield return Co_FadeIn(it.target, duration, ease, it.enableRaycastsOnComplete);
-            yield break;
-        }
-
-        Vector2 end = rt.anchoredPosition;
-        Vector2 start = GetSlideStart(rt, it);
-
-        // Ensure at start and visible
-        rt.anchoredPosition = start;
-        SetAlphaIfCanvasGroup(it.target, 1f);
-
-        float t = 0f;
-        while (t < duration)
-        {
-            t += Time.unscaledDeltaTime;
-            float p = Mathf.Clamp01(t / Mathf.Max(0.0001f, duration));
-            rt.anchoredPosition = Vector2.LerpUnclamped(start, end, ease.Evaluate(p));
-            yield return null;
-        }
         rt.anchoredPosition = end;
+        group.alpha = 1f;
+        if (alsoScale) transform.localScale = Vector3.one;
+        if (manageInput) { group.interactable = true; group.blocksRaycasts = true; }
+    }
 
-        var cg = it.target.GetComponent<CanvasGroup>();
-        if (cg && it.enableRaycastsOnComplete)
+    IEnumerator Co_StaggerChildren()
+    {
+        for (int i = 0; i < childGraphics.Count; i++)
         {
-            cg.interactable = true;
-            cg.blocksRaycasts = true;
+            var g = childGraphics[i];
+            if (g) StartCoroutine(Co_FadeGraphic(g, 0f, 1f, childFadeTime));
+            yield return new WaitForSecondsRealtime(childStaggerStep);
         }
     }
 
-    IEnumerator Co_ScaleIn(Item it, float duration, AnimationCurve ease)
+    IEnumerator Co_FadeGraphic(Graphic g, float a0, float a1, float d)
     {
-        var tr = it.target.transform;
-        Vector3 end = Vector3.one;
-        Vector3 start = Vector3.one * Mathf.Max(0.0001f, it.scaleFrom);
-
-        tr.localScale = start;
-
         float t = 0f;
-        while (t < duration)
+        while (t < d)
         {
             t += Time.unscaledDeltaTime;
-            float p = Mathf.Clamp01(t / Mathf.Max(0.0001f, duration));
-            tr.localScale = Vector3.LerpUnclamped(start, end, ease.Evaluate(p));
+            float p = Mathf.Clamp01(t / d);
+            SetGraphicAlpha(g, Mathf.LerpUnclamped(a0, a1, p));
             yield return null;
         }
-        tr.localScale = end;
-
-        var cg = it.target.GetComponent<CanvasGroup>();
-        if (cg && it.enableRaycastsOnComplete)
-        {
-            cg.interactable = true;
-            cg.blocksRaycasts = true;
-        }
+        SetGraphicAlpha(g, a1);
     }
 
-    // Helpers
-    static CanvasGroup GetOrAddCanvasGroup(GameObject go)
+    static void SetGraphicAlpha(Graphic g, float a)
     {
-        var cg = go.GetComponent<CanvasGroup>();
-        if (!cg) cg = go.AddComponent<CanvasGroup>();
-        return cg;
+        if (!g) return;
+        var c = g.color; c.a = a; g.color = c;
+
+        var tmp = g as TextMeshProUGUI;
+        if (tmp) tmp.alpha = a;
     }
 
-    static void SetAlphaIfCanvasGroup(GameObject go, float a, bool enableRaycasts = false)
+    void PrepareHidden()
     {
-        var cg = go.GetComponent<CanvasGroup>();
-        if (cg)
-        {
-            cg.alpha = a;
-            if (enableRaycasts && a >= 1f)
-            {
-                cg.interactable = true;
-                cg.blocksRaycasts = true;
-            }
-        }
-    }
-
-    static Vector2 GetSlideStart(RectTransform rt, Item it)
-    {
-        float d = it.slideDistance <= 0f ? 200f : it.slideDistance;
-        switch (it.preset)
-        {
-            case Preset.SlideFromBottom: return rt.anchoredPosition + new Vector2(0f, -d);
-            case Preset.SlideFromTop: return rt.anchoredPosition + new Vector2(0f, d);
-            case Preset.SlideFromLeft: return rt.anchoredPosition + new Vector2(-d, 0f);
-            case Preset.SlideFromRight: return rt.anchoredPosition + new Vector2(d, 0f);
-        }
-        return rt.anchoredPosition;
+        if (!group) group = GetComponent<CanvasGroup>();
+        if (!rt) rt = GetComponent<RectTransform>();
+        homePos = rt.anchoredPosition;
+        rt.anchoredPosition = homePos + startOffset;
+        group.alpha = 0f;
+        if (alsoScale) transform.localScale = Vector3.one * scaleRange.x;
+        if (manageInput) { group.interactable = false; group.blocksRaycasts = false; }
+        _prepared = true;
     }
 }
