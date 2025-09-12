@@ -4,10 +4,10 @@ using System.Linq;
 using Mirror;
 using UnityEngine;
 
-public class CoinGridSpawner : NetworkBehaviour
+public class CoinGridSpawner : MonoBehaviour
 {
     [Header("Setup")]
-    [Tooltip("Prefab with NetworkIdentity, CoinMakerUI, DraggableCoin, CoinDragSync on the root")]
+    [Tooltip("Prefab with CoinMakerUI on the root")]
     public GameObject coinPrefab;
 
     [Tooltip("The GridLayoutGroup root (or any parent whose children are the slots)")]
@@ -20,35 +20,48 @@ public class CoinGridSpawner : NetworkBehaviour
     public bool clearExistingCoins = true;
 
     [Header("Timing")]
-    [Tooltip("If true, server spawns coins in OnStartServer; clients only apply colors.")]
-    public bool spawnOnStartServer = true;
+    [Tooltip("Call SpawnNow() automatically when this object enables")]
+    public bool spawnOnEnable = false;
 
     readonly List<Transform> _slots = new List<Transform>();
+    readonly List<CoinPlayerBinding> _spawned = new List<CoinPlayerBinding>();
 
-    public override void OnStartServer()
+    void OnEnable()
     {
-        base.OnStartServer();
-        if (spawnOnStartServer)
-            Server_SpawnAll();
+        if (spawnOnEnable)
+            StartCoroutine(WaitForRegistryThenSpawn());
+        StartCoroutine(HookRegistryWhenReady());
     }
 
-    public override void OnStartClient()
+    IEnumerator WaitForRegistryThenSpawn()
     {
-        base.OnStartClient();
+        float timeout = 3f;
+        ColorLockRegistry reg = null;
+        while (timeout > 0f && (reg = ColorLockRegistry.GetOrFind()) == null)
+        {
+            timeout -= Time.unscaledDeltaTime;
+            yield return null;
+        }
 
-        StartCoroutine(Client_WaitAndApplyColors());
-        StartCoroutine(Client_HookRegistry());
+        if (reg != null) SpawnNow();
+        else Debug.LogWarning("[CoinGridSpawner] Timed out waiting for ColorLockRegistry.");
+    }
+
+
+    IEnumerator HookRegistryWhenReady()
+    {
+        ColorLockRegistry reg = null;
+        while ((reg = ColorLockRegistry.GetOrFind()) == null) yield return null;
+        reg.OnRegistryChanged += RefreshAllColors;
     }
 
     void OnDisable()
     {
-        if (!isClient) return;
         var reg = ColorLockRegistry.GetOrFind();
-        if (reg) reg.OnRegistryChanged -= Client_RefreshAllColors;
+        if (reg) reg.OnRegistryChanged -= RefreshAllColors;
     }
 
-    [Server]
-    public void Server_SpawnAll()
+    public void SpawnNow()
     {
         if (!coinPrefab)
         {
@@ -63,10 +76,10 @@ public class CoinGridSpawner : NetworkBehaviour
 
         BuildSlotList();
 
-        var reg = ColorLockRegistry.Instance;
+        var reg = ColorLockRegistry.GetOrFind();
         if (!reg)
         {
-            Debug.LogWarning("[CoinGridSpawner] No ColorLockRegistry on server.");
+            Debug.LogWarning("[CoinGridSpawner] No ColorLockRegistry in scene.");
             return;
         }
 
@@ -81,38 +94,34 @@ public class CoinGridSpawner : NetworkBehaviour
             {
                 var slot = _slots[i];
                 for (int c = slot.childCount - 1; c >= 0; c--)
-                {
-                    var child = slot.GetChild(c).gameObject;
-                    var ni = child.GetComponent<NetworkIdentity>();
-                    if (ni && ni.isServer) NetworkServer.Destroy(child);
-                    else Destroy(child);
-                }
+                    Destroy(slot.GetChild(c).gameObject);
             }
         }
+
+        _spawned.Clear();
 
         for (int i = 0; i < need; i++)
         {
             int playerIndex = i / 2;
             var entry = entries[playerIndex];
-            uint ownerNetId = entry.Key;
             var slot = _slots[i];
-
-            if (!NetworkServer.spawned.TryGetValue(ownerNetId, out var ownerNI) || ownerNI == null)
-            {
-                Debug.LogWarning($"[CoinGridSpawner] Owner netId {ownerNetId} not found in spawned table.");
-                continue;
-            }
 
             var coin = Instantiate(coinPrefab, slot, false);
 
             var ui = coin.GetComponent<CoinMakerUI>();
             if (ui) ui.SetPlayerColor(entry.Value);
 
+            var bind = coin.GetComponent<CoinPlayerBinding>() ?? coin.AddComponent<CoinPlayerBinding>();
+            bind.ownerNetId = entry.Key;
+            bind.ui = ui;
+            bind.RefreshColor();
+            _spawned.Add(bind);
+
             var dr = coin.GetComponent<DraggableCoin>();
-            if (dr) dr.ownerNetId = ownerNetId;
+            if (dr) dr.ownerNetId = entry.Key;
 
             var sync = coin.GetComponent<CoinDragSync>();
-            if (sync) sync.ownerNetId = ownerNetId;
+            if (sync) sync.ownerNetId = entry.Key;
 
             var rt = coin.transform as RectTransform;
             if (rt)
@@ -124,65 +133,6 @@ public class CoinGridSpawner : NetworkBehaviour
                 rt.anchoredPosition = Vector2.zero;
                 rt.localScale = Vector3.one;
             }
-
-            NetworkServer.Spawn(coin, ownerNI.connectionToClient);
-        }
-    }
-
-    IEnumerator Client_WaitAndApplyColors()
-    {
-        ColorLockRegistry reg = null;
-        float timeout = 3f;
-        while (timeout > 0f && (reg = ColorLockRegistry.GetOrFind()) == null)
-        {
-            timeout -= Time.unscaledDeltaTime;
-            yield return null;
-        }
-        if (reg == null) yield break;
-
-        Client_RefreshAllColors();
-    }
-
-    IEnumerator Client_HookRegistry()
-    {
-        ColorLockRegistry reg = null;
-        while ((reg = ColorLockRegistry.GetOrFind()) == null) yield return null;
-        reg.OnRegistryChanged += Client_RefreshAllColors;
-        yield break;
-    }
-
-    void Client_RefreshAllColors()
-    {
-        var reg = ColorLockRegistry.GetOrFind();
-        if (!reg) return;
-
-        BuildSlotList();
-
-        for (int i = 0; i < _slots.Count; i++)
-        {
-            var slot = _slots[i];
-            for (int c = 0; c < slot.childCount; c++)
-            {
-                var go = slot.GetChild(c).gameObject;
-
-                uint owner = 0;
-                var dr = go.GetComponent<DraggableCoin>();
-                if (dr) owner = dr.ownerNetId;
-
-                if (owner == 0)
-                {
-                    var bind = go.GetComponent<CoinPlayerBinding>();
-                    if (bind) owner = bind.ownerNetId;
-                }
-
-                if (owner == 0) continue;
-
-                if (reg.colorByOwner.TryGetValue(owner, out var color))
-                {
-                    var ui = go.GetComponent<CoinMakerUI>();
-                    if (ui) ui.SetPlayerColor(color);
-                }
-            }
         }
     }
 
@@ -190,16 +140,19 @@ public class CoinGridSpawner : NetworkBehaviour
     {
         _slots.Clear();
         if (!gridSlotsRoot) return;
+        for (int i = 0; i < gridSlotsRoot.childCount; i++)
+            _slots.Add(gridSlotsRoot.GetChild(i));
+    }
 
-        if (autoDiscoverSlots)
+    void RefreshAllColors()
+    {
+        for (int i = _spawned.Count - 1; i >= 0; i--)
         {
-            for (int i = 0; i < gridSlotsRoot.childCount; i++)
-                _slots.Add(gridSlotsRoot.GetChild(i));
+            var b = _spawned[i];
+            if (!b) { _spawned.RemoveAt(i); continue; }
+            b.RefreshColor();
         }
-        else
-        {
-            for (int i = 0; i < gridSlotsRoot.childCount; i++)
-                _slots.Add(gridSlotsRoot.GetChild(i));
-        }
+
+        SpawnNow();
     }
 }
