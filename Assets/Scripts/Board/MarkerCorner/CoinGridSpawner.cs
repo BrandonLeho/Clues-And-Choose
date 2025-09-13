@@ -110,9 +110,17 @@ public class CoinGridSpawner : MonoBehaviour
 
             if (NetworkServer.active)
             {
+                Debug.Log("aisudghosaihgioasdhgklsadg");
                 var ni = coin.GetComponent<NetworkIdentity>();
                 if (!ni) ni = coin.AddComponent<NetworkIdentity>();
-                NetworkServer.Spawn(coin);
+                if (NetworkServer.spawned.TryGetValue(entry.Key, out var ownerNI))
+                {
+                    NetworkServer.Spawn(coin, ownerNI.connectionToClient);
+                }
+                else
+                {
+                    NetworkServer.Spawn(coin);
+                }
             }
 
 
