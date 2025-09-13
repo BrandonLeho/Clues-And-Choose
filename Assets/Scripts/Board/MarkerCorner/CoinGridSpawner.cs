@@ -108,6 +108,14 @@ public class CoinGridSpawner : MonoBehaviour
 
             var coin = Instantiate(coinPrefab, slot, false);
 
+            if (NetworkServer.active)
+            {
+                var ni = coin.GetComponent<NetworkIdentity>();
+                if (!ni) ni = coin.AddComponent<NetworkIdentity>();
+                NetworkServer.Spawn(coin);
+            }
+
+
             var ui = coin.GetComponent<CoinMakerUI>();
             if (ui) ui.SetPlayerColor(entry.Value);
 
@@ -121,12 +129,7 @@ public class CoinGridSpawner : MonoBehaviour
             if (dr) dr.ownerNetId = entry.Key;
 
             var sync = coin.GetComponent<CoinDragSync>();
-            if (sync)
-            {
-                sync.ownerNetId = entry.Key;
-                sync.slotIndex = i;
-            }
-
+            if (sync) sync.ownerNetId = entry.Key;
 
             var rt = coin.transform as RectTransform;
             if (rt)
