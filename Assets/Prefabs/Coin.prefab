@@ -109,6 +109,9 @@ GameObject:
   - component: {fileID: 8020690437672755268}
   - component: {fileID: 9071779100074129548}
   - component: {fileID: 3611043173122093176}
+  - component: {fileID: 8262066772767799692}
+  - component: {fileID: 6382939680484325264}
+  - component: {fileID: 2715368749751026665}
   m_Layer: 5
   m_Name: Coin
   m_TagString: Untagged
@@ -218,6 +221,56 @@ MonoBehaviour:
   serverOnly: 0
   visibility: 0
   hasSpawned: 0
+--- !u!114 &8262066772767799692
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2807909767930187507}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0500969dbbb85ef46993bd70100d073a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerCoinDragRelay
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  coin0Pos: {x: 0, y: 0}
+  coin0Dragging: 0
+  coin1Pos: {x: 0, y: 0}
+  coin1Dragging: 0
+--- !u!114 &6382939680484325264
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2807909767930187507}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e5f98ce9bf065148a3841c14d712c1d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DraggableCoinUI
+  coinIndex: 0
+  dragLayer: {fileID: 0}
+  rootCanvas: {fileID: 0}
+  networkFps: 30
+--- !u!114 &2715368749751026665
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2807909767930187507}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8df094708eca84d458dcace9b622c46c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CoinNetBinder
+  coinIndex: 0
+  dragLayer: {fileID: 0}
+  rootCanvas: {fileID: 0}
 --- !u!1 &3619437409042461286
 GameObject:
   m_ObjectHideFlags: 0
