@@ -1,136 +1,160 @@
+using System.Text;
 using Mirror;
 using UnityEngine;
 using UnityEngine.UI;
 
-[RequireComponent(typeof(RectTransform))]
-[DisallowMultipleComponent]
 public class CoinDragSync : NetworkBehaviour
 {
+    [Header("UI Refs")]
+    [SerializeField] RectTransform coinRT;
+    [SerializeField] CanvasGroup coinCanvasGroup;
+
+    [Header("Shared Roots (must exist on all clients)")]
+    [Tooltip("Root used to resolve/encode Transform paths for parenting (eg. your root Canvas)")]
+    [SerializeField] Transform pathRoot;
+
+    [Tooltip("Where coins should temporarily live while being dragged (sits above the board)")]
+    [SerializeField] Transform dragLayer;
+
     [Header("Ownership")]
-    [Tooltip("NetId of the player who is allowed to drive this coin.")]
-    public uint ownerNetId;
+    [SyncVar] public uint ownerNetId; // set by spawner / DraggableCoin
 
-    [Header("Smoothing (non-owners)")]
-    [SerializeField] bool smoothRemoteMotion = true;
-    [SerializeField, Range(1f, 50f)] float smoothLerp = 18f;
-
-    [Header("Bandwidth")]
-    [Tooltip("Server → clients updates are unreliable to reduce drag latency.")]
-    public bool useUnreliableForDrags = true;
-
-    RectTransform _rt;
-    Vector2 _targetPos;     // where remotes should lerp to
-    bool _dragRemoteVisual; // for remote-only visual state
 
     void Awake()
     {
-        _rt = GetComponent<RectTransform>();
-    }
-
-    void Update()
-    {
-        // Non-owners receive target positions via RPCs and optionally smooth.
-        if (!isLocalPlayer && isClient)
+        if (!pathRoot)
         {
-            if (smoothRemoteMotion)
-            {
-                float k = 1f - Mathf.Exp(-smoothLerp * Time.unscaledDeltaTime);
-                _rt.anchoredPosition = Vector2.Lerp(_rt.anchoredPosition, _targetPos, k);
-            }
-            else
-            {
-                _rt.anchoredPosition = _targetPos;
-            }
+            var canvas = FindFirstObjectByType<Canvas>();
+            if (canvas) pathRoot = canvas.transform;
+        }
+
+        if (!dragLayer)
+        {
+            var layerObj = GameObject.FindWithTag("DragLayer");
+            if (layerObj) dragLayer = layerObj.transform;
         }
     }
 
-    // ---- Called by DraggableCoin (local owner only) ----
+
 
     public void OwnerBeginDrag()
     {
-        if (!isClient) return;
-        // We deliberately allow calling without authority to avoid warnings
-        // on scene objects; server validates the sender.
+        if (!NetworkClient.active) return;
         CmdBeginDrag();
     }
 
-    public void OwnerUpdateDrag(Vector2 anchoredLocalPos)
+    public void OwnerUpdateDrag(Vector2 anchoredPos)
     {
-        if (!isClient) return;
-        CmdUpdatePos(anchoredLocalPos);
+        if (!NetworkClient.active) return;
+        CmdUpdatePos(anchoredPos);
     }
 
-    public void OwnerEndDrag(Vector2 anchoredLocalPos)
+    public void OwnerEndDrag(Vector2 anchoredPos)
     {
-        if (!isClient) return;
-        CmdEndDrag(anchoredLocalPos);
+        if (!NetworkClient.active) return;
+
+        // Try to capture the final parent path, so all clients can reparent identically.
+        string parentPath = EncodePath(coinRT ? coinRT.parent : null);
+        CmdEndDrag(anchoredPos, parentPath);
     }
 
-    // ---- Server-side validation helper ----
-
-    bool IsSenderTheOwner(NetworkConnectionToClient sender)
-    {
-        if (sender == null || sender.identity == null) return false;
-        return ownerNetId != 0 && sender.identity.netId == ownerNetId;
-    }
-
-    // ---- Commands (server authoritative; no authority required, we validate) ----
-
+    // --- Commands: allow without authority, but validate sender is the owner ---
     [Command(requiresAuthority = false)]
     void CmdBeginDrag(NetworkConnectionToClient sender = null)
     {
-        if (!IsSenderTheOwner(sender)) return;
+        if (!IsValidSender(sender)) return;
         RpcBeginDrag();
     }
 
     [Command(requiresAuthority = false)]
-    void CmdUpdatePos(Vector2 anchoredLocalPos, NetworkConnectionToClient sender = null)
+    void CmdUpdatePos(Vector2 anchoredPos, NetworkConnectionToClient sender = null)
     {
-        if (!IsSenderTheOwner(sender)) return;
-
-        // Pick channel based on setting
-        if (useUnreliableForDrags)
-            RpcUpdatePos_Unreliable(anchoredLocalPos);
-        else
-            RpcUpdatePos(anchoredLocalPos);
+        if (!IsValidSender(sender)) return;
+        RpcUpdatePos(anchoredPos);
     }
 
     [Command(requiresAuthority = false)]
-    void CmdEndDrag(Vector2 anchoredLocalPos, NetworkConnectionToClient sender = null)
+    void CmdEndDrag(Vector2 anchoredPos, string parentPath, NetworkConnectionToClient sender = null)
     {
-        if (!IsSenderTheOwner(sender)) return;
-        RpcEndDrag(anchoredLocalPos);
+        if (!IsValidSender(sender)) return;
+        RpcEndDrag(anchoredPos, parentPath);
     }
 
-    // ---- Client RPCs (broadcast to everyone else; owner excluded where useful) ----
-
-    [ClientRpc(includeOwner = false)]
+    // --- RPCs ---
+    [ClientRpc]
     void RpcBeginDrag()
     {
-        _dragRemoteVisual = true;
+        // Owner is already handling visuals locally via DraggableCoin; skip for owner.
+        if (IsLocalOwner()) return;
+
+        if (coinCanvasGroup) coinCanvasGroup.blocksRaycasts = false;
+        if (coinRT && dragLayer) coinRT.SetParent(dragLayer, worldPositionStays: true);
     }
 
-    // Reliable version (optional)
-    [ClientRpc(includeOwner = false)]
-    void RpcUpdatePos(Vector2 anchoredLocalPos)
+    [ClientRpc]
+    void RpcUpdatePos(Vector2 anchoredPos)
     {
-        _targetPos = anchoredLocalPos;
-        if (!smoothRemoteMotion) _rt.anchoredPosition = anchoredLocalPos;
+        if (IsLocalOwner()) return; // local owner already drives it
+        if (coinRT) coinRT.anchoredPosition = anchoredPos;
     }
 
-    // Unreliable, lower latency while dragging
-    [ClientRpc(channel = Channels.Unreliable, includeOwner = false)]
-    void RpcUpdatePos_Unreliable(Vector2 anchoredLocalPos)
+    [ClientRpc]
+    void RpcEndDrag(Vector2 anchoredPos, string parentPath)
     {
-        _targetPos = anchoredLocalPos;
-        if (!smoothRemoteMotion) _rt.anchoredPosition = anchoredLocalPos;
+        if (IsLocalOwner()) return; // local owner already placed it
+
+        if (coinRT)
+        {
+            var targetParent = DecodePath(parentPath);
+            if (targetParent)
+                coinRT.SetParent(targetParent, worldPositionStays: false);
+
+            coinRT.anchoredPosition = anchoredPos;
+        }
+        if (coinCanvasGroup) coinCanvasGroup.blocksRaycasts = true;
     }
 
-    [ClientRpc(includeOwner = false)]
-    void RpcEndDrag(Vector2 anchoredLocalPos)
+    // --- Helpers ---
+    bool IsLocalOwner()
     {
-        _dragRemoteVisual = false;
-        _targetPos = anchoredLocalPos;
-        if (!smoothRemoteMotion) _rt.anchoredPosition = anchoredLocalPos;
+        var lp = NetworkClient.localPlayer;
+        return lp && ownerNetId != 0 && lp.netId == ownerNetId;
     }
+
+    bool IsValidSender(NetworkConnectionToClient sender)
+    {
+        if (ownerNetId == 0 || sender == null || sender.identity == null) return false;
+        return sender.identity.netId == ownerNetId;
+    }
+
+    string EncodePath(Transform t)
+    {
+        if (!t || !pathRoot) return string.Empty;
+        var sb = new StringBuilder();
+        var cur = t;
+        while (cur && cur != pathRoot)
+        {
+            sb.Insert(0, "/" + cur.name);
+            cur = cur.parent;
+        }
+        return sb.ToString(); // "/Board/Cells/Cell_12/Anchor"
+    }
+
+    Transform DecodePath(string path)
+    {
+        if (string.IsNullOrEmpty(path) || !pathRoot) return null;
+        // Use Transform.Find with a relative path
+        return pathRoot.Find(path.TrimStart('/'));
+    }
+
+#if UNITY_EDITOR
+    void Reset()
+    {
+        coinRT = GetComponent<RectTransform>();
+        coinCanvasGroup = GetComponent<CanvasGroup>();
+        // Try to guess a path root (nearest Canvas)
+        var canvas = GetComponentInParent<Canvas>();
+        if (canvas) pathRoot = canvas.transform;
+    }
+#endif
 }

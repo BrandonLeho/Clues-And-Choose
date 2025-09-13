@@ -63,30 +63,24 @@ public class CoinGridSpawner : MonoBehaviour
 
     public void SpawnNow()
     {
-        if (!coinPrefab)
-        {
-            Debug.LogWarning("[CoinGridSpawner] coinPrefab is not set.");
-            return;
-        }
-        if (!gridSlotsRoot)
-        {
-            Debug.LogWarning("[CoinGridSpawner] gridSlotsRoot is not set.");
-            return;
-        }
+        if (!coinPrefab || !gridSlotsRoot) { Debug.LogWarning("..."); return; }
 
         BuildSlotList();
 
         var reg = ColorLockRegistry.GetOrFind();
-        if (!reg)
-        {
-            Debug.LogWarning("[CoinGridSpawner] No ColorLockRegistry in scene.");
-            return;
-        }
+        if (!reg) { Debug.LogWarning("No ColorLockRegistry in scene."); return; }
 
-        var entries = reg.colorByOwner.ToArray();
+        var entries = reg.colorByOwner.ToArray(); // (ownerNetId -> Color)
         int playerCount = entries.Length;
         int need = Mathf.Min(_slots.Count, playerCount * 2);
         if (need == 0) return;
+
+        // IMPORTANT: only the server should create and spawn networked coins
+        if (!NetworkServer.active)
+        {
+            // Let the server do it; clients will get spawns automatically.
+            return;
+        }
 
         if (clearExistingCoins)
         {
@@ -104,43 +98,51 @@ public class CoinGridSpawner : MonoBehaviour
         {
             int playerIndex = i / 2;
             var entry = entries[playerIndex];
+            uint ownerId = entry.Key;
             var slot = _slots[i];
 
+            // Create coin under the intended slot (same hierarchy on server);
+            // we'll also send a path in RPCs when we need to reparent.
             var coin = Instantiate(coinPrefab, slot, false);
 
-            if (NetworkServer.active)
-            {
-                Debug.Log("aisudghosaihgioasdhgklsadg");
-                var ni = coin.GetComponent<NetworkIdentity>();
-                if (!ni) ni = coin.AddComponent<NetworkIdentity>();
-                if (NetworkServer.spawned.TryGetValue(entry.Key, out var ownerNI))
-                {
-                    NetworkServer.Spawn(coin, ownerNI.connectionToClient);
-                }
-                else
-                {
-                    NetworkServer.Spawn(coin);
-                }
-            }
-
-
+            // Style/color
             var ui = coin.GetComponent<CoinMakerUI>();
             if (ui) ui.SetPlayerColor(entry.Value);
 
+            // Bind owner id for local logic
             var bind = coin.GetComponent<CoinPlayerBinding>() ?? coin.AddComponent<CoinPlayerBinding>();
-            bind.ownerNetId = entry.Key;
+            bind.ownerNetId = ownerId;
             bind.ui = ui;
             bind.RefreshColor();
             _spawned.Add(bind);
 
+            // Draggable knows the owner
             var dr = coin.GetComponent<DraggableCoin>();
-            if (dr) dr.ownerNetId = entry.Key;
+            if (dr) dr.ownerNetId = ownerId;
 
+            // NEW: network sync component also needs owner id
             var sync = coin.GetComponent<CoinDragSync>();
-            if (sync) sync.ownerNetId = entry.Key;
+            if (sync) sync.ownerNetId = ownerId;
 
-            var rt = coin.transform as RectTransform;
-            if (rt)
+            // Spawn on network & grant client authority to the owner
+            if (coin.TryGetComponent<NetworkIdentity>(out var ni))
+            {
+                // Find the owner's connection to grant authority
+                if (NetworkServer.spawned.TryGetValue(ownerId, out var ownerIdentity) &&
+                    ownerIdentity != null &&
+                    ownerIdentity.connectionToClient != null)
+                {
+                    NetworkServer.Spawn(coin, ownerIdentity.connectionToClient);
+                }
+                else
+                {
+                    // Fallback: spawn without authority; the Commands still work because CoinDragSync validates sender.
+                    NetworkServer.Spawn(coin);
+                }
+            }
+
+            // Ensure uniform anchoring
+            if (coin.transform is RectTransform rt)
             {
                 rt.anchorMin = Vector2.zero;
                 rt.anchorMax = Vector2.one;
