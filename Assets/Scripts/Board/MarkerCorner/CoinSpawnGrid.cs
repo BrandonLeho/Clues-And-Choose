@@ -21,7 +21,6 @@ public class CoinSpawnGrid : MonoBehaviour
     [Tooltip("Find ColorChoosingPhaseController and run SpawnNow when onPhaseEnded fires.")]
     public bool spawnOnChoosingPhaseEnd = true;
 
-    // internal cache
     readonly List<Transform> _slots = new List<Transform>();
     bool _hooked;
 
@@ -29,7 +28,6 @@ public class CoinSpawnGrid : MonoBehaviour
     {
         if (!slotsRoot)
         {
-            // If not set, try the GridLayoutGroup's transform
             var grid = GetComponentInChildren<GridLayoutGroup>(true);
             if (grid) slotsRoot = grid.transform;
         }
@@ -46,7 +44,6 @@ public class CoinSpawnGrid : MonoBehaviour
     {
         if (!spawnOnChoosingPhaseEnd) return;
 
-        // Find the phase controller and add a one-time listener to its onPhaseEnded event
         var phase = FindFirstObjectByType<ColorChoosingPhaseController>();
         if (phase && !_hooked)
         {
@@ -65,8 +62,6 @@ public class CoinSpawnGrid : MonoBehaviour
             return;
         }
 
-        // Who is playing? Use the owners present in colorByOwner (each has a chosen color).
-        // Sort by the swatch index for a stable order (top-left to bottom-right feel).
         var owners = registry.colorByOwner.Keys.ToList();
         owners.Sort((a, b) =>
         {
@@ -79,7 +74,6 @@ public class CoinSpawnGrid : MonoBehaviour
         if (_slots.Count < needed)
         {
             Debug.LogWarning($"[CoinSpawnGrid] Not enough slots: have {_slots.Count}, need {needed}.");
-            // We’ll still fill as many as possible.
         }
 
         if (clearBeforeSpawn) ClearAllCoinsInSlots();
@@ -110,10 +104,8 @@ public class CoinSpawnGrid : MonoBehaviour
     {
         if (!coinPrefab || !slot) return;
 
-        // Instantiate as child of the slot, and normalize RectTransform so it doesn't appear huge.
         var go = Instantiate(coinPrefab, slot, false);
 
-        // Ensure UI transform sane defaults
         var rt = go.transform as RectTransform;
         if (rt)
         {
@@ -122,15 +114,13 @@ public class CoinSpawnGrid : MonoBehaviour
             rt.pivot = new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = Vector2.zero;
             rt.localScale = Vector3.one;
-            rt.sizeDelta = Vector2.zero; // let layout/auto-size handle it
+            rt.sizeDelta = Vector2.zero;
         }
 
-        // Bind owner → color via your CoinPlayerBinding
         var binding = go.GetComponent<CoinPlayerBinding>();
         if (!binding) binding = go.AddComponent<CoinPlayerBinding>();
         binding.ownerNetId = ownerNetId;
 
-        // If color already present, apply it immediately; otherwise the binding can refresh later.
         if (registry.colorByOwner.TryGetValue(ownerNetId, out var c))
         {
             if (!binding.ui) binding.ui = go.GetComponent<CoinMakerUI>();
@@ -138,7 +128,6 @@ public class CoinSpawnGrid : MonoBehaviour
         }
         else
         {
-            // Fallback: ask binding to refresh when the registry updates
             binding.RefreshColor();
         }
     }

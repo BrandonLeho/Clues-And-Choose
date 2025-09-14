@@ -11,8 +11,8 @@ public class NeonRingPulse : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     [Tooltip("Also pulse when hovered.")]
     public bool pulseOnHover = true;
     [Range(0.5f, 10f)] public float baseIntensity = 2.2f;
-    [Range(0f, 1.0f)] public float pulseAmplitude = 0.25f; // 0.05–0.35 is subtle
-    [Range(0.05f, 5f)] public float pulseSpeed = 1.3f;     // Hz-ish
+    [Range(0f, 1.0f)] public float pulseAmplitude = 0.25f;
+    [Range(0.05f, 5f)] public float pulseSpeed = 1.3f;
     public bool useUnscaledTime = true;
     public bool randomizePhase = true;
 
@@ -23,7 +23,6 @@ public class NeonRingPulse : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
     void Awake()
     {
         var img = GetComponent<Image>();
-        // Use a unique instance so we don't modify the shared material.
         _mat = Instantiate(img.material);
         img.material = _mat;
 
