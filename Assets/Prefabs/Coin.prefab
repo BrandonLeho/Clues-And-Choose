@@ -153,7 +153,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c9be690603025d4498f1b0ee7ce12aa4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CoinDragHandler
-  dragMode: 0
+  dragMode: 1
   worldCamera: {fileID: 0}
   followSpeed: 20
   dragZ: 1000
