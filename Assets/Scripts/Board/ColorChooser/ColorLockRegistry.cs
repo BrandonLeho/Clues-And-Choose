@@ -18,11 +18,7 @@ public class ColorLockRegistry : NetworkBehaviour
     public static ColorLockRegistry GetOrFind()
     {
         if (Instance) return Instance;
-#if UNITY_2023_1_OR_NEWER
         Instance = FindFirstObjectByType<ColorLockRegistry>(FindObjectsInactive.Include);
-#else
-        Instance = Object.FindObjectOfType<ColorLockRegistry>(true);
-#endif
         return Instance;
     }
 

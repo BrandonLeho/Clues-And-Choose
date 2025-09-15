@@ -14,11 +14,7 @@ public class ColorPickerMirrorBinder : NetworkBehaviour
 
         if (!picker)
         {
-#if UNITY_2023_1_OR_NEWER
-            picker = Object.FindFirstObjectByType<SelectionController>(FindObjectsInactive.Include);
-#else
-            picker = Object.FindObjectOfType<SelectionController>(true);
-#endif
+            picker = FindFirstObjectByType<SelectionController>(FindObjectsInactive.Include);
         }
 
         _registry = ColorLockRegistry.Instance;

@@ -34,7 +34,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 7.49, y: -1.16, z: 0}
-  m_LocalScale: {x: 0.15, y: 0.15, z: 0.15}
+  m_LocalScale: {x: 15, y: 15, z: 15}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
@@ -83,9 +83,9 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: -1068248487
-  m_SortingLayer: 1
-  m_SortingOrder: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 1000
   m_Sprite: {fileID: 7482667652216324306, guid: 434775e67a94b784e9c43dbb3244822c, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -153,12 +153,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CoinDragHandler
   dragMode: 0
   worldCamera: {fileID: 0}
-  followSpeed: 20
-  dragZ: 0
+  followSpeed: 30
+  dragZ: 1000
   preserveGrabOffset: 1
   targetRenderer: {fileID: 5500346098180898074}
   sortingOrderBoost: 50
   disableColliderWhileDragging: 0
+  pickupScaleMultiplier: 1.4
+  scaleLerpSpeed: 10
   onPickUp:
     m_PersistentCalls:
       m_Calls: []
