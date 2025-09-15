@@ -46,7 +46,6 @@ public class NeonRingPulse : MonoBehaviour, IPointerEnterHandler, IPointerExitHa
         bool active = pulseAlways || (pulseOnHover && _hover);
         float t = useUnscaledTime ? Time.unscaledTime : Time.time;
 
-        // 1 + A*sin gives a gentle up/down around baseIntensity.
         float k = active ? (1f + pulseAmplitude * Mathf.Sin(t * Mathf.PI * 2f * pulseSpeed + _phase)) : 1f;
 
         _mat.SetFloat("_Intensity", baseIntensity * k);

@@ -62,6 +62,7 @@
     <Compile Include="Assets\Scripts\Board\ColorBoard\ColorBoard2D.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorLockRegistry.cs" />
     <Compile Include="Assets\Scripts\Background\UVScroller.cs" />
+    <Compile Include="Assets\Scripts\Board\MarkerCorner\UIAttachToParent.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandler.cs" />
     <Compile Include="Assets\Scripts\Steamworks.NET\SteamManager.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ConfirmButtonNeonHover.cs" />
@@ -77,7 +78,6 @@
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardGenerator.cs" />
     <Compile Include="Assets\Scripts\Board\MarkerCorner\CoinPlayerBinding.cs" />
     <Compile Include="Assets\Scripts\Board\MarkerCorner\NeonRingPulse.cs" />
-    <Compile Include="Assets\Scripts\Board\MarkerCorner\CoinSync.cs" />
     <Compile Include="Assets\Scripts\Controller\DraggableItem.cs" />
     <Compile Include="Assets\Scripts\UI\LobbyUIManager.cs" />
     <Compile Include="Assets\Scripts\Steam\SteamLobby.cs" />
@@ -88,6 +88,7 @@
     <Compile Include="Assets\Scripts\Board\ColorBoard\GameGroupEntryAnimator.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandlerGame.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerRow.cs" />
+    <Compile Include="Assets\Scripts\Board\MarkerCorner\UICoinSpawner.cs" />
     <Compile Include="Assets\Scripts\Board\MarkerCorner\CoinSpawnGrid.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardAttachToBoard.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\SwatchHoverNeon.cs" />

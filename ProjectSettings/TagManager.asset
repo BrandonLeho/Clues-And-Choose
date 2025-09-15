@@ -5,6 +5,7 @@ TagManager:
   serializedVersion: 3
   tags:
   - DragLayer
+  - MainCanvas
   layers:
   - Default
   - TransparentFX

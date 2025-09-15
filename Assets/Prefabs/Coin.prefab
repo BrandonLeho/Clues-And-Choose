@@ -58,7 +58,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 2100000, guid: c546bbaf4d0d65b4eb3a3451efbe527c, type: 2}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -108,9 +108,9 @@ GameObject:
   - component: {fileID: 7287471675750329325}
   - component: {fileID: 8020690437672755268}
   - component: {fileID: 9071779100074129548}
-  - component: {fileID: 2506660686283540108}
   - component: {fileID: 3611043173122093176}
   - component: {fileID: 8301225727770601466}
+  - component: {fileID: 3409062276667786884}
   m_Layer: 5
   m_Name: Coin
   m_TagString: Untagged
@@ -203,25 +203,6 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!114 &2506660686283540108
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2807909767930187507}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 13c98fdf7888c4c4c8ffb776850a6c02, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CoinSync
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0
-  dragTarget: {fileID: 7325940549336810145}
-  worldSpaceCanvas: {fileID: 0}
-  preferredCanvasTag: MainCanvas
-  syncInterval: 0.02
 --- !u!114 &3611043173122093176
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -253,7 +234,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Mirror.Components::Mirror.NetworkTransformReliable
   syncDirection: 1
   syncMode: 0
-  syncInterval: 0
+  syncInterval: 0.05
   target: {fileID: 7325940549336810145}
   syncPosition: 1
   syncRotation: 1
@@ -273,6 +254,22 @@ MonoBehaviour:
   rotationSensitivity: 0.01
   positionPrecision: 0.01
   scalePrecision: 0.01
+--- !u!114 &3409062276667786884
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2807909767930187507}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95997465dfd617d42adfc19947d947ee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UiAttachToParent
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  parentObjectName: 
 --- !u!1 &3619437409042461286
 GameObject:
   m_ObjectHideFlags: 0
