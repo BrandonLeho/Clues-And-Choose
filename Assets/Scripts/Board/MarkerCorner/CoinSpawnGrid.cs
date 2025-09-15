@@ -22,9 +22,6 @@ public class CoinSpawnGrid : MonoBehaviour
     public bool spawnOnChoosingPhaseEnd = true;
 
     readonly List<Transform> _slots = new List<Transform>();
-    public int SlotCount => _slots.Count;
-    public Transform GetSlot(int index) => _slots[index];
-
     bool _hooked;
 
     void Awake()

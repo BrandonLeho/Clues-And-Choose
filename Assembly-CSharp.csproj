@@ -64,13 +64,16 @@
     <Compile Include="Assets\Scripts\Background\UVScroller.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandler.cs" />
     <Compile Include="Assets\Scripts\Steamworks.NET\SteamManager.cs" />
+    <Compile Include="Assets\Scripts\Board\MarkerCorner\CoinMoveTest.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ConfirmButtonNeonHover.cs" />
     <Compile Include="Assets\Scripts\Controller\CursorController\CursorControllerModule.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\ScoreboardGridPainter.cs" />
+    <Compile Include="Assets\Scripts\Board\MarkerCorner\CoinSpawnGridNet.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardLabels.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\PaletteGrid.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerListBinder.cs" />
     <Compile Include="Assets\Scripts\GameNetworking\NetworkChat.cs" />
+    <Compile Include="Assets\Scripts\Board\MarkerCorner\CoinSlotAttach.cs" />
     <Compile Include="Assets\Scripts\Board\GameChat\ChatUI.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\PlayerNameSync.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorChoosingPhaseController.cs" />
@@ -94,7 +97,6 @@
     <Compile Include="Assets\Scripts\Board\ColorBoard\BoardLabels.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\GameScenePlayerList.cs" />
     <Compile Include="Assets\Scripts\UI\PanelSwapper.cs" />
-    <Compile Include="Assets\Scripts\Board\MarkerCorner\NetCoinSpawner.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\ColorGridAnimator.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ButtonSwapFlash.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\GridCellHoverWithCoords.cs" />

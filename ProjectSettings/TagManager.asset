@@ -6,6 +6,7 @@ TagManager:
   tags:
   - DragLayer
   - MainCanvas
+  - CoinSlotsRoot
   layers:
   - Default
   - TransparentFX

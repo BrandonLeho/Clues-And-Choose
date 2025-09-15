@@ -110,6 +110,8 @@ GameObject:
   - component: {fileID: 9071779100074129548}
   - component: {fileID: 3611043173122093176}
   - component: {fileID: 8301225727770601466}
+  - component: {fileID: 6652768284308562438}
+  - component: {fileID: 4023494308410385071}
   m_Layer: 5
   m_Name: Coin
   m_TagString: Untagged
@@ -253,6 +255,39 @@ MonoBehaviour:
   rotationSensitivity: 0.01
   positionPrecision: 0.01
   scalePrecision: 0.01
+--- !u!114 &6652768284308562438
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2807909767930187507}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fdcd80d0004736f418e6419e41bbecc9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CoinAuthorityMoveTest
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  speed: 5
+--- !u!114 &4023494308410385071
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2807909767930187507}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: edf0969cbe7735449af75cce7e833c4a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CoinSlotAttach
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  slotIndex: 0
+  slotsRootTag: CoinSlotsRoot
 --- !u!1 &3619437409042461286
 GameObject:
   m_ObjectHideFlags: 0
