@@ -62,7 +62,6 @@
     <Compile Include="Assets\Scripts\Board\ColorBoard\ColorBoard2D.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorLockRegistry.cs" />
     <Compile Include="Assets\Scripts\Background\UVScroller.cs" />
-    <Compile Include="Assets\Scripts\Board\MarkerCorner\UIAttachToParent.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandler.cs" />
     <Compile Include="Assets\Scripts\Steamworks.NET\SteamManager.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ConfirmButtonNeonHover.cs" />
@@ -95,6 +94,7 @@
     <Compile Include="Assets\Scripts\Board\ColorBoard\BoardLabels.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\GameScenePlayerList.cs" />
     <Compile Include="Assets\Scripts\UI\PanelSwapper.cs" />
+    <Compile Include="Assets\Scripts\Board\MarkerCorner\NetCoinSpawner.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\ColorGridAnimator.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ButtonSwapFlash.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\GridCellHoverWithCoords.cs" />
