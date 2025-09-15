@@ -10,27 +10,27 @@ public class CoinDragHandler : MonoBehaviour
     [Header("General")]
     public DragMode dragMode = DragMode.Hold;
     public Camera worldCamera;
-    [Tooltip("How quickly the coin follows the pointer (1 = instant).")]
     [Range(0.05f, 30f)] public float followSpeed = 20f;
-    [Tooltip("Keep the coin at this Z while dragging.")]
     public float dragZ = 0f;
-    [Tooltip("If true, the coin keeps the initial grab offset instead of snapping center to the pointer.")]
     public bool preserveGrabOffset = true;
 
-    [Header("Sorting / Visual Layering")]
+    [Header("Visual Layering")]
     public SpriteRenderer targetRenderer;
-    [Tooltip("Sorting order increase while dragging so the coin renders on top.")]
     public int sortingOrderBoost = 50;
 
     [Header("Collisions")]
-    [Tooltip("Disable the collider while dragging to avoid accidental overlaps.")]
     public bool disableColliderWhileDragging = false;
+
+    [Header("Scaling Effect")]
+    [Tooltip("How much to scale coin while dragging. 1 = no change.")]
+    [Range(0.8f, 1.5f)] public float pickupScaleMultiplier = 1.15f;
+    [Tooltip("How quickly the coin scales to target size.")]
+    [Range(1f, 20f)] public float scaleLerpSpeed = 10f;
 
     [Header("Events")]
     public UnityEvent onPickUp;
     public UnityEvent onDrop;
 
-    // State
     Collider2D _col;
     int _activePointerId = -1;
     bool _isDragging;
@@ -38,6 +38,9 @@ public class CoinDragHandler : MonoBehaviour
     int _baseSortingOrder;
     bool _hadRenderer;
     float _origZ;
+
+    Vector3 _baseScale;
+    Vector3 _targetScale;
 
     void Awake()
     {
@@ -49,6 +52,8 @@ public class CoinDragHandler : MonoBehaviour
         if (_hadRenderer) _baseSortingOrder = targetRenderer.sortingOrder;
 
         _origZ = transform.position.z;
+        _baseScale = transform.localScale;
+        _targetScale = _baseScale;
     }
 
     void Update()
@@ -62,8 +67,12 @@ public class CoinDragHandler : MonoBehaviour
             if (preserveGrabOffset) targetPos += _grabOffsetLocal;
             targetPos.z = dragZ;
 
-            transform.position = Vector3.Lerp(transform.position, targetPos, 1f - Mathf.Exp(-followSpeed * Time.deltaTime));
+            transform.position = Vector3.Lerp(transform.position, targetPos,
+                1f - Mathf.Exp(-followSpeed * Time.deltaTime));
         }
+
+        transform.localScale = Vector3.Lerp(transform.localScale, _targetScale,
+            1f - Mathf.Exp(-scaleLerpSpeed * Time.deltaTime));
     }
 
     #region Mouse
@@ -75,19 +84,14 @@ public class CoinDragHandler : MonoBehaviour
         bool mouseUp = Input.GetMouseButtonUp(0);
 
         Vector2 p2 = (Vector2)GetPointerWorld(mouseId);
-
         bool overMe = _col && _col.OverlapPoint(p2);
 
         if (dragMode == DragMode.Hold)
         {
             if (!_isDragging && mouseDown && overMe)
-            {
                 BeginDrag(mouseId, p2);
-            }
             if (_isDragging && (!mouseHeld || mouseUp))
-            {
                 EndDrag();
-            }
         }
         else
         {
@@ -113,71 +117,35 @@ public class CoinDragHandler : MonoBehaviour
                 Vector2 p2 = (Vector2)GetPointerWorld(i);
                 if (_col && _col.OverlapPoint(p2))
                 {
-                    if (dragMode == DragMode.Hold || dragMode == DragMode.Toggle)
-                    {
-                        BeginDrag(i, p2);
-                    }
+                    BeginDrag(i, p2);
                     break;
                 }
             }
         }
 
-        if (_isDragging)
+        if (_isDragging && _activePointerId >= 0 && _activePointerId < Input.touchCount)
         {
-            if (_activePointerId >= 0 && _activePointerId < Input.touchCount)
+            var t = Input.GetTouch(_activePointerId);
+            if (dragMode == DragMode.Hold &&
+                (t.phase == TouchPhase.Canceled || t.phase == TouchPhase.Ended))
+                EndDrag();
+
+            if (dragMode == DragMode.Toggle && t.phase == TouchPhase.Began)
             {
-                var t = Input.GetTouch(_activePointerId);
-
-                if (dragMode == DragMode.Hold)
-                {
-                    if (t.phase == TouchPhase.Canceled || t.phase == TouchPhase.Ended)
-                    {
-                        EndDrag();
-                    }
-                }
-                else // Toggle
-                {
-                    // In toggle, lift doesn't drop; a second tap over the coin will.
-                    // Detect second tap:
-                    if (t.phase == TouchPhase.Ended)
-                    {
-                        // Do nothing here; wait for a new Began over us to toggle off
-                        // (Handled in the “not dragging” block above: Began over us -> BeginDrag; if dragging, EndDrag)
-                    }
-                }
-            }
-            else
-            {
-
-                if (dragMode == DragMode.Hold) EndDrag();
-            }
-
-            if (dragMode == DragMode.Toggle)
-            {
-                for (int i = 0; i < Input.touchCount; i++)
-                {
-                    var t = Input.GetTouch(i);
-                    if (t.phase != TouchPhase.Began) continue;
-
-                    Vector2 p2 = (Vector2)GetPointerWorld(i);
-                    if (_col && _col.OverlapPoint(p2))
-                    {
-                        EndDrag();
-                        break;
-                    }
-                }
+                Vector2 p2 = (Vector2)GetPointerWorld(_activePointerId);
+                if (_col && _col.OverlapPoint(p2))
+                    EndDrag();
             }
         }
     }
     #endregion
 
-    #region Core
     void BeginDrag(int pointerId, Vector2 worldPoint)
     {
         _activePointerId = pointerId;
         _isDragging = true;
 
-        var coinPos = transform.position;
+        Vector3 coinPos = transform.position;
         Vector3 pointer3 = new Vector3(worldPoint.x, worldPoint.y, dragZ);
         _grabOffsetLocal = preserveGrabOffset ? (coinPos - pointer3) : Vector3.zero;
 
@@ -194,6 +162,8 @@ public class CoinDragHandler : MonoBehaviour
         pos.z = dragZ;
         transform.position = pos;
 
+        _targetScale = _baseScale * pickupScaleMultiplier;
+
         onPickUp?.Invoke();
     }
 
@@ -209,6 +179,8 @@ public class CoinDragHandler : MonoBehaviour
         pos.z = _origZ;
         transform.position = pos;
 
+        _targetScale = _baseScale;
+
         onDrop?.Invoke();
     }
 
@@ -216,20 +188,13 @@ public class CoinDragHandler : MonoBehaviour
     {
         if (!worldCamera) worldCamera = Camera.main;
         Vector3 sp;
-        if (pointerId == -999)
-        {
-            sp = Input.mousePosition;
-        }
-        else
-        {
-            sp = (pointerId >= 0 && pointerId < Input.touchCount)
-                ? (Vector3)Input.GetTouch(pointerId).position
-                : Input.mousePosition;
-        }
+        if (pointerId == -999) sp = Input.mousePosition;
+        else sp = (pointerId >= 0 && pointerId < Input.touchCount)
+            ? (Vector3)Input.GetTouch(pointerId).position
+            : Input.mousePosition;
 
-        var wp = worldCamera.ScreenToWorldPoint(sp);
+        Vector3 wp = worldCamera.ScreenToWorldPoint(sp);
         wp.z = dragZ;
         return wp;
     }
-    #endregion
 }
