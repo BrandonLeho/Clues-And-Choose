@@ -70,6 +70,7 @@
     <Compile Include="Assets\Scripts\Board\ColorBoard\PaletteGrid.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerListBinder.cs" />
     <Compile Include="Assets\Scripts\GameNetworking\NetworkChat.cs" />
+    <Compile Include="Assets\Scripts\Board\Coins\NetworkCoin.cs" />
     <Compile Include="Assets\Scripts\Board\GameChat\ChatUI.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\PlayerNameSync.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinVisual.cs" />
@@ -81,10 +82,12 @@
     <Compile Include="Assets\Scripts\Board\Coins\CoinSpawnOnPhaseEnd.cs" />
     <Compile Include="Assets\Scripts\Steam\SteamLobby.cs" />
     <Compile Include="Assets\Scripts\Steam\CustomNetworkManager.cs" />
+    <Compile Include="Assets\Scripts\Board\Coins\CoinNetworkSpawner.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorSwatch.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\GridPalettePainter.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardFitter.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\GameGroupEntryAnimator.cs" />
+    <Compile Include="Assets\Scripts\Board\Coins\CoinDragSync.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandlerGame.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerRow.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinDragHandler.cs" />

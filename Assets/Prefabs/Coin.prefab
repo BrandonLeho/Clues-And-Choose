@@ -17,6 +17,8 @@ GameObject:
   - component: {fileID: 6937249757147063920}
   - component: {fileID: 618872228319516248}
   - component: {fileID: 7419800804130616504}
+  - component: {fileID: -8049305124921635006}
+  - component: {fileID: 4393721356630196991}
   m_Layer: 0
   m_Name: Coin
   m_TagString: Untagged
@@ -163,10 +165,34 @@ MonoBehaviour:
   scaleLerpSpeed: 10
   onPickUp:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 4393721356630196991}
+        m_TargetAssemblyTypeName: CoinDragSync, Assembly-CSharp
+        m_MethodName: BeginLocalDrag
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   onDrop:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 4393721356630196991}
+        m_TargetAssemblyTypeName: CoinDragSync, Assembly-CSharp
+        m_MethodName: EndLocalDrag
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!58 &92682915565311040
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -267,3 +293,39 @@ MonoBehaviour:
   rotationSensitivity: 0.01
   positionPrecision: 0.01
   scalePrecision: 0.01
+--- !u!114 &-8049305124921635006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5861153836025292340}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e02ba72638dbbf458f4f580b012088e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NetworkCoin
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  ownerNetId: 0
+  netColor:
+    serializedVersion: 2
+    rgba: 0
+--- !u!114 &4393721356630196991
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5861153836025292340}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a3c839a9a9b8fb54ea187a3a0d9294e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CoinDragSync
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  sendInterval: 0.02
+  dragZ: 0
