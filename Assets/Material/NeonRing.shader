@@ -1,108 +1,99 @@
-Shader "UI/NeonRing (Built-in)"
+Shader "Sprites/NeonRing"
 {
     Properties
     {
-        [PerRendererData]_MainTex ("Sprite Texture", 2D) = "white" {}
-        [HDR]_Color("Glow Color", Color) = (1,1,1,1)
-        _Intensity("Glow Intensity", Range(0,10)) = 2
-        _Thickness("Ring Thickness", Range(0,0.5)) = 0.10
-        _Softness("Edge Softness", Range(0,0.5)) = 0.08
-        _Alpha("Overall Alpha", Range(0,1)) = 1
-        _StencilComp ("Stencil Comparison", Float) = 8
-        _Stencil ("Stencil ID", Float) = 0
-        _StencilOp ("Stencil Operation", Float) = 0
-        _StencilWriteMask ("Stencil Write Mask", Float) = 255
-        _StencilReadMask ("Stencil Read Mask", Float) = 255
-        _ColorMask ("Color Mask", Float) = 15
+        _FillColor  ("Fill Color", Color)      = (0.2, 0.8, 0.8, 1)
+        _RingColor  ("Ring Color", Color)      = (0.2, 0.9, 1.0, 1)
+        _Radius     ("Coin Radius (UV)", Range(0.0, 0.5)) = 0.40
+        _RingThick  ("Ring Thickness", Range(0.0, 0.5))   = 0.07
+        _EdgeSoft   ("Edge Softness", Range(0.0001, 0.2)) = 0.02
+        _GlowWidth  ("Glow Width", Range(0.0, 0.5))       = 0.10
+        _GlowBoost  ("Glow Boost", Range(0.0, 5.0))       = 1.5
     }
 
     SubShader
     {
-        Tags
-        {
-            "Queue"="Transparent"
-            "IgnoreProjector"="True"
-            "RenderType"="Transparent"
-            "CanUseSpriteAtlas"="True"
-        }
-
-        Stencil
-        {
-            Ref [_Stencil]
-            Comp [_StencilComp]
-            Pass [_StencilOp]
-            ReadMask [_StencilReadMask]
-            WriteMask [_StencilWriteMask]
-        }
-
-        Cull Off
+        Tags { "Queue"="Transparent" "RenderType"="Transparent" "IgnoreProjector"="True" "CanUseSpriteAtlas"="True" "RenderPipeline"="UniversalPipeline" }
+        Blend One OneMinusSrcAlpha
         ZWrite Off
-        Blend One One
-        ColorMask [_ColorMask]
+        Cull Off
 
         Pass
         {
-            Name "NeonRing"
-            CGPROGRAM
+            HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
-            #include "UnityCG.cginc"
-            #include "UnityUI.cginc"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            sampler2D _MainTex;
-
-            fixed4 _Color;
-            float  _Intensity;
-            float  _Thickness;
-            float  _Softness;
-            float  _Alpha;
-
-            struct appdata_t {
-                float4 vertex   : POSITION;
-                float2 texcoord : TEXCOORD0;
-                fixed4 color    : COLOR;
+            struct appdata
+            {
+                float4 vertex : POSITION;
+                float2 uv     : TEXCOORD0;
+                float4 color  : COLOR;
+            };
+            struct v2f
+            {
+                float4 pos : SV_POSITION;
+                float2 uv  : TEXCOORD0;
+                float4 col : COLOR;
             };
 
-            struct v2f {
-                float4 pos      : SV_POSITION;
-                float2 uv       : TEXCOORD0;
-                fixed4 color    : COLOR;
-                float4 worldPos : TEXCOORD1;
-            };
+            float4 _FillColor;
+            float4 _RingColor;
+            float  _Radius;
+            float  _RingThick;
+            float  _EdgeSoft;
+            float  _GlowWidth;
+            float  _GlowBoost;
 
-            v2f vert (appdata_t v)
+            v2f vert (appdata v)
             {
                 v2f o;
-                o.pos = UnityObjectToClipPos(v.vertex);
-                o.uv = v.texcoord;
-                o.color = v.color;
-                o.worldPos = v.vertex;
+                o.pos = TransformObjectToHClip(v.vertex.xyz);
+                o.uv  = v.uv;                 // expect a quad with UV [0..1]
+                o.col = v.color;
                 return o;
             }
 
-            fixed4 frag (v2f i) : SV_Target
+            // smoothstep helper that tolerates swapped edges
+            float sstep(float a, float b, float x)
             {
-                float2 p = i.uv * 2.0 - 1.0;
-                float r = length(p);
-
-                float outer = 1.0 - _Softness;
-                float inner = outer - _Thickness;
-
-                float outerEdge = 1.0 - smoothstep(outer, outer + _Softness, r);
-                float innerEdge = smoothstep(inner - _Softness, inner, r);
-                float ring = saturate(innerEdge * outerEdge) * _Alpha;
-
-                #ifdef UNITY_UI_CLIP_RECT
-                ring *= UnityGet2DClipping(i.worldPos.xy, _ClipRect);
-                #endif
-                #ifdef UNITY_UI_ALPHACLIP
-                clip(ring - 0.001);
-                #endif
-
-                float3 col = _Color.rgb * _Intensity;
-                return fixed4(col * ring, ring);
+                float lo = min(a,b);
+                float hi = max(a,b);
+                return smoothstep(lo, hi, x);
             }
-            ENDCG
+
+            half4 frag (v2f i) : SV_Target
+            {
+                // Map UV to centered coordinates (-0.5..+0.5), maintain aspect for non-square sprites via ddx/ddy length.
+                float2 p = i.uv - 0.5;
+                float d  = length(p); // distance from center in UV space
+
+                // Base coin fill: inside radius (soft edge)
+                float fillAlpha = 1.0 - sstep(_Radius - _EdgeSoft, _Radius + _EdgeSoft, d);
+
+                // Ring: annulus around radius with thickness _RingThick and soft edges
+                float inner = sstep(_Radius - _RingThick - _EdgeSoft, _Radius - _RingThick + _EdgeSoft, d);
+                float outer = 1.0 - sstep(_Radius + _EdgeSoft, _Radius - _EdgeSoft, d); // inverted soft step
+                float ringMask = saturate(inner * outer);
+
+                // Glow: soft falloff outside the ring
+                float glowStart = _Radius;
+                float glowEnd   = _Radius + _GlowWidth + _EdgeSoft;
+                float glow      = 1.0 - sstep(glowStart, glowEnd, d);
+                glow *= _GlowBoost;
+
+                // Compose colors (premultiplied-ish alpha)
+                float3 col = _FillColor.rgb * fillAlpha;
+                col = lerp(col, _RingColor.rgb, ringMask);   // brighten ring zone
+                col += _RingColor.rgb * glow;                // add outer glow (relies on Bloom for real neon)
+
+                // Composite alpha: keep visuals soft but clickable
+                float alpha = saturate(max(fillAlpha, max(ringMask, glow * 0.4)));
+
+                return half4(col, alpha) * i.col;
+            }
+            ENDHLSL
         }
     }
 }
