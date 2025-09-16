@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &5861153836025292340
+--- !u!1 &2640207753243157200
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,48 +8,39 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 7955328306791421603}
-  - component: {fileID: 5500346098180898074}
-  - component: {fileID: 968773101993330051}
-  - component: {fileID: 5183186436813672732}
-  - component: {fileID: 4930192264046914011}
-  - component: {fileID: 92682915565311040}
-  - component: {fileID: 6937249757147063920}
-  - component: {fileID: 618872228319516248}
-  - component: {fileID: 7419800804130616504}
-  - component: {fileID: -8049305124921635006}
-  - component: {fileID: 4393721356630196991}
-  - component: {fileID: 4261633262551534886}
-  - component: {fileID: 206152032113006913}
+  - component: {fileID: 4669634716166424127}
+  - component: {fileID: 2242483134195174353}
+  - component: {fileID: 6819449827738559523}
+  - component: {fileID: 5045735096884736146}
   m_Layer: 0
-  m_Name: Coin
+  m_Name: Visual
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &7955328306791421603
+--- !u!4 &4669634716166424127
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5861153836025292340}
+  m_GameObject: {fileID: 2640207753243157200}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 7.49, y: -1.16, z: 0}
-  m_LocalScale: {x: 0.12, y: 0.12, z: 0.12}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 7955328306791421603}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!212 &5500346098180898074
+--- !u!212 &2242483134195174353
 SpriteRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5861153836025292340}
+  m_GameObject: {fileID: 2640207753243157200}
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
@@ -89,7 +80,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 1000
+  m_SortingOrder: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 434775e67a94b784e9c43dbb3244822c, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -101,13 +92,13 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &968773101993330051
+--- !u!114 &6819449827738559523
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5861153836025292340}
+  m_GameObject: {fileID: 2640207753243157200}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1b36c9cb3e5ab1943a6b40baa3743a23, type: 3}
@@ -122,13 +113,13 @@ MonoBehaviour:
   edgeSoftness: 0.025
   glowWidth: 0.092
   glowBoost: 0.32
---- !u!114 &5183186436813672732
+--- !u!114 &5045735096884736146
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5861153836025292340}
+  m_GameObject: {fileID: 2640207753243157200}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b4cef13777dcce8409697af0d069ab77, type: 3}
@@ -145,6 +136,46 @@ MonoBehaviour:
   ringThicknessPulse: 0.08
   hoverScaleMultiplier: 1.487
   scaleLerpSpeed: 10
+--- !u!1 &5861153836025292340
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7955328306791421603}
+  - component: {fileID: 4930192264046914011}
+  - component: {fileID: 92682915565311040}
+  - component: {fileID: 6937249757147063920}
+  - component: {fileID: 618872228319516248}
+  - component: {fileID: 7419800804130616504}
+  - component: {fileID: -8049305124921635006}
+  - component: {fileID: 4393721356630196991}
+  - component: {fileID: 4261633262551534886}
+  m_Layer: 0
+  m_Name: Coin
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7955328306791421603
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5861153836025292340}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 7.49, y: -1.16, z: 0}
+  m_LocalScale: {x: 0.12, y: 0.12, z: 0.12}
+  m_ConstrainProportionsScale: 1
+  m_Children:
+  - {fileID: 4669634716166424127}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &4930192264046914011
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -162,7 +193,7 @@ MonoBehaviour:
   followSpeed: 20
   dragZ: 0
   preserveGrabOffset: 1
-  targetRenderer: {fileID: 5500346098180898074}
+  targetRenderer: {fileID: 2242483134195174353}
   sortingOrderBoost: 50
   disableColliderWhileDragging: 0
   pickupScaleMultiplier: 1.4
@@ -198,6 +229,7 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+  dropGuardSeconds: 0.06
 --- !u!58 &92682915565311040
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -282,7 +314,7 @@ MonoBehaviour:
   target: {fileID: 7955328306791421603}
   syncPosition: 1
   syncRotation: 1
-  syncScale: 1
+  syncScale: 0
   onlySyncOnChange: 1
   compressRotation: 1
   interpolatePosition: 1
@@ -349,19 +381,3 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
---- !u!114 &206152032113006913
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5861153836025292340}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2bdc8d3d737dde8419d4afb239f189ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CoinClientSanity
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0
-  logOnClick: 1
