@@ -22,7 +22,6 @@ public class CoinDragSync : NetworkBehaviour
         if (Time.unscaledTime - _lastSend < sendInterval) return;
         _lastSend = Time.unscaledTime;
 
-        Debug.Log($"[Sync] send {transform.position}");
         var p = transform.position;
         p.z = dragZ;
         CmdMove(p);
