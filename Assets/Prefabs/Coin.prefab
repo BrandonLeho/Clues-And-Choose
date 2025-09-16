@@ -19,6 +19,7 @@ GameObject:
   - component: {fileID: 7419800804130616504}
   - component: {fileID: -8049305124921635006}
   - component: {fileID: 4393721356630196991}
+  - component: {fileID: 4261633262551534886}
   m_Layer: 0
   m_Name: Coin
   m_TagString: Untagged
@@ -153,7 +154,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c9be690603025d4498f1b0ee7ce12aa4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CoinDragHandler
-  dragMode: 1
+  dragMode: 0
   worldCamera: {fileID: 0}
   followSpeed: 20
   dragZ: 1000
@@ -329,3 +330,18 @@ MonoBehaviour:
   syncInterval: 0
   sendInterval: 0.02
   dragZ: 0
+--- !u!114 &4261633262551534886
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5861153836025292340}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dea3ee63d7752634fb7e1ce56310d24d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CoinOwnerSanity
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
