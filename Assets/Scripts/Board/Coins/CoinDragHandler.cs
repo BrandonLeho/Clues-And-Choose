@@ -32,6 +32,11 @@ public class CoinDragHandler : MonoBehaviour
     public UnityEvent onPickUp;
     public UnityEvent onDrop;
 
+    [Header("Input Guard")]
+    [Tooltip("Minimum time after pickup before a drop is allowed (prevents same-frame drop).")]
+    [Range(0f, 0.2f)] public float dropGuardSeconds = 0.06f;
+    float _noDropBefore;
+
     Collider2D _col;
     int _activePointerId = -1;
     bool _isDragging;
@@ -41,7 +46,6 @@ public class CoinDragHandler : MonoBehaviour
     bool _hadRenderer;
     float _origZ;
     Vector3 _baseScale, _targetScale;
-    int _frameDragBegan = -1000000;
 
     NetworkCoin _netCoin;
 
@@ -99,42 +103,30 @@ public class CoinDragHandler : MonoBehaviour
         Vector2 p2 = (Vector2)PointerOnDragPlane(mouseId);
         bool overMe = _col && _col.OverlapPoint(p2);
 
-        if (debugInteract && mouseDown)
-            Debug.Log($"[Drag] {name} mouseDown overMe={overMe} cam={(worldCamera ? worldCamera.name : "<null>")} p2={p2} enabled={enabled} activeGO={gameObject.activeInHierarchy}");
-
         if (dragMode == DragMode.Hold)
         {
             if (!_isDragging && mouseDown && overMe)
             {
                 BeginDrag(mouseId, p2);
-                _frameDragBegan = Time.frameCount;
                 return;
             }
 
-            if (_isDragging && Time.frameCount != _frameDragBegan && (!mouseHeld || mouseUp))
+            if (_isDragging)
             {
-                EndDrag();
-                return;
+                bool canDrop = Time.unscaledTime >= _noDropBefore;
+                if (canDrop && (!mouseHeld || mouseUp))
+                {
+                    EndDrag();
+                    return;
+                }
             }
         }
         else
         {
             if (mouseDown && overMe)
             {
-                if (!_isDragging)
-                {
-                    BeginDrag(mouseId, p2);
-                    _frameDragBegan = Time.frameCount;
-                    return;
-                }
-                else
-                {
-                    if (Time.frameCount != _frameDragBegan)
-                    {
-                        EndDrag();
-                        return;
-                    }
-                }
+                if (!_isDragging) { BeginDrag(mouseId, p2); return; }
+                else { EndDrag(); return; }
             }
         }
     }
@@ -149,31 +141,22 @@ public class CoinDragHandler : MonoBehaviour
             {
                 var t = Input.GetTouch(i);
                 if (t.phase != TouchPhase.Began) continue;
-
                 Vector2 p2 = (Vector2)PointerOnDragPlane(i);
                 bool overMe = _col && _col.OverlapPoint(p2);
-                if (debugInteract) Debug.Log($"[Drag] {name} touch began overMe={overMe} id={i}");
-                if (overMe)
-                {
-                    BeginDrag(i, p2);
-                    _frameDragBegan = Time.frameCount;
-                    return;
-                }
+                if (debugInteract) Debug.Log($"[{name}] touch began overMe={overMe} id={i}");
+                if (overMe) { BeginDrag(i, p2); break; }
             }
         }
         else
         {
             if (dragMode == DragMode.Hold)
             {
-                if (Time.frameCount != _frameDragBegan)
+                if (_activePointerId >= 0 && _activePointerId < Input.touchCount)
                 {
-                    if (_activePointerId >= 0 && _activePointerId < Input.touchCount)
-                    {
-                        var t = Input.GetTouch(_activePointerId);
-                        if (t.phase == TouchPhase.Canceled || t.phase == TouchPhase.Ended) { EndDrag(); return; }
-                    }
-                    else { EndDrag(); return; }
+                    var t = Input.GetTouch(_activePointerId);
+                    if (t.phase == TouchPhase.Canceled || t.phase == TouchPhase.Ended) EndDrag();
                 }
+                else EndDrag();
             }
             else
             {
@@ -181,11 +164,8 @@ public class CoinDragHandler : MonoBehaviour
                 {
                     var t = Input.GetTouch(i);
                     if (t.phase != TouchPhase.Began) continue;
-
-                    if (Time.frameCount == _frameDragBegan) continue;
-
                     Vector2 p2 = (Vector2)PointerOnDragPlane(i);
-                    if (_col && _col.OverlapPoint(p2)) { EndDrag(); return; }
+                    if (_col && _col.OverlapPoint(p2)) { EndDrag(); break; }
                 }
             }
         }
@@ -205,6 +185,8 @@ public class CoinDragHandler : MonoBehaviour
         _activePointerId = pointerId;
         _isDragging = true;
         _allowLocalMove = true;
+
+        _noDropBefore = Time.unscaledTime + dropGuardSeconds;
 
         if (debugInteract) Debug.Log($"[Drag] {name} STARTED: dragging=true allowLocalMove={_allowLocalMove}");
 
