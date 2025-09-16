@@ -33,20 +33,17 @@ public class CoinNetworkSpawner : NetworkBehaviour
         TrySpawnOnce();
     }
 
-    // inside CoinNetworkSpawner.cs
     [Server]
     public void TrySpawnOnce()
     {
         if (_spawned) { Debug.Log("[CoinNetworkSpawner] Already spawned; skipping."); return; }
 
-        // ---- sanity for required refs ----
         if (!gridParent) { Debug.LogError("[CoinNetworkSpawner] gridParent (slots) not set."); return; }
         if (!coinPrefab) { Debug.LogError("[CoinNetworkSpawner] coinPrefab not set."); return; }
         if (!sourceCanvas) { Debug.LogWarning("[CoinNetworkSpawner] sourceCanvas is null (OK if fallback positions are acceptable)."); }
         if (!worldCamera) { worldCamera = Camera.main; }
         bool usingFallback = worldCamera == null;
 
-        // ---- get registry and players ----
         var reg = ColorLockRegistry.GetOrFind();
         if (!reg) { Debug.LogError("[CoinNetworkSpawner] ColorLockRegistry not found."); return; }
 
@@ -58,13 +55,11 @@ public class CoinNetworkSpawner : NetworkBehaviour
             return;
         }
 
-        // order by swatch index (deterministic)
-        var ordered = reg.lockedBy.OrderBy(kv => kv.Key).ToList(); // index -> ownerNetId
+        var ordered = reg.lockedBy.OrderBy(kv => kv.Key).ToList();
 
         int coinsNeeded = Mathf.Min(ordered.Count * 2, gridParent.childCount);
         if (coinsNeeded == 0) { Debug.Log("[CoinNetworkSpawner] No coinsNeeded."); return; }
 
-        // collect slot transforms
         var slots = new List<RectTransform>(gridParent.childCount);
         for (int i = 0; i < gridParent.childCount; i++)
         {
@@ -77,11 +72,9 @@ public class CoinNetworkSpawner : NetworkBehaviour
 
         Debug.Log($"[CoinNetworkSpawner] Spawning {coinsNeeded} coins. worldCamera={(worldCamera ? worldCamera.name : "<null>")} fallback={usingFallback}");
 
-        // fallback line start (used only if camera is null)
         Vector3 fbStart = worldParent ? worldParent.position : Vector3.zero;
         float fbStep = 1.0f;
 
-        // ---- spawn loop (per coin) ----
         for (int p = 0; p < ordered.Count; p++)
         {
             uint ownerId = ordered[p].Value;
@@ -104,11 +97,10 @@ public class CoinNetworkSpawner : NetworkBehaviour
                     Vector3 pos;
                     if (!usingFallback)
                     {
-                        pos = SlotCenterOnWorldPlane(slot, spawnZ);   // uses worldCamera + sourceCanvas if available
+                        pos = SlotCenterOnWorldPlane(slot, spawnZ);
                     }
                     else
                     {
-                        // Server without camera (headless). Keep running: place along a line so testing can continue.
                         pos = fbStart + new Vector3(slotIdx * fbStep, 0f, spawnZ);
                     }
 
@@ -132,7 +124,6 @@ public class CoinNetworkSpawner : NetworkBehaviour
                 catch (System.Exception ex)
                 {
                     Debug.LogError($"[CoinNetworkSpawner] Exception spawning coin for slot {slotIdx}: {ex}");
-                    // continue with next coin instead of aborting
                 }
             }
         }
