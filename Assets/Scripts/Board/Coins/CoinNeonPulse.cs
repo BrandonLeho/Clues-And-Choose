@@ -83,8 +83,8 @@ public class CoinPulseController : MonoBehaviour
         _mpb.SetFloat(PID_RingThick, ringThick);
         _sr.SetPropertyBlock(_mpb);
 
-        float targetScale = Mathf.Lerp(1f, hoverScaleMultiplier, _hover01);
-        transform.localScale = Vector3.Lerp(transform.localScale, _baseScale * targetScale, scaleLerpSpeed * Time.deltaTime);
+        //float targetScale = Mathf.Lerp(1f, hoverScaleMultiplier, _hover01);
+        //transform.localScale = Vector3.Lerp(transform.localScale, _baseScale * targetScale, scaleLerpSpeed * Time.deltaTime);
     }
 
     bool IsPointerOverMe()
