@@ -41,6 +41,7 @@ public class CoinDragHandler : MonoBehaviour
     bool _hadRenderer;
     float _origZ;
     Vector3 _baseScale, _targetScale;
+    int _frameDragBegan = -1000000;
 
     NetworkCoin _netCoin;
 
@@ -103,15 +104,37 @@ public class CoinDragHandler : MonoBehaviour
 
         if (dragMode == DragMode.Hold)
         {
-            if (!_isDragging && mouseDown && overMe) BeginDrag(mouseId, p2);
-            if (_isDragging && (!mouseHeld || mouseUp)) EndDrag();
+            if (!_isDragging && mouseDown && overMe)
+            {
+                BeginDrag(mouseId, p2);
+                _frameDragBegan = Time.frameCount;
+                return;
+            }
+
+            if (_isDragging && Time.frameCount != _frameDragBegan && (!mouseHeld || mouseUp))
+            {
+                EndDrag();
+                return;
+            }
         }
         else
         {
             if (mouseDown && overMe)
             {
-                if (!_isDragging) BeginDrag(mouseId, p2);
-                else EndDrag();
+                if (!_isDragging)
+                {
+                    BeginDrag(mouseId, p2);
+                    _frameDragBegan = Time.frameCount;
+                    return;
+                }
+                else
+                {
+                    if (Time.frameCount != _frameDragBegan)
+                    {
+                        EndDrag();
+                        return;
+                    }
+                }
             }
         }
     }
@@ -126,22 +149,31 @@ public class CoinDragHandler : MonoBehaviour
             {
                 var t = Input.GetTouch(i);
                 if (t.phase != TouchPhase.Began) continue;
+
                 Vector2 p2 = (Vector2)PointerOnDragPlane(i);
                 bool overMe = _col && _col.OverlapPoint(p2);
-                if (debugInteract) Debug.Log($"[{name}] touch began overMe={overMe} id={i}");
-                if (overMe) { BeginDrag(i, p2); break; }
+                if (debugInteract) Debug.Log($"[Drag] {name} touch began overMe={overMe} id={i}");
+                if (overMe)
+                {
+                    BeginDrag(i, p2);
+                    _frameDragBegan = Time.frameCount;
+                    return;
+                }
             }
         }
         else
         {
             if (dragMode == DragMode.Hold)
             {
-                if (_activePointerId >= 0 && _activePointerId < Input.touchCount)
+                if (Time.frameCount != _frameDragBegan)
                 {
-                    var t = Input.GetTouch(_activePointerId);
-                    if (t.phase == TouchPhase.Canceled || t.phase == TouchPhase.Ended) EndDrag();
+                    if (_activePointerId >= 0 && _activePointerId < Input.touchCount)
+                    {
+                        var t = Input.GetTouch(_activePointerId);
+                        if (t.phase == TouchPhase.Canceled || t.phase == TouchPhase.Ended) { EndDrag(); return; }
+                    }
+                    else { EndDrag(); return; }
                 }
-                else EndDrag();
             }
             else
             {
@@ -149,8 +181,11 @@ public class CoinDragHandler : MonoBehaviour
                 {
                     var t = Input.GetTouch(i);
                     if (t.phase != TouchPhase.Began) continue;
+
+                    if (Time.frameCount == _frameDragBegan) continue;
+
                     Vector2 p2 = (Vector2)PointerOnDragPlane(i);
-                    if (_col && _col.OverlapPoint(p2)) { EndDrag(); break; }
+                    if (_col && _col.OverlapPoint(p2)) { EndDrag(); return; }
                 }
             }
         }
