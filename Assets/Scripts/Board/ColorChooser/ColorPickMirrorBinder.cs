@@ -1,4 +1,3 @@
-// ColorPickMirrorBinder.cs (relevant additions)
 using Mirror;
 using UnityEngine;
 
