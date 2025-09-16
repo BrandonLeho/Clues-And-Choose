@@ -8,7 +8,7 @@ namespace Mirror.FizzySteam
 {
     public class NextServer : NextCommon, IServer
     {
-        private event Action<int,string> OnConnectedWithAddress;
+        private event Action<int, string> OnConnectedWithAddress;
         private event Action<int, byte[], int> OnReceivedData;
         private event Action<int> OnDisconnected;
         private event Action<int, TransportError, string> OnReceivedError;
@@ -40,7 +40,7 @@ namespace Mirror.FizzySteam
         {
             server = new NextServer(maxConnections);
 
-            server.OnConnectedWithAddress += (id,addres) => transport.OnServerConnectedWithAddress.Invoke(id,addres);
+            server.OnConnectedWithAddress += (id, addres) => transport.OnServerConnectedWithAddress.Invoke(id, addres);
             server.OnDisconnected += (id) => transport.OnServerDisconnected.Invoke(id);
             server.OnReceivedData += (id, data, ch) => transport.OnServerDataReceived.Invoke(id, new ArraySegment<byte>(data), ch);
             server.OnReceivedError += (id, error, reason) => transport.OnServerError.Invoke(id, error, reason);
@@ -75,6 +75,34 @@ namespace Mirror.FizzySteam
 
         private void OnConnectionStatusChanged(SteamNetConnectionStatusChangedCallback_t param)
         {
+            // The callback struct has the handle and old state:
+            var conn = param.m_hConn;
+            var oldState = param.m_eOldState;
+
+            // The nested info struct has the new state + end reason/debug:
+            var info = param.m_info;
+
+            // Field name for the "new state" differs by Steamworks.NET version:
+            // - Older:  info.m_eState
+            // - Newer:  info.m_eSteamNetworkingConnectionState
+            ESteamNetworkingConnectionState newState;
+#if STEAMWORKSNET_21_OR_NEWER
+            newState = info.m_eSteamNetworkingConnectionState;
+#else
+            newState = info.m_eState;
+#endif
+
+            // m_szEndDebug is usually a string in Steamworks.NET. If yours is a byte[]/fixed buffer,
+            // change it to a decoder (UTF8) as needed.
+            var reason = (ESteamNetConnectionEnd)info.m_eEndReason;
+            var reasonCode = (int)info.m_eEndReason;
+            var endDebug = info.m_szEndDebug ?? string.Empty;
+
+            Debug.Log(
+                $"[FizzySteam] Conn {conn}: {oldState} → {newState} | " +
+                $"endReason={reasonCode} ({reason}) | dbg='{endDebug}' | userData={info.m_nUserData}"
+            );
+
             ulong clientSteamID = param.m_info.m_identityRemote.GetSteamID64();
             if (param.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_Connecting)
             {
@@ -109,7 +137,7 @@ namespace Mirror.FizzySteam
                 int connectionId = nextConnectionID++;
                 connToMirrorID.Add(param.m_hConn, connectionId);
                 steamIDToMirrorID.Add(param.m_info.m_identityRemote.GetSteamID(), connectionId);
-                OnConnectedWithAddress?.Invoke(connectionId,server.ServerGetClientAddress(connectionId));
+                OnConnectedWithAddress?.Invoke(connectionId, server.ServerGetClientAddress(connectionId));
                 Debug.Log($"Client with SteamID {clientSteamID} connected. Assigning connection id {connectionId}");
             }
             else if (param.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_ClosedByPeer || param.m_info.m_eState == ESteamNetworkingConnectionState.k_ESteamNetworkingConnectionState_ProblemDetectedLocally)
