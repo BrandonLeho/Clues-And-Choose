@@ -1550,6 +1550,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 76d8775072dd89e48a2548e265e2c1eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NetKeepAlive
+  interval: 1
 --- !u!1 &1282196875
 GameObject:
   m_ObjectHideFlags: 0

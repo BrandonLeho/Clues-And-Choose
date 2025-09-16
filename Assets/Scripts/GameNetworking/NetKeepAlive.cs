@@ -2,29 +2,35 @@ using Mirror;
 using UnityEngine;
 
 public struct KeepAlive : NetworkMessage { }
-
 public class NetKeepAlive : MonoBehaviour
 {
-    const float interval = 1.0f;
-    float t;
+    [SerializeField] float interval = 1.0f;
+
+    float timer;
+    static bool registered;
 
     void Awake()
     {
-        NetworkClient.RegisterHandler<KeepAlive>(_ => { });
-        if (NetworkServer.active)
-            NetworkServer.RegisterHandler<KeepAlive>((conn, msg) => { });
+        DontDestroyOnLoad(gameObject);
+
+        if (!registered)
+        {
+            NetworkClient.RegisterHandler<KeepAlive>(_ => { /* no-op */ });
+            NetworkServer.RegisterHandler<KeepAlive>((conn, msg) => { /* no-op */ });
+            registered = true;
+        }
     }
 
     void Update()
     {
-        t += Time.unscaledDeltaTime;
-        if (t < interval) return;
-        t = 0f;
+        timer += Time.unscaledDeltaTime;
+        if (timer < interval) return;
+        timer = 0f;
 
-        if (NetworkClient.active)
+        if (NetworkClient.isConnected)
             NetworkClient.Send(new KeepAlive());
 
-        if (NetworkServer.active)
+        if (NetworkServer.active && NetworkServer.connections.Count > 0)
             NetworkServer.SendToAll(new KeepAlive());
     }
 }
