@@ -77,9 +77,6 @@ public class CoinDragHandler : MonoBehaviour
             if (preserveGrabOffset) targetPos += _grabOffsetLocal;
             targetPos.z = dragZ;
 
-            if (debugInteract && _isDragging && _allowLocalMove)
-                Debug.Log($"[Drag] {name} follow tick; pos={transform.position}");
-
             transform.position = Vector3.Lerp(
                 transform.position, targetPos,
                 1f - Mathf.Exp(-followSpeed * Time.deltaTime));
