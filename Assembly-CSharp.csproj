@@ -79,6 +79,7 @@
     <Compile Include="Assets\Scripts\Board\Coins\CoinSpawner.cs" />
     <Compile Include="Assets\Scripts\Controller\DraggableItem.cs" />
     <Compile Include="Assets\Scripts\UI\LobbyUIManager.cs" />
+    <Compile Include="Assets\Scripts\Board\Coins\RegistryDebugLogger.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinSpawnOnPhaseEnd.cs" />
     <Compile Include="Assets\Scripts\Steam\SteamLobby.cs" />
     <Compile Include="Assets\Scripts\Steam\CustomNetworkManager.cs" />

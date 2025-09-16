@@ -47,17 +47,14 @@ public class ColorPickerMirrorBinder : NetworkBehaviour
     [Command]
     void CmdTryConfirm(int index, Color32 color, NetworkConnectionToClient sender = null)
     {
-        var player = sender != null ? sender.identity : null;
-        if (player) ColorLockRegistry.Instance?.TryConfirm(player, index, color);
+        if (sender?.identity) ColorLockRegistry.Instance?.TryConfirm(sender.identity, index, color);
     }
 
     [Command]
     void CmdCancelMyLock(NetworkConnectionToClient sender = null)
     {
-        var player = sender != null ? sender.identity : null;
-        if (player) ColorLockRegistry.Instance?.UnlockAllFor(player);
+        if (sender?.identity) ColorLockRegistry.Instance?.UnlockAllFor(sender.identity);
     }
-
 
     void RefreshFromRegistry()
     {
