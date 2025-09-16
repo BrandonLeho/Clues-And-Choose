@@ -13,7 +13,7 @@ public class CoinDragSync : NetworkBehaviour
 
     void Awake() => _coin = GetComponent<NetworkCoin>();
 
-    public void BeginLocalDrag() { if (_coin.IsLocalOwner()) _streaming = true; }
+    public void BeginLocalDrag() { if (_coin.IsLocalOwner()) _streaming = true; Debug.Log($"[Sync] BeginLocalDrag on {name}"); }
     public void EndLocalDrag() { _streaming = false; }
 
     void Update()
@@ -22,19 +22,18 @@ public class CoinDragSync : NetworkBehaviour
         if (Time.unscaledTime - _lastSend < sendInterval) return;
         _lastSend = Time.unscaledTime;
 
-        var p = transform.position; p.z = dragZ;
+        Debug.Log($"[Sync] send {transform.position}");
+        var p = transform.position;
+        p.z = dragZ;
         CmdMove(p);
     }
 
     [Command(requiresAuthority = false)]
     void CmdMove(Vector3 pos, NetworkConnectionToClient sender = null)
     {
-        if (_coin && sender != null)
-        {
-            var owner = _coin.ownerNetId;
-            var senderId = sender.identity ? sender.identity.netId : 0u;
-            if (owner != 0 && senderId != owner) return;
-        }
+        if (_coin == null || sender?.identity == null) return;
+        if (_coin.ownerNetId != sender.identity.netId) return;
+        transform.position = pos;
 
         transform.position = pos;
     }

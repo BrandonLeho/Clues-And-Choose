@@ -77,6 +77,9 @@ public class CoinDragHandler : MonoBehaviour
             if (preserveGrabOffset) targetPos += _grabOffsetLocal;
             targetPos.z = dragZ;
 
+            if (debugInteract && _isDragging && _allowLocalMove)
+                Debug.Log($"[Drag] {name} follow tick; pos={transform.position}");
+
             transform.position = Vector3.Lerp(
                 transform.position, targetPos,
                 1f - Mathf.Exp(-followSpeed * Time.deltaTime));
@@ -99,7 +102,7 @@ public class CoinDragHandler : MonoBehaviour
         bool overMe = _col && _col.OverlapPoint(p2);
 
         if (debugInteract && mouseDown)
-            Debug.Log($"[{name}] mouseDown overMe={overMe} pos={p2}");
+            Debug.Log($"[Drag] {name} mouseDown overMe={overMe} cam={(worldCamera ? worldCamera.name : "<null>")} p2={p2} enabled={enabled} activeGO={gameObject.activeInHierarchy}");
 
         if (dragMode == DragMode.Hold)
         {
@@ -159,15 +162,19 @@ public class CoinDragHandler : MonoBehaviour
 
     void BeginDrag(int pointerId, Vector2 worldPoint)
     {
+        if (debugInteract) Debug.Log($"[Drag] {name} BeginDrag called");
+
         if (_netCoin != null && !_netCoin.IsLocalOwner())
         {
-            if (debugInteract) Debug.Log($"[{name}] BeginDrag blocked; not local owner.");
+            if (debugInteract) Debug.Log($"[Drag] {name} blocked: not local owner (owner={_netCoin.ownerNetId})");
             return;
         }
 
         _activePointerId = pointerId;
         _isDragging = true;
         _allowLocalMove = true;
+
+        if (debugInteract) Debug.Log($"[Drag] {name} STARTED: dragging=true allowLocalMove={_allowLocalMove}");
 
         var coinPos = transform.position;
         Vector3 pointer3 = new Vector3(worldPoint.x, worldPoint.y, dragZ);
@@ -191,6 +198,8 @@ public class CoinDragHandler : MonoBehaviour
 
     void EndDrag()
     {
+        if (debugInteract) Debug.Log($"[Drag] {name} EndDrag()");
+
         _isDragging = false;
         _activePointerId = -1;
         _allowLocalMove = false;
