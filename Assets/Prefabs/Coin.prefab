@@ -20,6 +20,7 @@ GameObject:
   - component: {fileID: -8049305124921635006}
   - component: {fileID: 4393721356630196991}
   - component: {fileID: 4261633262551534886}
+  - component: {fileID: 206152032113006913}
   m_Layer: 0
   m_Name: Coin
   m_TagString: Untagged
@@ -166,6 +167,7 @@ MonoBehaviour:
   disableColliderWhileDragging: 0
   pickupScaleMultiplier: 1.4
   scaleLerpSpeed: 10
+  debugInteract: 0
   onPickUp:
     m_PersistentCalls:
       m_Calls:
@@ -308,7 +310,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8e02ba72638dbbf458f4f580b012088e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NetworkCoin
-  syncDirection: 0
+  syncDirection: 1
   syncMode: 0
   syncInterval: 0
   ownerNetId: 0
@@ -347,3 +349,19 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
+--- !u!114 &206152032113006913
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5861153836025292340}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2bdc8d3d737dde8419d4afb239f189ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CoinClientSanity
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  logOnClick: 1

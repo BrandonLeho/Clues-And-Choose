@@ -77,6 +77,7 @@
     <Compile Include="Assets\Scripts\Board\Coins\CoinVisual.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorChoosingPhaseController.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardGenerator.cs" />
+    <Compile Include="Assets\Scripts\Board\Coins\CoinClientSanity.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinSpawner.cs" />
     <Compile Include="Assets\Scripts\Controller\DraggableItem.cs" />
     <Compile Include="Assets\Scripts\UI\LobbyUIManager.cs" />
