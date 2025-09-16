@@ -15,13 +15,9 @@ public class NetworkCoin : NetworkBehaviour
     {
         base.OnStartClient();
         ApplyColor(netColor);
-
-        var lp = NetworkClient.localPlayer;
-        var myId = lp ? lp.netId : 0u;
-        Debug.Log($"[NetworkCoin] OnStartClient coin({netId}) owner={ownerNetId} localPlayer={myId} isLocalOwner={IsLocalOwner()}");
     }
 
-    void OnColorChanged(Color32 _, Color32 nc) => ApplyColor(nc);
+    void OnColorChanged(Color32 _, Color32 newColor) => ApplyColor(newColor);
 
     void ApplyColor(Color32 c)
     {
@@ -31,8 +27,7 @@ public class NetworkCoin : NetworkBehaviour
 
     public bool IsLocalOwner()
     {
-        var lp = NetworkClient.localPlayer;
-        if (!lp) return false;
-        return lp.netId == ownerNetId;
+        var me = NetworkClient.connection?.identity;
+        return me && me.netId == ownerNetId;
     }
 }

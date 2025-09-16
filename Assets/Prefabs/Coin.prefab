@@ -142,6 +142,8 @@ MonoBehaviour:
   shape: 1.25
   transitionSpeed: 10
   ringThicknessPulse: 0.08
+  hoverScaleMultiplier: 1.487
+  scaleLerpSpeed: 10
 --- !u!114 &4930192264046914011
 MonoBehaviour:
   m_ObjectHideFlags: 0

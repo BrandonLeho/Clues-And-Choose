@@ -29,12 +29,13 @@ public class CoinDragSync : NetworkBehaviour
     [Command(requiresAuthority = false)]
     void CmdMove(Vector3 pos, NetworkConnectionToClient sender = null)
     {
-        if (_coin == null || sender?.identity == null) return;
-
-        uint senderId = sender.identity.netId;
-        if (_coin.ownerNetId != senderId) return;
+        if (_coin && sender != null)
+        {
+            var owner = _coin.ownerNetId;
+            var senderId = sender.identity ? sender.identity.netId : 0u;
+            if (owner != 0 && senderId != owner) return;
+        }
 
         transform.position = pos;
     }
-
 }

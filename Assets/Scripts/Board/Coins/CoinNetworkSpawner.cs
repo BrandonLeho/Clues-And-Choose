@@ -18,7 +18,6 @@ public class CoinNetworkSpawner : NetworkBehaviour
     [Range(0.5f, 1f)] public float slotFillRatio = 0.85f;
 
     bool _spawned;
-    RegistryDebugLogger registryDebugLogger;
 
     public override void OnStartServer()
     {

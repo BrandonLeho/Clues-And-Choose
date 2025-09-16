@@ -42,18 +42,21 @@ public class CoinDragHandler : MonoBehaviour
     Vector3 _baseScale;
     Vector3 _targetScale;
 
+    NetworkCoin _netCoin;
+    bool _allowLocalMove;
+
     void Awake()
     {
         _col = GetComponent<Collider2D>();
         if (!worldCamera) worldCamera = Camera.main;
-
         if (!targetRenderer) targetRenderer = GetComponent<SpriteRenderer>();
         _hadRenderer = targetRenderer != null;
         if (_hadRenderer) _baseSortingOrder = targetRenderer.sortingOrder;
-
         _origZ = transform.position.z;
         _baseScale = transform.localScale;
         _targetScale = _baseScale;
+
+        _netCoin = GetComponent<NetworkCoin>();
     }
 
     void Update()
@@ -61,12 +64,11 @@ public class CoinDragHandler : MonoBehaviour
         if (Input.touchSupported && Input.touchCount > 0) HandleTouch();
         else HandleMouse();
 
-        if (_isDragging)
+        if (_isDragging && _allowLocalMove)
         {
             Vector3 targetPos = GetPointerWorld(_activePointerId);
             if (preserveGrabOffset) targetPos += _grabOffsetLocal;
             targetPos.z = dragZ;
-
             transform.position = Vector3.Lerp(transform.position, targetPos,
                 1f - Mathf.Exp(-followSpeed * Time.deltaTime));
         }
@@ -74,6 +76,7 @@ public class CoinDragHandler : MonoBehaviour
         transform.localScale = Vector3.Lerp(transform.localScale, _targetScale,
             1f - Mathf.Exp(-scaleLerpSpeed * Time.deltaTime));
     }
+
 
     #region Mouse
     void HandleMouse()
@@ -142,8 +145,12 @@ public class CoinDragHandler : MonoBehaviour
 
     void BeginDrag(int pointerId, Vector2 worldPoint)
     {
+        if (_netCoin != null && !_netCoin.IsLocalOwner())
+            return;
+
         _activePointerId = pointerId;
         _isDragging = true;
+        _allowLocalMove = true;
 
         Vector3 coinPos = transform.position;
         Vector3 pointer3 = new Vector3(worldPoint.x, worldPoint.y, dragZ);
@@ -171,6 +178,7 @@ public class CoinDragHandler : MonoBehaviour
     {
         _isDragging = false;
         _activePointerId = -1;
+        _allowLocalMove = false;
 
         if (_hadRenderer) targetRenderer.sortingOrder = _baseSortingOrder;
         if (disableColliderWhileDragging) _col.enabled = true;
