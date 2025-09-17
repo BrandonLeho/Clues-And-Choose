@@ -84,6 +84,7 @@
     <Compile Include="Assets\Scripts\Controller\DraggableItem.cs" />
     <Compile Include="Assets\Scripts\UI\LobbyUIManager.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\RegistryDebugLogger.cs" />
+    <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverRoulette\ClueGiverRoulette.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinSpawnOnPhaseEnd.cs" />
     <Compile Include="Assets\Scripts\Steam\SteamLobby.cs" />
     <Compile Include="Assets\Scripts\Steam\CustomNetworkManager.cs" />
@@ -96,6 +97,7 @@
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandlerGame.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerRow.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinDragHandler.cs" />
+    <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverRoulette\RouletteOnPhaseEnd.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardAttachToBoard.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\SwatchHoverNeon.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\BoardLabels.cs" />
