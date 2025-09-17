@@ -48,11 +48,13 @@ public class CoinDragHandler : MonoBehaviour
     Vector3 _baseScale, _targetScale;
 
     NetworkCoin _netCoin;
+    CoinDragSync _sync;
 
     void Awake()
     {
         _col = GetComponent<Collider2D>();
         _netCoin = GetComponent<NetworkCoin>();
+        _sync = GetComponent<CoinDragSync>();
 
         if (!worldCamera)
         {
@@ -207,6 +209,7 @@ public class CoinDragHandler : MonoBehaviour
 
         _targetScale = _baseScale * pickupScaleMultiplier;
 
+        _sync?.BeginLocalDrag();
         onPickUp?.Invoke();
     }
 
@@ -225,6 +228,7 @@ public class CoinDragHandler : MonoBehaviour
 
         _targetScale = _baseScale;
 
+        _sync?.EndLocalDrag();
         onDrop?.Invoke();
     }
 
