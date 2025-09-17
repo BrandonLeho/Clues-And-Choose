@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Linq;
 using UnityEngine;
 
@@ -15,10 +16,22 @@ public class CoinDropSnap : MonoBehaviour
     [Tooltip("Keep the coin's current Z when snapping. If false, use the drop spot's Z.")]
     public bool keepCurrentZ = true;
 
+    [Header("Snap Tween")]
+    [Tooltip("Time (seconds) to tween into the snap position.")]
+    public float snapDuration = 0.18f;
+
+    [Tooltip("Ease curve for the tween (x=time 0..1, y=0..1).")]
+    public AnimationCurve snapEase = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
+    [Tooltip("If true, send intermediate network updates while tweening so others see smooth motion.")]
+    public bool sendNetworkDuringTween = true;
+
     Vector3 _lastValidWorldPos;
     float _spawnZ;
     CoinDragHandler _drag;
     CoinDragSync _sync;
+    Coroutine _snapRoutine;
+    bool _isTweening;
 
     void Awake()
     {
@@ -46,7 +59,12 @@ public class CoinDropSnap : MonoBehaviour
 
     void OnPickUp()
     {
-
+        if (_snapRoutine != null)
+        {
+            StopCoroutine(_snapRoutine);
+            _snapRoutine = null;
+            _isTweening = false;
+        }
     }
 
     void OnDrop()
@@ -66,28 +84,74 @@ public class CoinDropSnap : MonoBehaviour
                 .OrderBy(s => Vector2.SqrMagnitude(center2D - (Vector2)s.GetCenterWorld()))
                 .First();
 
-            Vector3 snapTarget = best.GetCenterWorld();
-            if (keepCurrentZ) snapTarget.z = transform.position.z;
+            Vector3 target = best.GetCenterWorld();
+            if (keepCurrentZ) target.z = transform.position.z;
 
-            ApplySnap(snapTarget, isValid: true);
+            StartSnapTween(target, updateLastValid: true);
         }
         else
         {
             Vector3 back = _lastValidWorldPos;
             if (!keepCurrentZ) back.z = _spawnZ;
-            ApplySnap(back, isValid: false);
+
+            StartSnapTween(back, updateLastValid: false);
         }
     }
 
-    void ApplySnap(Vector3 target, bool isValid)
+    void StartSnapTween(Vector3 target, bool updateLastValid)
     {
-        transform.position = target;
+        if (_snapRoutine != null)
+        {
+            StopCoroutine(_snapRoutine);
+        }
+        _snapRoutine = StartCoroutine(SnapTweenRoutine(target, updateLastValid));
+    }
 
-        if (isValid) _lastValidWorldPos = target;
+    IEnumerator SnapTweenRoutine(Vector3 target, bool updateLastValid)
+    {
+        _isTweening = true;
+
+        Vector3 start = transform.position;
+        if (snapDuration <= 0.0001f)
+        {
+            transform.position = target;
+            if (_sync) _sync.OwnerSnapTo(target);
+            if (updateLastValid) _lastValidWorldPos = target;
+            _isTweening = false;
+            yield break;
+        }
+
+        float t = 0f;
+        while (t < snapDuration)
+        {
+            float p = t / snapDuration;
+            float eased = snapEase != null ? snapEase.Evaluate(p) : p;
+
+            Vector3 pos = Vector3.LerpUnclamped(start, target, eased);
+            transform.position = pos;
+
+            if (sendNetworkDuringTween && _sync != null)
+            {
+                _sync.OwnerSendPositionThrottled(pos);
+            }
+
+            t += Time.deltaTime;
+            yield return null;
+        }
+
+        transform.position = target;
 
         if (_sync != null)
         {
             _sync.OwnerSnapTo(target);
         }
+
+        if (updateLastValid)
+        {
+            _lastValidWorldPos = target;
+        }
+
+        _isTweening = false;
+        _snapRoutine = null;
     }
 }

@@ -12,7 +12,9 @@ public class CoinDragSync : NetworkBehaviour
     [Header("Smoothing for non-owners")]
     [SerializeField] float lerpSpeed = 20f;
     [SerializeField] float snapIfFar = 0.5f;
+    [SerializeField] float minSendInterval = 0.05f;
 
+    float _lastSendTime = -999f;
     NetworkCoin _coin;
     float _lastSend;
     bool _streaming;
@@ -97,6 +99,16 @@ public class CoinDragSync : NetworkBehaviour
         {
             CmdMove(worldPos);
         }
+    }
+
+    public void OwnerSendPositionThrottled(Vector3 worldPos)
+    {
+        if (!isClient) return;
+        if (_coin == null || !_coin.IsLocalOwner()) return;
+
+        if (Time.time - _lastSendTime < minSendInterval) return;
+        _lastSendTime = Time.time;
+        CmdMove(worldPos);
     }
 
 }
