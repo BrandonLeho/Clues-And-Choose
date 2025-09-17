@@ -19,6 +19,7 @@ GameObject:
   - component: {fileID: 7759284121926917508}
   - component: {fileID: 6382785329410118573}
   - component: {fileID: 2192374657448525166}
+  - component: {fileID: 347154497940464648}
   m_Layer: 0
   m_Name: Coin
   m_TagString: Untagged
@@ -196,7 +197,10 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0
   sendInterval: 0.02
+  minSendDelta: 0.0009
   dragZ: 0
+  lerpSpeed: 20
+  snapIfFar: 0.5
 --- !u!114 &4261633262551534886
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -314,3 +318,20 @@ MonoBehaviour:
   ringThicknessPulse: 0.08
   hoverScaleMultiplier: 1.487
   scaleLerpSpeed: 10
+--- !u!114 &347154497940464648
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5861153836025292340}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 623c569959fafd247bc70eff747905b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CoinDropSnap
+  overlapRadius: 0.05
+  validSpotLayers:
+    serializedVersion: 2
+    m_Bits: 256
+  keepCurrentZ: 1

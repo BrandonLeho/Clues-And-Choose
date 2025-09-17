@@ -89,4 +89,14 @@ public class CoinDragSync : NetworkBehaviour
 
         transform.position = Vector3.Lerp(transform.position, _targetPos, 0.25f);
     }
+
+    public void OwnerSnapTo(Vector3 worldPos)
+    {
+        if (!isClient) return;
+        if (_coin != null && _coin.IsLocalOwner())
+        {
+            CmdMove(worldPos);
+        }
+    }
+
 }
