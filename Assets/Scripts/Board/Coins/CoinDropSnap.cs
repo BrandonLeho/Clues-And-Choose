@@ -31,7 +31,6 @@ public class CoinDropSnap : MonoBehaviour
     CoinDragHandler _drag;
     CoinDragSync _sync;
     Coroutine _snapRoutine;
-    bool _isTweening;
 
     void Awake()
     {
@@ -63,7 +62,6 @@ public class CoinDropSnap : MonoBehaviour
         {
             StopCoroutine(_snapRoutine);
             _snapRoutine = null;
-            _isTweening = false;
         }
     }
 
@@ -109,15 +107,12 @@ public class CoinDropSnap : MonoBehaviour
 
     IEnumerator SnapTweenRoutine(Vector3 target, bool updateLastValid)
     {
-        _isTweening = true;
-
         Vector3 start = transform.position;
         if (snapDuration <= 0.0001f)
         {
             transform.position = target;
             if (_sync) _sync.OwnerSnapTo(target);
             if (updateLastValid) _lastValidWorldPos = target;
-            _isTweening = false;
             yield break;
         }
 
@@ -151,7 +146,6 @@ public class CoinDropSnap : MonoBehaviour
             _lastValidWorldPos = target;
         }
 
-        _isTweening = false;
         _snapRoutine = null;
     }
 }
