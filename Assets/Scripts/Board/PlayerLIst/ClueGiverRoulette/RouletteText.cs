@@ -57,6 +57,16 @@ public class RouletteText : MonoBehaviour
     [Range(0f, 1f)] public float glowOuter = 0.25f;
     [Range(0f, 1.5f)] public float glowPower = 0.75f;
 
+    [Header("Winner Animation")]
+    public bool enableWinnerAnimation = true;
+    public float winnerDelay = 0.5f;
+    public float winnerAnimDuration = 0.6f;
+    public float othersDropDistance = 300f;
+    public float winnerDropDistance = 60f;
+    [Range(1f, 3f)] public float winnerScaleMultiplier = 1.4f;
+    public AnimationCurve winnerPosCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+    public AnimationCurve winnerScaleCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+    public bool suspendCurveDuringWinnerAnim = true;
 
 
     readonly List<TMP_Text> _allLabels = new List<TMP_Text>();
@@ -80,6 +90,19 @@ public class RouletteText : MonoBehaviour
     float _snapT;
     float _snapStartX;
     float _snapTargetX;
+
+    bool _inWinnerAnim = false;
+
+    struct LabelAnimState
+    {
+        public RectTransform rt;
+        public Vector2 startPos;
+        public Vector3 startScale;
+        public Vector2 endPos;
+        public Vector3 endScale;
+    }
+    readonly List<LabelAnimState> _winStates = new List<LabelAnimState>(128);
+
 
     System.Random _rng = new System.Random();
 
@@ -322,23 +345,12 @@ public class RouletteText : MonoBehaviour
         _content.anchoredPosition = new Vector2(_currentX, 0f);
         UpdateCurvedTrackEffect();
         _state = SpinState.Idle;
+        if (enableWinnerAnimation)
+            StartCoroutine(CoPlayWinnerSequenceWithDelay());
 
         int idx = Mathf.Clamp(GetIndexForTargetX(_targetX), 0, entries.Count - 1);
         OnSpinComplete?.Invoke(entries[idx], idx);
         Debug.Log("Winner: " + entries[idx]);
-    }
-
-    Color ResolveNameColor(string ownerName, Color current)
-    {
-        if (forceColor.a > 0f) return forceColor;
-        if (useRegistryColors && TryResolveRegistryColor(ownerName, out var c))
-        {
-            if (preserveNameAlpha) c.a = current.a;
-            return c;
-        }
-        return fallbackNameColor.a > 0f
-            ? new Color(fallbackNameColor.r, fallbackNameColor.g, fallbackNameColor.b, preserveNameAlpha ? current.a : fallbackNameColor.a)
-            : current;
     }
 
     bool TryResolveRegistryColor(string ownerName, out Color color)
@@ -373,8 +385,17 @@ public class RouletteText : MonoBehaviour
         else reg.OnRegistryChanged -= OnRegistryChanged;
     }
 
-    void OnEnable() { TryHookRegistryEvents(true); }
-    void OnDisable() { TryHookRegistryEvents(false); }
+    void OnEnable()
+    {
+        TryHookRegistryEvents(true);
+        OnSpinComplete.RemoveListener(OnSpinDonePlayWinAnim);
+        OnSpinComplete.AddListener(OnSpinDonePlayWinAnim);
+    }
+    void OnDisable()
+    {
+        TryHookRegistryEvents(false);
+        OnSpinComplete.RemoveListener(OnSpinDonePlayWinAnim);
+    }
 
     void SetOutline(TMP_Text t, Color col, float width, float softness)
     {
@@ -417,7 +438,7 @@ public class RouletteText : MonoBehaviour
 
     void UpdateCenterHighlight()
     {
-        if (!enableCenterGlow) return;
+        if (!enableCenterGlow || _inWinnerAnim) return;
         var now = FindLabelAtViewportCenter();
         if (now == _highlighted && now != null)
         {
@@ -502,7 +523,7 @@ public class RouletteText : MonoBehaviour
 
     void UpdateCurvedTrackEffect()
     {
-        if (!enableCurvedTrack || _allLabels == null || _allLabels.Count == 0 || _viewport == null)
+        if (!enableCurvedTrack || _allLabels == null || _allLabels.Count == 0 || _viewport == null || _inWinnerAnim)
             return;
 
         float centerXInContent = ViewportCenterX() - _currentX;
@@ -541,4 +562,91 @@ public class RouletteText : MonoBehaviour
             closest.transform.SetAsLastSibling();
     }
 
+    System.Collections.IEnumerator CoPlayWinnerSequenceWithDelay()
+    {
+        if (!enableWinnerAnimation) yield break;
+        if (_inWinnerAnim) yield break;
+
+        var winner = _highlighted != null ? _highlighted : FindLabelAtViewportCenter();
+        if (winner == null) yield break;
+
+        _inWinnerAnim = true;
+
+        float delay = Mathf.Max(0f, winnerDelay);
+        if (delay > 0f) yield return new WaitForSeconds(delay);
+
+        _winStates.Clear();
+        var wrt = winner.rectTransform;
+
+        for (int i = 0; i < _allLabels.Count; i++)
+        {
+            var t = _allLabels[i];
+            if (!t) continue;
+
+            var rt = t.rectTransform;
+            var s = new LabelAnimState
+            {
+                rt = rt,
+                startPos = rt.anchoredPosition,
+                startScale = rt.localScale
+            };
+
+            if (t == winner)
+            {
+                s.endPos = s.startPos + new Vector2(0f, -winnerDropDistance);
+                s.endScale = s.startScale * winnerScaleMultiplier;
+            }
+            else
+            {
+                s.endPos = s.startPos + new Vector2(0f, -othersDropDistance);
+                s.endScale = s.startScale;
+            }
+
+            _winStates.Add(s);
+        }
+
+        winner.transform.SetAsLastSibling();
+
+        float dur = Mathf.Max(0.001f, winnerAnimDuration);
+        float tNorm = 0f;
+        while (tNorm < 1f)
+        {
+            tNorm += Time.deltaTime / dur;
+            float pPos = winnerPosCurve.Evaluate(Mathf.Clamp01(tNorm));
+            float pScl = winnerScaleCurve.Evaluate(Mathf.Clamp01(tNorm));
+
+            for (int i = 0; i < _winStates.Count; i++)
+            {
+                var st = _winStates[i];
+                if (!st.rt) continue;
+
+                Vector2 pos = Vector2.LerpUnclamped(st.startPos, st.endPos, pPos);
+
+                Vector3 scl = (st.rt == wrt)
+                    ? Vector3.LerpUnclamped(st.startScale, st.endScale, pScl)
+                    : st.startScale;
+
+                st.rt.anchoredPosition = pos;
+                st.rt.localScale = scl;
+            }
+
+            yield return null;
+        }
+
+        for (int i = 0; i < _winStates.Count; i++)
+        {
+            var st = _winStates[i];
+            if (!st.rt) continue;
+            st.rt.anchoredPosition = st.endPos;
+            st.rt.localScale = st.endScale;
+        }
+
+        _inWinnerAnim = false;
+    }
+
+    void OnSpinDonePlayWinAnim(string name, int index)
+    {
+        if (enableWinnerAnimation)
+            StartCoroutine(CoPlayWinnerSequenceWithDelay());
+    }
 }
