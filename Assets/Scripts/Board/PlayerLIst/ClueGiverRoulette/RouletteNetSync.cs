@@ -1,115 +1,107 @@
+using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
 using Mirror;
+using UnityEngine;
 
 public class RouletteNetSync : NetworkBehaviour
 {
-    [Header("Scene refs")]
+    [Header("Refs")]
     [SerializeField] RouletteText roulette;
 
-    [Header("Spin config (applied to all clients)")]
-    [SerializeField] float initialSpeed = 1200f;
-    [SerializeField] float decelMultiplier = 1.0f;
-    [SerializeField] int extraLoops = 3;
-    [SerializeField] float maxSlowdownSeconds = 0f;
+    [Header("Roster")]
+    [SerializeField] bool useRosterStore = true;
+    [SerializeField] bool sortNames = true;
 
-    [Header("Data broadcast")]
-    [Tooltip("Send the names to clients in the RPC (most robust). Turn off only if every client already has the same list/order.")]
-    [SerializeField] bool sendNamesInRpc = true;
+    [Header("Spin Scheduling")]
+    [SerializeField] float startDelay = 0.35f; // seconds from now (server) to start on clients
 
-    [Header("Timing")]
-    [Tooltip("Small delay so all clients begin at the same NetworkTime.")]
-    [SerializeField] float startDelay = 0.10f;
-
-    bool spinScheduled;
-    double scheduledStart;
+    bool spinning;
 
     void Reset() => roulette = GetComponent<RouletteText>();
+    void Awake() { if (!roulette) roulette = GetComponent<RouletteText>(); }
 
+    public override void OnStartClient()
+    {
+        base.OnStartClient();
+        BuildEntries();
+    }
+
+    public void BuildEntries()
+    {
+        if (!roulette) return;
+        var names = new List<string>();
+
+        if (useRosterStore && RosterStore.Instance != null && RosterStore.Instance.Names != null)
+            names.AddRange(RosterStore.Instance.Names);
+
+        if (sortNames) names.Sort(StringComparer.InvariantCultureIgnoreCase);
+
+        if (names.Count > 0)
+        {
+            roulette.entries = names;
+            roulette.Rebuild();
+        }
+    }
+
+    [Client]
     public void RequestSpin()
     {
-        if (isServer) ServerStartSpin();
-        else CmdRequestSpin();
+        if (spinning) return;
+        CmdRequestSpin();
     }
 
     [Command(requiresAuthority = false)]
-    void CmdRequestSpin() => ServerStartSpin();
-
-    [Server]
-    void ServerStartSpin()
+    void CmdRequestSpin()
     {
-        var names = GetEntriesServer();
-        if (names == null || names.Count == 0)
-        {
-            Debug.LogWarning("RouletteNetSync: No names to spin.");
-            return;
-        }
+        if (spinning) return;
+        spinning = true;
 
-        int chosenIndex = Random.Range(0, names.Count);
-        int loops = Mathf.Max(0, extraLoops);
-        double startTime = NetworkTime.time + startDelay;
+        var names = (RosterStore.Instance != null ? RosterStore.Instance.Names : null) ?? new List<string>();
+        if (sortNames) names.Sort(StringComparer.InvariantCultureIgnoreCase);
+        int count = names.Count;
 
-        if (sendNamesInRpc)
-            RpcStartSpinWithNames(names.ToArray(), chosenIndex, loops, initialSpeed, decelMultiplier, maxSlowdownSeconds, startTime);
-        else
-            RpcStartSpin(chosenIndex, loops, initialSpeed, decelMultiplier, maxSlowdownSeconds, startTime);
+        if (count == 0) { spinning = false; return; }
+
+        int chosenIndex = UnityEngine.Random.Range(0, count);
+
+        int loops = UnityEngine.Random.Range(roulette.minExtraLoops, roulette.maxExtraLoops + 1);
+
+        float speed = roulette.initialSpeed;
+        float decel = roulette.decelMultiplier;
+
+        double startAt = NetworkTime.time + startDelay;
+
+        RpcStartSpin(chosenIndex, loops, startAt, speed, decel);
     }
 
     [ClientRpc]
-    void RpcStartSpinWithNames(string[] names, int chosenIndex, int loops, float initSpeed, float decelMult, float maxSlowSec, double startTime)
+    void RpcStartSpin(int chosenIndex, int loops, double startNetworkTime, float speed, float decel)
     {
-        if (!roulette) return;
-        ApplyEntries(names);
-        ApplySpinConfig(chosenIndex, loops, initSpeed, decelMult, maxSlowSec);
-        Schedule(startTime);
+        StartCoroutine(CoSpin(chosenIndex, loops, startNetworkTime, speed, decel));
     }
 
-    [ClientRpc]
-    void RpcStartSpin(int chosenIndex, int loops, float initSpeed, float decelMult, float maxSlowSec, double startTime)
+    IEnumerator CoSpin(int chosenIndex, int loops, double startNetworkTime, float speed, float decel)
     {
-        if (!roulette) return;
-        ApplySpinConfig(chosenIndex, loops, initSpeed, decelMult, maxSlowSec);
-        Schedule(startTime);
-    }
+        if (roulette.entries == null || roulette.entries.Count == 0) BuildEntries();
 
-    void ApplyEntries(IList<string> names)
-    {
-        roulette.entries = new List<string>(names);
-        roulette.Rebuild();
-    }
-
-    void ApplySpinConfig(int index, int loops, float initSpeed, float decelMult, float maxSlowSec)
-    {
-        roulette.forceTargetIndex = index;
+        roulette.forceTargetIndex = chosenIndex;
         roulette.minExtraLoops = loops;
         roulette.maxExtraLoops = loops;
-        roulette.initialSpeed = initSpeed;
-        roulette.decelMultiplier = decelMult;
-        roulette.maxSlowdownSeconds = maxSlowSec;
-    }
-
-    void Schedule(double networkStartTime)
-    {
+        roulette.initialSpeed = speed;
+        roulette.decelMultiplier = decel;
         roulette.Rebuild();
-        scheduledStart = networkStartTime;
-        spinScheduled = true;
+
+        while (NetworkTime.time < startNetworkTime - 0.001) yield return null;
+
+        spinning = true;
+        roulette.OnSpinComplete.RemoveListener(OnSpinCompleteLocal);
+        roulette.OnSpinComplete.AddListener(OnSpinCompleteLocal);
+        roulette.StartSpin();
     }
 
-    void Update()
+    void OnSpinCompleteLocal(string name, int index)
     {
-        if (spinScheduled && NetworkTime.time >= scheduledStart)
-        {
-            spinScheduled = false;
-            roulette.StartSpin();
-        }
-    }
-
-    List<string> GetEntriesServer()
-    {
-        if (RosterStore.Instance != null && RosterStore.Instance.Names != null && RosterStore.Instance.Names.Count > 0)
-            return new List<string>(RosterStore.Instance.Names);
-
-        return null;
+        spinning = false;
     }
 }
