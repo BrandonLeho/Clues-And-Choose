@@ -29,6 +29,12 @@ public class RouletteText : MonoBehaviour
 
     public int copiesEachSide = 3;
 
+    [Header("Name Colors")]
+    public bool useRegistryColors = true;
+    public bool rebuildOnRegistryChanged = true;
+    public bool preserveNameAlpha = true;
+    public Color fallbackNameColor = Color.white;
+
     public UnityEvent<string, int> OnSpinComplete;
 
     RectTransform _root;
@@ -190,6 +196,7 @@ public class RouletteText : MonoBehaviour
             if (forceFontSize > 0f) t.fontSize = forceFontSize;
             if (forceColor.a > 0f) t.color = forceColor;
             t.text = entries[i];
+            t.color = ResolveNameColor(entries[i], t.color);
             t.raycastTarget = false;
 
             var rt = t.rectTransform;
@@ -231,6 +238,7 @@ public class RouletteText : MonoBehaviour
             if (forceFontSize > 0f) t.fontSize = forceFontSize;
             if (forceColor.a > 0f) t.color = forceColor;
             t.text = entries[i];
+            t.color = ResolveNameColor(entries[i], t.color);
             t.raycastTarget = false;
 
             var rt = t.rectTransform;
@@ -325,7 +333,72 @@ public class RouletteText : MonoBehaviour
         int idx = GetIndexForTargetX(_targetX);
         idx = Mathf.Clamp(idx, 0, entries.Count - 1);
         OnSpinComplete?.Invoke(entries[idx], idx);
+        Debug.Log("Winner: " + entries[idx]);
     }
+
+    Color ResolveNameColor(string ownerName, Color current)
+    {
+        if (forceColor.a > 0f) return forceColor;
+
+        if (useRegistryColors && TryResolveRegistryColor(ownerName, out var c))
+        {
+            if (preserveNameAlpha) c.a = current.a;
+            return c;
+        }
+        return fallbackNameColor.a > 0f ? new Color(fallbackNameColor.r, fallbackNameColor.g, fallbackNameColor.b, preserveNameAlpha ? current.a : fallbackNameColor.a) : current;
+    }
+
+    bool TryResolveRegistryColor(string ownerName, out Color color)
+    {
+        color = Color.white;
+        if (string.IsNullOrWhiteSpace(ownerName)) return false;
+
+        var reg = ColorLockRegistry.GetOrFind();
+        if (reg == null) return false;
+
+        foreach (var kv in reg.lockedBy)
+        {
+            int index = kv.Key;
+            uint netId = kv.Value;
+
+            if (reg.labelByIndex.TryGetValue(index, out var label) &&
+                string.Equals(label, ownerName, System.StringComparison.Ordinal))
+            {
+                if (reg.colorByOwner.TryGetValue(netId, out var c32))
+                {
+                    color = c32;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    void RecolorItemsOnly()
+    {
+        if (!useRegistryColors || _content == null) return;
+
+        for (int i = 0; i < _content.childCount; i++)
+        {
+            var tmp = _content.GetChild(i).GetComponent<TMPro.TMP_Text>();
+            if (!tmp) continue;
+            tmp.color = ResolveNameColor(tmp.text, tmp.color);
+        }
+    }
+
+    void TryHookRegistryEvents(bool hook)
+    {
+        if (!useRegistryColors || !rebuildOnRegistryChanged) return;
+
+        var reg = ColorLockRegistry.GetOrFind();
+        if (reg == null) return;
+
+        if (hook) reg.OnRegistryChanged += RecolorItemsOnly;
+        else reg.OnRegistryChanged -= RecolorItemsOnly;
+    }
+
+    void OnEnable() { TryHookRegistryEvents(true); }
+    void OnDisable() { TryHookRegistryEvents(false); }
 
 
 }

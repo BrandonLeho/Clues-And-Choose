@@ -82,6 +82,7 @@
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorChoosingPhaseController.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardGenerator.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinClientSanity.cs" />
+    <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerNameColorBinder.cs" />
     <Compile Include="Assets\Scripts\Controller\DraggableItem.cs" />
     <Compile Include="Assets\Scripts\UI\LobbyUIManager.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\RegistryDebugLogger.cs" />
@@ -98,6 +99,7 @@
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandlerGame.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerRow.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinDragHandler.cs" />
+    <Compile Include="Assets\Scripts\Board\PlayerLIst\RegistryNameColorLookup.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardAttachToBoard.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\SwatchHoverNeon.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\BoardLabels.cs" />
