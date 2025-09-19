@@ -69,8 +69,6 @@ public class CoinNetworkSpawner : NetworkBehaviour
         }
         if (slots.Count == 0) { Debug.LogError("[CoinNetworkSpawner] No RectTransform slots found."); return; }
 
-        Debug.Log($"[CoinNetworkSpawner] Spawning {coinsNeeded} coins. worldCamera={(worldCamera ? worldCamera.name : "<null>")} fallback={usingFallback}");
-
         Vector3 fbStart = worldParent ? worldParent.position : Vector3.zero;
         float fbStep = 1.0f;
 

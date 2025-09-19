@@ -42,7 +42,6 @@ public class RouletteText : MonoBehaviour
     float _targetX;
     float _speed;
     float _decel;
-    bool _spinning;
 
     enum SpinState { Idle, Decelerating, Snapping }
     SpinState _state = SpinState.Idle;
@@ -121,6 +120,8 @@ public class RouletteText : MonoBehaviour
             ? forceTargetIndex
             : _rng.Next(0, entries.Count);
 
+        Debug.Log(chosenIndex);
+
         float baseTargetUnwrapped = -(_itemCenters[chosenIndex] - ViewportCenterX());
         int loops = Mathf.Clamp(_rng.Next(minExtraLoops, maxExtraLoops + 1), 0, 100);
 
@@ -149,7 +150,6 @@ public class RouletteText : MonoBehaviour
         }
 
         _decel = scaledDecel;
-        _spinning = true;
         _state = SpinState.Decelerating;
     }
 
@@ -321,10 +321,11 @@ public class RouletteText : MonoBehaviour
 
         _content.anchoredPosition = new Vector2(_currentX, 0f);
         _state = SpinState.Idle;
-        _spinning = false;
 
         int idx = GetIndexForTargetX(_targetX);
         idx = Mathf.Clamp(idx, 0, entries.Count - 1);
         OnSpinComplete?.Invoke(entries[idx], idx);
     }
+
+
 }
