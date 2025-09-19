@@ -271,7 +271,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b36c9cb3e5ab1943a6b40baa3743a23, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CoinVisual
-  baseColor: {r: 1, g: 0.02109914, b: 0, a: 1}
+  baseColor: {r: 1, g: 1, b: 1, a: 1}
   ringSaturationBoost: 0.5
   ringValueBoost: 0.266
   fillDarkenAmount: 0.653

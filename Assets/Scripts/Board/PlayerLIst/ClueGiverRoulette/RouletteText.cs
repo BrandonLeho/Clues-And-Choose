@@ -9,25 +9,32 @@ using TMPro;
 public class RouletteText : MonoBehaviour
 {
     public List<string> entries = new List<string>();
-
     public TMP_Text itemPrefab;
     public float horizontalPadding = 32f;
     public float itemSpacing = 24f;
     public float forceFontSize = 0f;
     public Color forceColor = new Color(0, 0, 0, 0);
-
     public float initialSpeed = 1200f;
     public float decelMultiplier = 1.0f;
     public int minExtraLoops = 2;
     public int maxExtraLoops = 4;
     public int forceTargetIndex = -1;
     public float maxSlowdownSeconds = 0f;
-
     public bool enableFinalSnap = true;
     public float snapDuration = 0.25f;
     public float snapEasePower = 2.0f;
-
     public int copiesEachSide = 3;
+
+    [Header("Curved Track & Scale")]
+    public bool enableCurvedTrack = true;
+    public float curveHeight = 40f;
+    public float baseTrackY = 0f;
+    [Range(0.25f, 3f)] public float curveWidthFactor = 1.0f;
+    [Range(0.5f, 3f)] public float curveExponent = 1.0f;
+    [Range(0.1f, 1.0f)] public float scaleAtEdges = 0.85f;
+    [Range(1.0f, 2.5f)] public float scaleAtCenter = 1.25f;
+    public bool setCenterAsLastSibling = false;
+
 
     [Header("Name Colors")]
     public bool useRegistryColors = true;
@@ -35,9 +42,27 @@ public class RouletteText : MonoBehaviour
     public bool preserveNameAlpha = true;
     public Color fallbackNameColor = Color.white;
 
+    [Header("Center Highlight")]
+    public bool enableCenterGlow = true;
+    [Range(0f, 1f)] public float centerOutlineWidth = 0.25f;
+    [Range(0f, 1f)] public float centerOutlineSoftness = 0.15f;
+    public Color defaultOutlineColor = Color.white;
+    public Color baseTextColor = Color.white;
+    public bool useRegistryColorsForGlow = true;
+
+    [Header("Center Glow")]
+    [ColorUsage(true, true)] public Color glowOverrideColor = Color.white;
+    [Range(-1f, 1f)] public float glowOffset = 0f;
+    [Range(0f, 1f)] public float glowInner = 1f;
+    [Range(0f, 1f)] public float glowOuter = 0.25f;
+    [Range(0f, 1.5f)] public float glowPower = 0.75f;
+
+
+
+    readonly List<TMP_Text> _allLabels = new List<TMP_Text>();
+    TMP_Text _highlighted;
     public UnityEvent<string, int> OnSpinComplete;
 
-    RectTransform _root;
     RectTransform _viewport;
     RectTransform _content;
 
@@ -60,7 +85,6 @@ public class RouletteText : MonoBehaviour
 
     void Awake()
     {
-        _root = (RectTransform)transform;
         EnsureViewportAndContent();
     }
 
@@ -72,40 +96,29 @@ public class RouletteText : MonoBehaviour
     void Update()
     {
         if (_state == SpinState.Idle) return;
-
         float dt = Time.unscaledDeltaTime;
-
-        if (_state == SpinState.Decelerating)
+        switch (_state)
         {
-            _speed = Mathf.Max(0f, _speed - _decel * dt);
-            _currentX -= _speed * dt;
-
-            while (_currentX <= -_listWidth) _currentX += _listWidth;
-
-            _content.anchoredPosition = new Vector2(_currentX, 0f);
-
-            if (enableFinalSnap && _speed <= 30f)
-            {
-                BeginFinalSnap();
-            }
-            else if (!enableFinalSnap && _speed <= 0.0001f)
-            {
-                SnapToExactTargetAndComplete();
-            }
-        }
-        else if (_state == SpinState.Snapping)
-        {
-            _snapT += dt / Mathf.Max(0.0001f, snapDuration);
-            float p = Mathf.Clamp01(_snapT);
-            float eased = 1f - Mathf.Pow(1f - p, Mathf.Max(1f, snapEasePower));
-
-            _currentX = Mathf.Lerp(_snapStartX, _snapTargetX, eased);
-            _content.anchoredPosition = new Vector2(_currentX, 0f);
-
-            if (p >= 1f - 1e-5f)
-            {
-                SnapToExactTargetAndComplete();
-            }
+            case SpinState.Decelerating:
+                _speed = Mathf.Max(0f, _speed - _decel * dt);
+                _currentX -= _speed * dt;
+                while (_currentX <= -_listWidth) _currentX += _listWidth;
+                _content.anchoredPosition = new Vector2(_currentX, 0f);
+                UpdateCenterHighlight();
+                UpdateCurvedTrackEffect();
+                if (enableFinalSnap && _speed <= 30f) BeginFinalSnap();
+                else if (!enableFinalSnap && _speed <= 0.0001f) SnapToExactTargetAndComplete();
+                break;
+            case SpinState.Snapping:
+                _snapT += dt / Mathf.Max(0.0001f, snapDuration);
+                float p = Mathf.Clamp01(_snapT);
+                float eased = 1f - Mathf.Pow(1f - p, Mathf.Max(1f, snapEasePower));
+                _currentX = Mathf.Lerp(_snapStartX, _snapTargetX, eased);
+                _content.anchoredPosition = new Vector2(_currentX, 0f);
+                UpdateCenterHighlight();
+                UpdateCurvedTrackEffect();
+                if (p >= 1f - 1e-5f) SnapToExactTargetAndComplete();
+                break;
         }
     }
 
@@ -122,10 +135,7 @@ public class RouletteText : MonoBehaviour
             if (_listWidth <= 0f) return;
         }
 
-        int chosenIndex = forceTargetIndex >= 0 && forceTargetIndex < entries.Count
-            ? forceTargetIndex
-            : _rng.Next(0, entries.Count);
-
+        int chosenIndex = forceTargetIndex >= 0 && forceTargetIndex < entries.Count ? forceTargetIndex : _rng.Next(0, entries.Count);
         Debug.Log(chosenIndex);
 
         float baseTargetUnwrapped = -(_itemCenters[chosenIndex] - ViewportCenterX());
@@ -136,24 +146,18 @@ public class RouletteText : MonoBehaviour
 
         float canonicalTarget = baseTargetUnwrapped - loops * _listWidth;
         float canonicalDistance = Mathf.Max(1f, _currentX - canonicalTarget);
-        float baseDecel = (_speed * _speed) / (2f * canonicalDistance);
-        float scaledDecel = Mathf.Max(1e-3f, baseDecel * Mathf.Max(0.01f, decelMultiplier));
-        float stopDistance = (_speed * _speed) / (2f * scaledDecel);
-        float desiredStopX = _currentX - stopDistance;
-
-        int k = Mathf.CeilToInt((baseTargetUnwrapped - desiredStopX) / _listWidth);
-        _targetX = baseTargetUnwrapped - k * _listWidth;
+        float scaledDecel = Mathf.Max(1e-3f, ((_speed * _speed) / (2f * canonicalDistance)) * Mathf.Max(0.01f, decelMultiplier));
 
         if (maxSlowdownSeconds > 0f)
         {
             float minRequiredDecel = _speed / Mathf.Max(0.01f, maxSlowdownSeconds);
-            scaledDecel = Mathf.Max(scaledDecel, minRequiredDecel);
-            stopDistance = (_speed * _speed) / (2f * scaledDecel);
-            desiredStopX = _currentX - stopDistance;
-            k = Mathf.CeilToInt((baseTargetUnwrapped - desiredStopX) / _listWidth);
-            _targetX = baseTargetUnwrapped - k * _listWidth;
-            _decel = scaledDecel;
+            if (scaledDecel < minRequiredDecel) scaledDecel = minRequiredDecel;
         }
+
+        float stopDistance = (_speed * _speed) / (2f * scaledDecel);
+        float desiredStopX = _currentX - stopDistance;
+        int k = Mathf.CeilToInt((baseTargetUnwrapped - desiredStopX) / _listWidth);
+        _targetX = baseTargetUnwrapped - k * _listWidth;
 
         _decel = scaledDecel;
         _state = SpinState.Decelerating;
@@ -162,14 +166,16 @@ public class RouletteText : MonoBehaviour
     [ContextMenu("Rebuild")]
     public void Rebuild()
     {
-        for (int i = _content.childCount - 1; i >= 0; i--)
-            DestroyImmediate(_content.GetChild(i).gameObject);
+        if (_content != null)
+        {
+            for (int i = _content.childCount - 1; i >= 0; i--) DestroyImmediate(_content.GetChild(i).gameObject);
+        }
 
+        _allLabels.Clear();
         _itemCenters.Clear();
         _listWidth = 0f;
 
-        if (entries == null || entries.Count == 0 || itemPrefab == null)
-            return;
+        if (entries == null || entries.Count == 0 || itemPrefab == null) return;
 
         var widths = new float[entries.Count];
         float maxWidth = 0f;
@@ -181,38 +187,29 @@ public class RouletteText : MonoBehaviour
             if (forceFontSize > 0f) measure.fontSize = forceFontSize;
             measure.ForceMeshUpdate();
             float w = measure.preferredWidth + horizontalPadding;
-            maxWidth = Mathf.Max(maxWidth, w);
+            if (w > maxWidth) maxWidth = w;
             DestroyImmediate(measure.gameObject);
         }
-
-        for (int i = 0; i < entries.Count; i++)
-            widths[i] = maxWidth;
+        for (int i = 0; i < entries.Count; i++) widths[i] = maxWidth;
 
         float x = 0f;
         var centerItems = new List<RectTransform>(entries.Count);
         for (int i = 0; i < entries.Count; i++)
         {
             var t = Instantiate(itemPrefab, _content);
-            if (forceFontSize > 0f) t.fontSize = forceFontSize;
-            if (forceColor.a > 0f) t.color = forceColor;
+            InitLabelVisual(t);
             t.text = entries[i];
-            t.color = ResolveNameColor(entries[i], t.color);
             t.raycastTarget = false;
 
             var rt = t.rectTransform;
-            rt.anchorMin = new Vector2(0f, 0.5f);
-            rt.anchorMax = new Vector2(0f, 0.5f);
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.anchoredPosition = new Vector2(0f, 0f);
-            rt.sizeDelta = new Vector2(widths[i], rt.sizeDelta.y);
-
+            SetupRect(rt, widths[i], 0f);
             float half = widths[i] * 0.5f;
             x += half;
             rt.anchoredPosition = new Vector2(x, 0f);
             _itemCenters.Add(x);
             x += half + itemSpacing;
-
             centerItems.Add(rt);
+            _allLabels.Add(t);
         }
         _listWidth = x - itemSpacing;
 
@@ -227,6 +224,8 @@ public class RouletteText : MonoBehaviour
 
         _currentX = 0f;
         _content.anchoredPosition = new Vector2(_currentX, 0f);
+        UpdateCenterHighlight();
+        UpdateCurvedTrackEffect();
     }
 
     void BuildCopy(List<RectTransform> sourceCenterItems, float offsetX)
@@ -235,18 +234,14 @@ public class RouletteText : MonoBehaviour
         {
             var src = sourceCenterItems[i];
             var t = Instantiate(itemPrefab, _content);
-            if (forceFontSize > 0f) t.fontSize = forceFontSize;
-            if (forceColor.a > 0f) t.color = forceColor;
+            InitLabelVisual(t);
             t.text = entries[i];
-            t.color = ResolveNameColor(entries[i], t.color);
             t.raycastTarget = false;
 
             var rt = t.rectTransform;
-            rt.anchorMin = new Vector2(0f, 0.5f);
-            rt.anchorMax = new Vector2(0f, 0.5f);
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta = new Vector2(src.sizeDelta.x, src.sizeDelta.y);
+            SetupRect(rt, src.sizeDelta.x, 0f);
             rt.anchoredPosition = new Vector2(src.anchoredPosition.x + offsetX, 0f);
+            _allLabels.Add(t);
         }
     }
 
@@ -276,7 +271,7 @@ public class RouletteText : MonoBehaviour
             _content.anchorMax = new Vector2(0f, 0.5f);
             _content.pivot = new Vector2(0f, 0.5f);
             _content.anchoredPosition = Vector2.zero;
-            _content.sizeDelta = new Vector2(0f, 0f);
+            _content.sizeDelta = Vector2.zero;
         }
     }
 
@@ -310,9 +305,8 @@ public class RouletteText : MonoBehaviour
         _state = SpinState.Snapping;
         _snapT = 0f;
         _snapStartX = _currentX;
-        float delta = _targetX - _currentX;
         float m = _listWidth;
-        float wrapped = Mathf.Repeat(delta + m * 0.5f, m) - m * 0.5f;
+        float wrapped = Mathf.Repeat((_targetX - _currentX) + m * 0.5f, m) - m * 0.5f;
         _snapTargetX = _currentX + wrapped;
     }
 
@@ -322,16 +316,14 @@ public class RouletteText : MonoBehaviour
         if (_state != SpinState.Snapping)
         {
             float m = _listWidth;
-            float delta = _targetX - _currentX;
-            float wrapped = Mathf.Repeat(delta + m * 0.5f, m) - m * 0.5f;
+            float wrapped = Mathf.Repeat((_targetX - _currentX) + m * 0.5f, m) - m * 0.5f;
             _currentX += wrapped;
         }
-
         _content.anchoredPosition = new Vector2(_currentX, 0f);
+        UpdateCurvedTrackEffect();
         _state = SpinState.Idle;
 
-        int idx = GetIndexForTargetX(_targetX);
-        idx = Mathf.Clamp(idx, 0, entries.Count - 1);
+        int idx = Mathf.Clamp(GetIndexForTargetX(_targetX), 0, entries.Count - 1);
         OnSpinComplete?.Invoke(entries[idx], idx);
         Debug.Log("Winner: " + entries[idx]);
     }
@@ -339,30 +331,28 @@ public class RouletteText : MonoBehaviour
     Color ResolveNameColor(string ownerName, Color current)
     {
         if (forceColor.a > 0f) return forceColor;
-
         if (useRegistryColors && TryResolveRegistryColor(ownerName, out var c))
         {
             if (preserveNameAlpha) c.a = current.a;
             return c;
         }
-        return fallbackNameColor.a > 0f ? new Color(fallbackNameColor.r, fallbackNameColor.g, fallbackNameColor.b, preserveNameAlpha ? current.a : fallbackNameColor.a) : current;
+        return fallbackNameColor.a > 0f
+            ? new Color(fallbackNameColor.r, fallbackNameColor.g, fallbackNameColor.b, preserveNameAlpha ? current.a : fallbackNameColor.a)
+            : current;
     }
 
     bool TryResolveRegistryColor(string ownerName, out Color color)
     {
         color = Color.white;
-        if (string.IsNullOrWhiteSpace(ownerName)) return false;
-
+        if (!useRegistryColorsForGlow || string.IsNullOrWhiteSpace(ownerName)) return false;
         var reg = ColorLockRegistry.GetOrFind();
-        if (reg == null) return false;
+        if (!reg) return false;
 
         foreach (var kv in reg.lockedBy)
         {
             int index = kv.Key;
             uint netId = kv.Value;
-
-            if (reg.labelByIndex.TryGetValue(index, out var label) &&
-                string.Equals(label, ownerName, System.StringComparison.Ordinal))
+            if (reg.labelByIndex.TryGetValue(index, out var label) && string.Equals(label, ownerName, StringComparison.Ordinal))
             {
                 if (reg.colorByOwner.TryGetValue(netId, out var c32))
                 {
@@ -374,31 +364,181 @@ public class RouletteText : MonoBehaviour
         return false;
     }
 
-    void RecolorItemsOnly()
-    {
-        if (!useRegistryColors || _content == null) return;
-
-        for (int i = 0; i < _content.childCount; i++)
-        {
-            var tmp = _content.GetChild(i).GetComponent<TMPro.TMP_Text>();
-            if (!tmp) continue;
-            tmp.color = ResolveNameColor(tmp.text, tmp.color);
-        }
-    }
-
     void TryHookRegistryEvents(bool hook)
     {
-        if (!useRegistryColors || !rebuildOnRegistryChanged) return;
-
+        if (!useRegistryColorsForGlow) return;
         var reg = ColorLockRegistry.GetOrFind();
-        if (reg == null) return;
-
-        if (hook) reg.OnRegistryChanged += RecolorItemsOnly;
-        else reg.OnRegistryChanged -= RecolorItemsOnly;
+        if (!reg) return;
+        if (hook) reg.OnRegistryChanged += OnRegistryChanged;
+        else reg.OnRegistryChanged -= OnRegistryChanged;
     }
 
     void OnEnable() { TryHookRegistryEvents(true); }
     void OnDisable() { TryHookRegistryEvents(false); }
 
+    void SetOutline(TMP_Text t, Color col, float width, float softness)
+    {
+        if (!t) return;
+        var mat = t.fontMaterial;
+        mat.SetFloat(ShaderUtilities.ID_OutlineWidth, width);
+        mat.SetFloat(ShaderUtilities.ID_OutlineSoftness, softness);
+        mat.SetColor(ShaderUtilities.ID_OutlineColor, col);
+        t.fontMaterial = mat;
+    }
+
+    void ClearOutline(TMP_Text t)
+    {
+        if (!t) return;
+        var mat = t.fontMaterial;
+        mat.SetFloat(ShaderUtilities.ID_OutlineWidth, 0f);
+        mat.SetFloat(ShaderUtilities.ID_OutlineSoftness, 0f);
+        t.fontMaterial = mat;
+    }
+
+    TMP_Text FindLabelAtViewportCenter()
+    {
+        if (_allLabels.Count == 0 || _viewport == null) return null;
+        float centerXInContent = ViewportCenterX() - _currentX;
+        TMP_Text best = null;
+        float bestDist = float.MaxValue;
+        for (int i = 0; i < _allLabels.Count; i++)
+        {
+            var t = _allLabels[i];
+            if (!t) continue;
+            float dx = Mathf.Abs(t.rectTransform.anchoredPosition.x - centerXInContent);
+            if (dx < bestDist)
+            {
+                bestDist = dx;
+                best = t;
+            }
+        }
+        return best;
+    }
+
+    void UpdateCenterHighlight()
+    {
+        if (!enableCenterGlow) return;
+        var now = FindLabelAtViewportCenter();
+        if (now == _highlighted && now != null)
+        {
+            ApplyHighlightColor(now);
+            return;
+        }
+        if (_highlighted)
+        {
+            ClearOutline(_highlighted);
+            ClearGlow(_highlighted);
+        }
+        _highlighted = now;
+        ApplyHighlightColor(_highlighted);
+    }
+
+    void ApplyHighlightColor(TMP_Text t)
+    {
+        if (!t) return;
+
+        Color col;
+        if (useRegistryColorsForGlow && TryResolveRegistryColor(t.text, out var regCol))
+            col = regCol;
+        else
+            col = glowOverrideColor;
+
+        SetOutline(t, col, centerOutlineWidth, centerOutlineSoftness);
+
+        if (enableCenterGlow)
+            SetGlow(t, col, glowOffset, glowInner, glowOuter, glowPower);
+        else
+            ClearGlow(t);
+    }
+
+
+    void OnRegistryChanged() => ApplyHighlightColor(_highlighted);
+
+    static void SetupRect(RectTransform rt, float width, float y)
+    {
+        rt.anchorMin = new Vector2(0f, 0.5f);
+        rt.anchorMax = new Vector2(0f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.sizeDelta = new Vector2(width, rt.sizeDelta.y);
+        rt.anchoredPosition = new Vector2(0f, y);
+    }
+
+    void SetGlow(TMP_Text t, Color col, float offset, float inner, float outer, float power)
+    {
+        if (!t) return;
+        var mat = t.fontMaterial;
+        mat.EnableKeyword(ShaderUtilities.Keyword_Glow);
+        mat.SetColor(ShaderUtilities.ID_GlowColor, col);
+        mat.SetFloat(ShaderUtilities.ID_GlowOffset, offset);
+        mat.SetFloat(ShaderUtilities.ID_GlowInner, inner);
+        mat.SetFloat(ShaderUtilities.ID_GlowOuter, outer);
+        mat.SetFloat(ShaderUtilities.ID_GlowPower, power);
+        t.fontMaterial = mat;
+    }
+
+    void ClearGlow(TMP_Text t)
+    {
+        if (!t) return;
+        var mat = t.fontMaterial;
+        mat.DisableKeyword(ShaderUtilities.Keyword_Glow);
+        mat.SetFloat(ShaderUtilities.ID_GlowInner, 0f);
+        mat.SetFloat(ShaderUtilities.ID_GlowOuter, 0f);
+        mat.SetFloat(ShaderUtilities.ID_GlowPower, 0f);
+        t.fontMaterial = mat;
+    }
+
+    void InitLabelVisual(TMP_Text t)
+    {
+        if (!t) return;
+        if (forceFontSize > 0f) t.fontSize = forceFontSize;
+
+        if (forceColor.a > 0f) t.color = forceColor;
+        else t.color = baseTextColor;
+
+        ClearOutline(t);
+        ClearGlow(t);
+    }
+
+
+    void UpdateCurvedTrackEffect()
+    {
+        if (!enableCurvedTrack || _allLabels == null || _allLabels.Count == 0 || _viewport == null)
+            return;
+
+        float centerXInContent = ViewportCenterX() - _currentX;
+
+        float radius = (_viewport.rect.width * 0.5f) * curveWidthFactor;
+        if (radius <= 1e-3f) radius = 1e-3f;
+
+        TMP_Text closest = null;
+        float bestDx = float.MaxValue;
+
+        for (int i = 0; i < _allLabels.Count; i++)
+        {
+            var t = _allLabels[i];
+            if (!t) continue;
+            var rt = t.rectTransform;
+            float dx = rt.anchoredPosition.x - centerXInContent;
+            float ax = Mathf.Abs(dx);
+            float u = Mathf.Clamp01(ax / radius);
+            float uExp = Mathf.Pow(u, curveExponent);
+            float h = 1f - (uExp * uExp);
+            float y = baseTrackY + (curveHeight * h);
+            float s = Mathf.Lerp(scaleAtEdges, scaleAtCenter, h);
+            var ap = rt.anchoredPosition;
+            ap.y = y;
+            rt.anchoredPosition = ap;
+            rt.localScale = new Vector3(s, s, 1f);
+
+            if (ax < bestDx)
+            {
+                bestDx = ax;
+                closest = t;
+            }
+        }
+
+        if (setCenterAsLastSibling && closest)
+            closest.transform.SetAsLastSibling();
+    }
 
 }

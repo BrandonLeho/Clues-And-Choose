@@ -2,8 +2,8 @@ Shader "Sprites/NeonRing"
 {
     Properties
     {
-        _FillColor  ("Fill Color", Color)      = (0.2, 0.8, 0.8, 1)
-        _RingColor  ("Ring Color", Color)      = (0.2, 0.9, 1.0, 1)
+        _FillColor  ("Fill Color", Color)      = (1, 1, 1, 1)
+        _RingColor  ("Ring Color", Color)      = (1, 1, 1, 1)
         _Radius     ("Coin Radius (UV)", Range(0.0, 0.5)) = 0.40
         _RingThick  ("Ring Thickness", Range(0.0, 0.5))   = 0.07
         _EdgeSoft   ("Edge Softness", Range(0.0001, 0.2)) = 0.02
