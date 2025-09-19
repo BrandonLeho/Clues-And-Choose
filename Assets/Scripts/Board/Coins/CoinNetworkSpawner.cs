@@ -35,29 +35,23 @@ public class CoinNetworkSpawner : NetworkBehaviour
     [Server]
     public void TrySpawnOnce()
     {
-        if (_spawned) { Debug.Log("[CoinNetworkSpawner] Already spawned; skipping."); return; }
+        if (_spawned) return;
+        if (!gridParent || !coinPrefab) return;
 
-        if (!gridParent) { Debug.LogError("[CoinNetworkSpawner] gridParent (slots) not set."); return; }
-        if (!coinPrefab) { Debug.LogError("[CoinNetworkSpawner] coinPrefab not set."); return; }
-        if (!sourceCanvas) { Debug.LogWarning("[CoinNetworkSpawner] sourceCanvas is null (OK if fallback positions are acceptable)."); }
-        if (!worldCamera) { worldCamera = Camera.main; }
+        if (!worldCamera) worldCamera = Camera.main;
         bool usingFallback = worldCamera == null;
 
         var reg = ColorLockRegistry.GetOrFind();
-        if (!reg) { Debug.LogError("[CoinNetworkSpawner] ColorLockRegistry not found."); return; }
+        if (!reg) return;
 
         int players = NetworkServer.spawned.Values.Count(id => id && id.GetComponent<PlayerNameSync>());
         int chosen = reg.colorByOwner.Count;
-        if (players <= 0 || chosen < players)
-        {
-            Debug.Log($"[CoinNetworkSpawner] Not spawning yet. players={players}, chosen={chosen}");
-            return;
-        }
+        if (players <= 0 || chosen < players) return;
 
         var ordered = reg.lockedBy.OrderBy(kv => kv.Key).ToList();
 
         int coinsNeeded = Mathf.Min(ordered.Count * 2, gridParent.childCount);
-        if (coinsNeeded == 0) { Debug.Log("[CoinNetworkSpawner] No coinsNeeded."); return; }
+        if (coinsNeeded == 0) return;
 
         var slots = new List<RectTransform>(gridParent.childCount);
         for (int i = 0; i < gridParent.childCount; i++)
@@ -65,9 +59,8 @@ public class CoinNetworkSpawner : NetworkBehaviour
             var ch = gridParent.GetChild(i);
             var rt = ch as RectTransform;
             if (rt) slots.Add(rt);
-            else Debug.LogWarning($"[CoinNetworkSpawner] Child {i} is not a RectTransform (type {ch?.GetType().Name}).");
         }
-        if (slots.Count == 0) { Debug.LogError("[CoinNetworkSpawner] No RectTransform slots found."); return; }
+        if (slots.Count == 0) return;
 
         Vector3 fbStart = worldParent ? worldParent.position : Vector3.zero;
         float fbStep = 1.0f;
@@ -85,49 +78,31 @@ public class CoinNetworkSpawner : NetworkBehaviour
                 try
                 {
                     RectTransform slot = (slotIdx < slots.Count) ? slots[slotIdx] : null;
-                    if (!slot)
-                    {
-                        Debug.LogWarning($"[CoinNetworkSpawner] Slot {slotIdx} is null; skipping.");
-                        continue;
-                    }
+                    if (!slot) continue;
 
-                    Vector3 pos;
-                    if (!usingFallback)
-                    {
-                        pos = SlotCenterOnWorldPlane(slot, spawnZ);
-                    }
-                    else
-                    {
-                        pos = fbStart + new Vector3(slotIdx * fbStep, 0f, spawnZ);
-                    }
+                    Vector3 pos = usingFallback
+                        ? fbStart + new Vector3(slotIdx * fbStep, 0f, spawnZ)
+                        : SlotCenterOnWorldPlane(slot, spawnZ);
 
                     var go = Instantiate(coinPrefab, pos, Quaternion.identity, worldParent);
                     var netCoin = go.GetComponent<NetworkCoin>();
-                    if (!netCoin)
-                    {
-                        Debug.LogError("[CoinNetworkSpawner] coinPrefab missing NetworkCoin component.");
-                    }
-                    else
+                    if (netCoin)
                     {
                         netCoin.ownerNetId = ownerId;
                         netCoin.netColor = color;
-                        Debug.Log($"[CoinNetworkSpawner] Coin at slot {slotIdx} owner={ownerId} color={color} pos={pos}");
                     }
 
-                    if (fitScaleToSlot && !usingFallback) FitCoinScaleToSlot(go, slot, spawnZ);
+                    if (fitScaleToSlot && !usingFallback)
+                        FitCoinScaleToSlot(go, slot, spawnZ);
 
                     NetworkServer.Spawn(go);
                 }
-                catch (System.Exception ex)
-                {
-                    Debug.LogError($"[CoinNetworkSpawner] Exception spawning coin for slot {slotIdx}: {ex}");
-                }
+                catch { /* silently ignore exceptions */ }
             }
         }
 
         _spawned = true;
     }
-
 
     Vector3 SlotCenterOnWorldPlane(RectTransform slot, float planeZ)
     {
@@ -145,16 +120,22 @@ public class CoinNetworkSpawner : NetworkBehaviour
         if (plane.Raycast(ray, out float enter)) return ray.GetPoint(enter);
 
         var wp = worldCamera.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, planeZ));
-        wp.z = planeZ; return wp;
+        wp.z = planeZ;
+        return wp;
     }
 
     void FitCoinScaleToSlot(GameObject coin, RectTransform slot, float planeZ)
     {
         if (!fitScaleToSlot) return;
-        var sr = coin.GetComponentInChildren<SpriteRenderer>(); if (!sr || !sr.sprite) return;
+        var sr = coin.GetComponentInChildren<SpriteRenderer>();
+        if (!sr || !sr.sprite) return;
 
-        Vector3[] c = new Vector3[4]; slot.GetWorldCorners(c);
-        Camera canvasCam = (sourceCanvas && (sourceCanvas.renderMode != RenderMode.ScreenSpaceOverlay)) ? sourceCanvas.worldCamera : null;
+        Vector3[] c = new Vector3[4];
+        slot.GetWorldCorners(c);
+        Camera canvasCam = (sourceCanvas && (sourceCanvas.renderMode != RenderMode.ScreenSpaceOverlay))
+            ? sourceCanvas.worldCamera
+            : null;
+
         Vector2 tl = RectTransformUtility.WorldToScreenPoint(canvasCam, c[1]);
         Vector2 tr = RectTransformUtility.WorldToScreenPoint(canvasCam, c[2]);
         Vector2 bl = RectTransformUtility.WorldToScreenPoint(canvasCam, c[0]);
@@ -169,7 +150,8 @@ public class CoinNetworkSpawner : NetworkBehaviour
 
         var original = coin.transform.localScale;
         coin.transform.localScale = Vector3.one;
-        float coinW = sr.bounds.size.x; if (coinW <= 0f) coinW = 1f;
+        float coinW = sr.bounds.size.x;
+        if (coinW <= 0f) coinW = 1f;
         coin.transform.localScale = original * (targetDia / coinW);
     }
 
@@ -178,7 +160,8 @@ public class CoinNetworkSpawner : NetworkBehaviour
         if (!worldCamera) worldCamera = Camera.main;
         var ray = worldCamera.ScreenPointToRay(sp);
         var plane = new Plane(-worldCamera.transform.forward, new Vector3(0, 0, planeZ));
-        return plane.Raycast(ray, out float enter) ? ray.GetPoint(enter)
+        return plane.Raycast(ray, out float enter)
+            ? ray.GetPoint(enter)
             : worldCamera.ScreenToWorldPoint(new Vector3(sp.x, sp.y, planeZ));
     }
 }
