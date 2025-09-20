@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Events;
 
 [DisallowMultipleComponent]
 public class ColorGridAnimator : MonoBehaviour
@@ -73,6 +74,7 @@ public class ColorGridAnimator : MonoBehaviour
     Vector2 _center;
     bool _running;
     int _activeCount;
+    public UnityEvent OnAnimationComplete;
 
     void Awake()
     {
@@ -127,6 +129,7 @@ public class ColorGridAnimator : MonoBehaviour
         if (gridRoot) LayoutRebuilder.ForceRebuildLayoutImmediate(gridRoot);
         Canvas.ForceUpdateCanvases();
         _running = false;
+        OnAnimationComplete?.Invoke();
     }
 
     void PrepareCells()
