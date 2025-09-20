@@ -103,6 +103,7 @@
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandlerGame.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerRow.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinDragHandler.cs" />
+    <Compile Include="Assets\Scripts\Board\ColorBoard\PerimeterGlowFromGrid.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\RegistryNameColorLookup.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardAttachToBoard.cs" />
     <Compile Include="Assets\Scripts\Controller\ClueGiverController\ClueGiverFromRoulette.cs" />

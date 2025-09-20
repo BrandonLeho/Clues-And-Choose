@@ -5,13 +5,10 @@ using UnityEngine.UI;
 [RequireComponent(typeof(GridLayoutGroup))]
 public class GridPalettePainter : MonoBehaviour
 {
-    [Tooltip("ScriptableObject with ColorAt(x,y).")]
     public PaletteGrid palette;
 
     [Header("Orientation overrides")]
-    [Tooltip("Flip the palette left↔right after layout corner is applied.")]
     public bool flipHorizontally = false;
-    [Tooltip("Flip the palette top↔bottom after layout corner is applied.")]
     public bool flipVertically = false;
 
     [Header("When to apply")]
