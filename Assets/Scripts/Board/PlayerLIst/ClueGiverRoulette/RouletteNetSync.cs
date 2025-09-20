@@ -30,8 +30,8 @@ public class RouletteNetSync : NetworkBehaviour
     public void BuildEntries()
     {
         if (!roulette) return;
-        var names = new List<string>();
 
+        var names = new List<string>();
         if (useRosterStore && RosterStore.Instance != null && RosterStore.Instance.Names != null)
             names.AddRange(RosterStore.Instance.Names);
 
@@ -40,7 +40,8 @@ public class RouletteNetSync : NetworkBehaviour
         if (names.Count > 0)
         {
             roulette.entries = names;
-            roulette.Rebuild();
+            if (roulette.gameObject.activeInHierarchy && roulette.isActiveAndEnabled)
+                roulette.Rebuild();
         }
     }
 

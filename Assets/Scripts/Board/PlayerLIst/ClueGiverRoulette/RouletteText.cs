@@ -189,6 +189,24 @@ public class RouletteText : MonoBehaviour
     [ContextMenu("Rebuild")]
     public void Rebuild()
     {
+        EnsureViewportAndContent();
+        if (_content == null || _viewport == null)
+        {
+            return;
+        }
+
+        if (_content != null)
+        {
+            for (int i = _content.childCount - 1; i >= 0; i--)
+                DestroyImmediate(_content.GetChild(i).gameObject);
+        }
+
+        _allLabels.Clear();
+        _itemCenters.Clear();
+        _listWidth = 0f;
+
+        if (entries == null || entries.Count == 0 || itemPrefab == null) return;
+
         if (_content != null)
         {
             for (int i = _content.childCount - 1; i >= 0; i--) DestroyImmediate(_content.GetChild(i).gameObject);

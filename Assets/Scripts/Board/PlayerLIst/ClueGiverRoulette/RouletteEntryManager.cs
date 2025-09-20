@@ -12,33 +12,17 @@ public class RouletteEntryManager : MonoBehaviour
     [SerializeField] RouletteText roulette;
 
     [Header("Timing")]
-    [Tooltip("Extra delay AFTER the grid finishes before showing roulette.")]
     [SerializeField] float delayAfterGrid = 0.35f;
-
-    [Tooltip("Duration for the roulette panel to slide up into place.")]
     [SerializeField] float enterDuration = 0.45f;
-
-    [Tooltip("Duration for the roulette panel to slide back down off-screen.")]
     [SerializeField] float exitDuration = 0.45f;
-
-    [Tooltip("Call RequestSpin() this many seconds BEFORE the entry animation starts.")]
-    [Min(0f)]
-    [SerializeField] float spinLeadBeforeEnter = 0.25f;
-
-    [Tooltip("Wait this long AFTER the final choice (and optional winner animation) before sliding down.")]
-    [Min(0f)]
-    [SerializeField] float extraHoldAfterFinalChoice = 0.35f;
-
-    [Tooltip("Wait for the roulette's built-in winner animation before sliding down?")]
+    [Min(0f)][SerializeField] float spinLeadBeforeEnter = 0.25f;
+    [Min(0f)][SerializeField] float extraHoldAfterFinalChoice = 0.35f;
     [SerializeField] bool waitForWinnerAnimation = true;
-
-    [Tooltip("Use unscaled time (ignores Time.timeScale).")]
     [SerializeField] bool useUnscaledTime = true;
 
     [Header("Motion")]
     [SerializeField] AnimationCurve enterCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
     [SerializeField] AnimationCurve exitCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
-    [Tooltip("How far below its anchored position is 'off-screen'.")]
     [SerializeField] float offscreenExtraPadding = 160f;
 
     [Header("Hooks")]
@@ -120,6 +104,7 @@ public class RouletteEntryManager : MonoBehaviour
         yield return WaitForSecondsFlex(extraHoldAfterFinalChoice);
 
         yield return Co_Slide(rouletteRoot, _homePos, _offPos, exitDuration, exitCurve);
+
         OnRouletteHidden?.Invoke();
 
         _isAnimating = false;

@@ -65,6 +65,7 @@
     <Compile Include="Assets\Scripts\GameNetworking\NetKeepAlive.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandler.cs" />
     <Compile Include="Assets\Scripts\Steamworks.NET\SteamManager.cs" />
+    <Compile Include="Assets\Scripts\Board\Cards\CardStackFlyInAnimator.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ConfirmButtonNeonHover.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\ValidDropSpot.cs" />
     <Compile Include="Assets\Scripts\Controller\CursorController\CursorControllerModule.cs" />
@@ -109,8 +110,10 @@
     <Compile Include="Assets\Scripts\Board\PlayerLIst\GameScenePlayerList.cs" />
     <Compile Include="Assets\Scripts\UI\PanelSwapper.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\ColorGridAnimator.cs" />
+    <Compile Include="Assets\Scripts\Board\Coins\CoinSpawnAfterRouletteNetwork.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ButtonSwapFlash.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\GridCellHoverWithCoords.cs" />
+    <Compile Include="Assets\Scripts\Board\Coins\CoinSlideInInto.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\SelectionController.cs" />
   </ItemGroup>
   <ItemGroup>

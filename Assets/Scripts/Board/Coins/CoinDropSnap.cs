@@ -148,4 +148,10 @@ public class CoinDropSnap : MonoBehaviour
 
         _snapRoutine = null;
     }
+
+    public void SetHome(Vector3 worldPos, bool alsoSetZ = true)
+    {
+        _lastValidWorldPos = worldPos;
+        if (alsoSetZ) _spawnZ = worldPos.z;
+    }
 }

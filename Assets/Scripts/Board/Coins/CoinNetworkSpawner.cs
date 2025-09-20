@@ -8,14 +8,33 @@ public class CoinNetworkSpawner : NetworkBehaviour
     [Header("UI Grid (slots)")]
     [SerializeField] RectTransform gridParent;
     [SerializeField] Canvas sourceCanvas;
+
     [Header("World")]
     [SerializeField] Camera worldCamera;
     [SerializeField] Transform worldParent;
     [SerializeField] GameObject coinPrefab;
     [SerializeField] float spawnZ = 0f;
+
     [Header("Sizing")]
     [SerializeField] bool fitScaleToSlot = true;
     [Range(0.5f, 1f)] public float slotFillRatio = 0.85f;
+
+    [Header("Slide-in Intro (Server-side animation)")]
+    [Tooltip("Grid columns used to compute row/col from slot index (4x5).")]
+    [Min(1)][SerializeField] int gridColumns = 4;
+    [Min(0f)][SerializeField] float globalStartDelay = 0.0f;
+    [Min(0f)][SerializeField] float perCoinDelay = 0.06f;
+    [Min(0f)][SerializeField] float perRowDelay = 0.12f;
+    [Min(0f)][SerializeField] float randomDelayJitter = 0.02f;
+    [Min(0.01f)][SerializeField] float slideUnitsPerSecond = 6.0f;
+    [SerializeField] float spawnFromRightDistance = 6.0f;
+    [SerializeField] AnimationCurve slideEase = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
+    [Header("Slide-in Appearance")]
+    [SerializeField] float startRotZ = 0f;
+    [SerializeField] float endRotZ = 0f;
+    [Range(0, 1)][SerializeField] float startAlpha = 1f;
+    [Range(0, 1)][SerializeField] float endAlpha = 1f;
 
     bool _spawned;
 
@@ -36,6 +55,21 @@ public class CoinNetworkSpawner : NetworkBehaviour
     public void TrySpawnOnce()
     {
         if (_spawned) return;
+        InternalSpawn(useSlideIn: false);
+        _spawned = true;
+    }
+
+    [Server]
+    public void ServerSpawnSlideIn()
+    {
+        if (_spawned) return;
+        InternalSpawn(useSlideIn: true);
+        _spawned = true;
+    }
+
+    [Server]
+    void InternalSpawn(bool useSlideIn)
+    {
         if (!gridParent || !coinPrefab) return;
 
         if (!worldCamera) worldCamera = Camera.main;
@@ -56,8 +90,7 @@ public class CoinNetworkSpawner : NetworkBehaviour
         var slots = new List<RectTransform>(gridParent.childCount);
         for (int i = 0; i < gridParent.childCount; i++)
         {
-            var ch = gridParent.GetChild(i);
-            var rt = ch as RectTransform;
+            var rt = gridParent.GetChild(i) as RectTransform;
             if (rt) slots.Add(rt);
         }
         if (slots.Count == 0) return;
@@ -75,33 +108,48 @@ public class CoinNetworkSpawner : NetworkBehaviour
                 int slotIdx = p * 2 + k;
                 if (slotIdx >= coinsNeeded) break;
 
-                try
+                RectTransform slot = (slotIdx < slots.Count) ? slots[slotIdx] : null;
+                if (!slot) continue;
+
+                Vector3 targetPos = usingFallback
+                    ? fbStart + new Vector3(slotIdx * fbStep, 0f, spawnZ)
+                    : SlotCenterOnWorldPlane(slot, spawnZ);
+
+                Vector3 spawnPos = targetPos;
+                if (useSlideIn)
+                    spawnPos = targetPos + new Vector3(spawnFromRightDistance, 0f, 0f);
+
+                var go = Instantiate(coinPrefab, spawnPos, Quaternion.identity, worldParent);
+
+                var netCoin = go.GetComponent<NetworkCoin>();
+                if (netCoin)
                 {
-                    RectTransform slot = (slotIdx < slots.Count) ? slots[slotIdx] : null;
-                    if (!slot) continue;
-
-                    Vector3 pos = usingFallback
-                        ? fbStart + new Vector3(slotIdx * fbStep, 0f, spawnZ)
-                        : SlotCenterOnWorldPlane(slot, spawnZ);
-
-                    var go = Instantiate(coinPrefab, pos, Quaternion.identity, worldParent);
-                    var netCoin = go.GetComponent<NetworkCoin>();
-                    if (netCoin)
-                    {
-                        netCoin.ownerNetId = ownerId;
-                        netCoin.netColor = color;
-                    }
-
-                    if (fitScaleToSlot && !usingFallback)
-                        FitCoinScaleToSlot(go, slot, spawnZ);
-
-                    NetworkServer.Spawn(go);
+                    netCoin.ownerNetId = ownerId;
+                    netCoin.netColor = color;
                 }
-                catch { /* silently ignore exceptions */ }
+
+                if (fitScaleToSlot && !usingFallback)
+                    FitCoinScaleToSlot(go, slot, spawnZ);
+
+                if (useSlideIn)
+                {
+                    int cols = Mathf.Max(1, gridColumns);
+                    int row = slotIdx / cols;
+                    int col = slotIdx % cols;
+
+                    float jitter = (randomDelayJitter > 0f) ? Random.Range(0f, randomDelayJitter) : 0f;
+                    float startDelay = globalStartDelay + (row * perRowDelay) + (col * perCoinDelay) + jitter;
+
+                    var intro = go.GetComponent<CoinSlideInIntro>();
+                    if (!intro) intro = go.AddComponent<CoinSlideInIntro>();
+                    intro.Configure(spawnPos, targetPos, startDelay,
+                                    slideUnitsPerSecond, startRotZ, endRotZ,
+                                    startAlpha, endAlpha, slideEase);
+                }
+
+                NetworkServer.Spawn(go);
             }
         }
-
-        _spawned = true;
     }
 
     Vector3 SlotCenterOnWorldPlane(RectTransform slot, float planeZ)
