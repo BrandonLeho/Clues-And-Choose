@@ -84,6 +84,7 @@
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardGenerator.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinClientSanity.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerNameColorBinder.cs" />
+    <Compile Include="Assets\Scripts\Board\Coins\CoinSlideInIntro.cs" />
     <Compile Include="Assets\Scripts\Controller\DraggableItem.cs" />
     <Compile Include="Assets\Scripts\Controller\ClueGiverController\ClueGiverController.cs" />
     <Compile Include="Assets\Scripts\UI\LobbyUIManager.cs" />
@@ -113,7 +114,6 @@
     <Compile Include="Assets\Scripts\Board\Coins\CoinSpawnAfterRouletteNetwork.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ButtonSwapFlash.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\GridCellHoverWithCoords.cs" />
-    <Compile Include="Assets\Scripts\Board\Coins\CoinSlideInInto.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\SelectionController.cs" />
   </ItemGroup>
   <ItemGroup>
