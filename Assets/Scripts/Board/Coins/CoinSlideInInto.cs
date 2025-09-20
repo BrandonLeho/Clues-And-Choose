@@ -19,20 +19,19 @@ public class CoinSlideInIntro : NetworkBehaviour
     Vector3 _startPos;
     Vector3 _targetPos;
     bool _configured;
-    bool _playedServer;
 
     SpriteRenderer[] _srs;
 
     public void Configure(Vector3 startPos, Vector3 targetPos, float delay,
-                          float speed, float sRot, float eRot,
+                          float speed, float startR, float endR,
                           float sAlpha, float eAlpha, AnimationCurve curve)
     {
         _startPos = startPos;
         _targetPos = targetPos;
         startDelay = delay;
         unitsPerSecond = Mathf.Max(0.01f, speed);
-        startRotZ = sRot;
-        endRotZ = eRot;
+        startRotZ = startR;
+        endRotZ = endR;
         startAlpha = Mathf.Clamp01(sAlpha);
         endAlpha = Mathf.Clamp01(eAlpha);
         ease = curve ?? AnimationCurve.EaseInOut(0, 0, 1, 1);
@@ -42,56 +41,31 @@ public class CoinSlideInIntro : NetworkBehaviour
     public override void OnStartServer()
     {
         base.OnStartServer();
-        if (_configured && !_playedServer)
-        {
-            _playedServer = true;
-
-            StartCoroutine(Co_RunServer());
-
-            RpcStartIntro(_startPos, _targetPos, startDelay, unitsPerSecond,
-                          startRotZ, endRotZ, startAlpha, endAlpha);
-        }
-    }
-
-    [ClientRpc]
-    void RpcStartIntro(Vector3 startPos, Vector3 targetPos, float delay, float speed,
-                       float sRot, float eRot, float sAlpha, float eAlpha)
-    {
-        if (isServer) return;
-
-        _startPos = startPos;
-        _targetPos = targetPos;
-        startDelay = delay;
-        unitsPerSecond = speed;
-        startRotZ = sRot;
-        endRotZ = eRot;
-        startAlpha = sAlpha;
-        endAlpha = eAlpha;
-        _configured = true;
-
         if (_srs == null) _srs = GetComponentsInChildren<SpriteRenderer>(true);
-        StartCoroutine(Co_RunClient());
+        if (_configured) StartCoroutine(Co_RunServer());
     }
 
+    [Server]
     IEnumerator Co_RunServer()
     {
-        if (_srs == null) _srs = GetComponentsInChildren<SpriteRenderer>(true);
-
         transform.position = _startPos;
         transform.rotation = Quaternion.Euler(0, 0, startRotZ);
         SetAlpha(startAlpha);
 
+        double serverTime = NetworkTime.time;
+        RpcStartSlide(_startPos, _targetPos, serverTime, startDelay,
+                    unitsPerSecond, startRotZ, endRotZ, startAlpha, endAlpha);
+
         if (startDelay > 0f) yield return new WaitForSeconds(startDelay);
 
-        float distance = Vector3.Distance(_startPos, _targetPos);
-        float dur = Mathf.Max(0.0001f, distance / unitsPerSecond);
+        float dist = Vector3.Distance(_startPos, _targetPos);
+        float dur = Mathf.Max(0.0001f, dist / unitsPerSecond);
 
         float t = 0f;
         while (t < 1f)
         {
             t += Time.deltaTime / dur;
             float u = ease.Evaluate(Mathf.Clamp01(t));
-
             transform.position = Vector3.LerpUnclamped(_startPos, _targetPos, u);
             float r = Mathf.LerpAngle(startRotZ, endRotZ, u);
             transform.rotation = Quaternion.Euler(0, 0, r);
@@ -110,35 +84,14 @@ public class CoinSlideInIntro : NetworkBehaviour
         enabled = false;
     }
 
-    IEnumerator Co_RunClient()
+
+    void SetAlpha(float a)
     {
-        transform.position = _startPos;
-        transform.rotation = Quaternion.Euler(0, 0, startRotZ);
-        SetAlpha(startAlpha);
-
-        if (startDelay > 0f) yield return new WaitForSeconds(startDelay);
-
-        float distance = Vector3.Distance(_startPos, _targetPos);
-        float dur = Mathf.Max(0.0001f, distance / unitsPerSecond);
-
-        float t = 0f;
-        while (t < 1f)
+        if (_srs == null) _srs = GetComponentsInChildren<SpriteRenderer>(true);
+        for (int i = 0; i < _srs.Length; i++)
         {
-            t += Time.deltaTime / dur;
-            float u = ease.Evaluate(Mathf.Clamp01(t));
-
-            transform.position = Vector3.LerpUnclamped(_startPos, _targetPos, u);
-            float r = Mathf.LerpAngle(startRotZ, endRotZ, u);
-            transform.rotation = Quaternion.Euler(0, 0, r);
-            SetAlpha(Mathf.Lerp(startAlpha, endAlpha, u));
-            yield return null;
+            var c = _srs[i].color; c.a = a; _srs[i].color = c;
         }
-
-        transform.position = _targetPos;
-        transform.rotation = Quaternion.Euler(0, 0, endRotZ);
-        SetAlpha(endAlpha);
-
-        enabled = false;
     }
 
     [ClientRpc]
@@ -148,14 +101,46 @@ public class CoinSlideInIntro : NetworkBehaviour
         if (snap) snap.SetHome(finalPos, true);
     }
 
-    void SetAlpha(float a)
+    [ClientRpc]
+    void RpcStartSlide(Vector3 start, Vector3 target, double serverTime, float delay,
+                    float speed, float sRot, float eRot, float sAlpha, float eAlpha)
     {
+        if (isServer) return;
+
         if (_srs == null) _srs = GetComponentsInChildren<SpriteRenderer>(true);
-        for (int i = 0; i < _srs.Length; i++)
-        {
-            var c = _srs[i].color;
-            c.a = a;
-            _srs[i].color = c;
-        }
+        StopAllCoroutines();
+        StartCoroutine(Co_RunClient(start, target, serverTime, delay, speed,
+                                    sRot, eRot, sAlpha, eAlpha));
     }
+
+    IEnumerator Co_RunClient(Vector3 start, Vector3 target, double serverTime, float delay,
+                            float speed, float sRot, float eRot, float sAlpha, float eAlpha)
+    {
+        transform.position = start;
+        transform.rotation = Quaternion.Euler(0, 0, sRot);
+        SetAlpha(sAlpha);
+
+        double startAt = serverTime + delay;
+        while (NetworkTime.time < startAt) yield return null;
+
+        float dist = Vector3.Distance(start, target);
+        float dur = Mathf.Max(0.0001f, dist / Mathf.Max(0.01f, speed));
+        double endAt = startAt + dur;
+
+        while (NetworkTime.time < endAt)
+        {
+            float u = Mathf.Clamp01((float)((NetworkTime.time - startAt) / dur));
+            float e = ease != null ? ease.Evaluate(u) : Mathf.SmoothStep(0f, 1f, u);
+            transform.position = Vector3.LerpUnclamped(start, target, e);
+            float r = Mathf.LerpAngle(sRot, eRot, e);
+            transform.rotation = Quaternion.Euler(0, 0, r);
+            SetAlpha(Mathf.Lerp(sAlpha, eAlpha, e));
+            yield return null;
+        }
+
+        transform.position = target;
+        transform.rotation = Quaternion.Euler(0, 0, eRot);
+        SetAlpha(eAlpha);
+    }
+
 }
