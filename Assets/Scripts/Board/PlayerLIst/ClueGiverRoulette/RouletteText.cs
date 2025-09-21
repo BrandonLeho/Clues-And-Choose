@@ -25,6 +25,11 @@ public class RouletteText : MonoBehaviour
     public float snapEasePower = 2.0f;
     public int copiesEachSide = 3;
 
+    [Header("Dynamic Sizing")]
+    [Range(0f, 0.5f)] public float paddingScale = 0.15f;
+    [Range(0f, 0.5f)] public float spacingScale = 0.10f;
+
+
     [Header("Curved Track & Scale")]
     public bool enableCurvedTrack = true;
     public float curveHeight = 40f;
@@ -34,7 +39,8 @@ public class RouletteText : MonoBehaviour
     [Range(0.1f, 1.0f)] public float scaleAtEdges = 0.85f;
     [Range(1.0f, 2.5f)] public float scaleAtCenter = 1.25f;
     public bool setCenterAsLastSibling = false;
-
+    public bool curveEverywhere = true;
+    public float minCurveH = -0.75f;
 
     [Header("Name Colors")]
     public bool useRegistryColors = true;
@@ -190,27 +196,10 @@ public class RouletteText : MonoBehaviour
     public void Rebuild()
     {
         EnsureViewportAndContent();
-        if (_content == null || _viewport == null)
-        {
-            return;
-        }
+        if (_content == null || _viewport == null) return;
 
-        if (_content != null)
-        {
-            for (int i = _content.childCount - 1; i >= 0; i--)
-                DestroyImmediate(_content.GetChild(i).gameObject);
-        }
-
-        _allLabels.Clear();
-        _itemCenters.Clear();
-        _listWidth = 0f;
-
-        if (entries == null || entries.Count == 0 || itemPrefab == null) return;
-
-        if (_content != null)
-        {
-            for (int i = _content.childCount - 1; i >= 0; i--) DestroyImmediate(_content.GetChild(i).gameObject);
-        }
+        for (int i = _content.childCount - 1; i >= 0; i--)
+            DestroyImmediate(_content.GetChild(i).gameObject);
 
         _allLabels.Clear();
         _itemCenters.Clear();
@@ -227,11 +216,20 @@ public class RouletteText : MonoBehaviour
             measure.text = entries[i];
             if (forceFontSize > 0f) measure.fontSize = forceFontSize;
             measure.ForceMeshUpdate();
-            float w = measure.preferredWidth + horizontalPadding;
+
+            float w = measure.preferredWidth;
             if (w > maxWidth) maxWidth = w;
             DestroyImmediate(measure.gameObject);
         }
-        for (int i = 0; i < entries.Count; i++) widths[i] = maxWidth;
+
+        float dynamicPadding = Mathf.Clamp(maxWidth * paddingScale, 16f, 150f);
+        float dynamicSpacing = Mathf.Clamp(maxWidth * spacingScale, 8f, 115f);
+
+        horizontalPadding = dynamicPadding;
+        itemSpacing = dynamicSpacing;
+
+        for (int i = 0; i < entries.Count; i++)
+            widths[i] = maxWidth + horizontalPadding;
 
         float x = 0f;
         var centerItems = new List<RectTransform>(entries.Count);
@@ -265,6 +263,12 @@ public class RouletteText : MonoBehaviour
 
         _currentX = 0f;
         _content.anchoredPosition = new Vector2(_currentX, 0f);
+
+        foreach (var label in _allLabels)
+        {
+            ConfigureLabelForOuterMaskOnly(label);
+        }
+
         UpdateCenterHighlight();
         UpdateCurvedTrackEffect();
     }
@@ -314,6 +318,8 @@ public class RouletteText : MonoBehaviour
             _content.anchoredPosition = Vector2.zero;
             _content.sizeDelta = Vector2.zero;
         }
+
+        EnforceSingleViewportMask(_viewport);
     }
 
     float ViewportCenterX()
@@ -556,14 +562,32 @@ public class RouletteText : MonoBehaviour
         {
             var t = _allLabels[i];
             if (!t) continue;
+
             var rt = t.rectTransform;
+
             float dx = rt.anchoredPosition.x - centerXInContent;
             float ax = Mathf.Abs(dx);
-            float u = Mathf.Clamp01(ax / radius);
-            float uExp = Mathf.Pow(u, curveExponent);
-            float h = 1f - (uExp * uExp);
+
+            float h;
+
+            if (curveEverywhere)
+            {
+                float u = ax / radius;
+                h = 1f - Mathf.Pow(u, 2f * Mathf.Max(0.0001f, curveExponent));
+
+                if (minCurveH < 0f) h = Mathf.Max(minCurveH, h);
+            }
+            else
+            {
+                float u = Mathf.Clamp01(ax / radius);
+                float uExp = Mathf.Pow(u, curveExponent);
+                h = 1f - (uExp * uExp);
+            }
+
             float y = baseTrackY + (curveHeight * h);
-            float s = Mathf.Lerp(scaleAtEdges, scaleAtCenter, h);
+
+            float s = Mathf.LerpUnclamped(scaleAtEdges, scaleAtCenter, h);
+
             var ap = rt.anchoredPosition;
             ap.y = y;
             rt.anchoredPosition = ap;
@@ -579,6 +603,7 @@ public class RouletteText : MonoBehaviour
         if (setCenterAsLastSibling && closest)
             closest.transform.SetAsLastSibling();
     }
+
 
     System.Collections.IEnumerator CoPlayWinnerSequenceWithDelay()
     {
@@ -666,5 +691,24 @@ public class RouletteText : MonoBehaviour
     {
         if (enableWinnerAnimation)
             StartCoroutine(CoPlayWinnerSequenceWithDelay());
+    }
+
+    void EnforceSingleViewportMask(RectTransform viewport)
+    {
+        foreach (var m in viewport.GetComponentsInChildren<RectMask2D>(true))
+            if (m.gameObject != viewport.gameObject)
+                Destroy(m);
+
+        foreach (var m in viewport.GetComponentsInChildren<Mask>(true))
+            if (m.gameObject != viewport.gameObject)
+                Destroy(m);
+    }
+
+    void ConfigureLabelForOuterMaskOnly(TMP_Text t)
+    {
+        if (!t) return;
+        t.maskable = true;
+        t.textWrappingMode = TextWrappingModes.NoWrap;
+        t.overflowMode = TextOverflowModes.Overflow;
     }
 }
