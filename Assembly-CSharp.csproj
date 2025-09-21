@@ -88,6 +88,7 @@
     <Compile Include="Assets\Scripts\Board\Coins\CoinSlideInIntro.cs" />
     <Compile Include="Assets\Scripts\Controller\DraggableItem.cs" />
     <Compile Include="Assets\Scripts\Controller\ClueGiverController\ClueGiverController.cs" />
+    <Compile Include="Assets\Scripts\Board\ColorBoard\PerimeterGlowEntry.cs" />
     <Compile Include="Assets\Scripts\UI\LobbyUIManager.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\RegistryDebugLogger.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinSpawnOnPhaseEnd.cs" />
