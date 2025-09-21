@@ -75,6 +75,7 @@
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerListBinder.cs" />
     <Compile Include="Assets\Scripts\GameNetworking\NetworkChat.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\NetworkCoin.cs" />
+    <Compile Include="Assets\Scripts\Board\ColorBoard\PerimeterGlowGraphic.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverRoulette\RouletteRosterBinder.cs" />
     <Compile Include="Assets\Scripts\Board\GameChat\ChatUI.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\PlayerNameSync.cs" />
@@ -103,7 +104,6 @@
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandlerGame.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerRow.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinDragHandler.cs" />
-    <Compile Include="Assets\Scripts\Board\ColorBoard\PerimeterGlowFromGrid.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\RegistryNameColorLookup.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardAttachToBoard.cs" />
     <Compile Include="Assets\Scripts\Controller\ClueGiverController\ClueGiverFromRoulette.cs" />
@@ -126,7 +126,7 @@
     <None Include="Assets\com.rlabrecque.steamworks.net\Plugins\steam_api.dll" />
     <None Include="Assets\ScriptTemplates\52-Mirror__Network Authenticator-NewNetworkAuthenticator.cs.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_Bitmap.shader" />
-    <None Include="Assets\Material\NeonRing.shader" />
+    <None Include="Assets\Shaders\NeonRing.shader" />
     <None Include="Assets\Mirror\Plugins\Mono.Cecil\Mono.CecilX.Pdb.dll" />
     <None Include="Assets\Mirror\version.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMPro_Mobile.cginc" />
@@ -148,10 +148,11 @@
     <None Include="Assets\TextMesh Pro\Resources\LineBreaking Leading Characters.txt" />
     <None Include="Assets\ScriptTemplates\52-Mirror__Network Behaviour-NewNetworkBehaviour.cs.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMPro_Properties.cginc" />
+    <None Include="Assets\Shaders\PerimeterGlowURP.shader" />
     <None Include="Assets\TextMesh Pro\Shaders\TMPro_Surface.cginc" />
     <None Include="Assets\TextMesh Pro\Resources\LineBreaking Following Characters.txt" />
     <None Include="Assets\Mirror\Plugins\Mono.Cecil\License.txt" />
-    <None Include="Assets\Material\NeonRect.shader" />
+    <None Include="Assets\Shaders\NeonRect.shader" />
     <None Include="Assets\ScriptTemplates\55-Mirror__Network Room Player-NewNetworkRoomPlayer.cs.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile Masking.shader" />
     <None Include="Assets\ThirdPartyAssets\KennyCursorPack\License.txt" />
