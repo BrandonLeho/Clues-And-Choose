@@ -224,6 +224,8 @@ GameObject:
   - component: {fileID: 8554551703784814068}
   - component: {fileID: 4258126109202983884}
   - component: {fileID: 936909994100406677}
+  - component: {fileID: 3411750299150423619}
+  - component: {fileID: 985836343265415424}
   m_Layer: 5
   m_Name: Color #4
   m_TagString: Untagged
@@ -304,6 +306,34 @@ MonoBehaviour:
   hoverScale: 1.08
   duration: 0.12
   easeOut: 0.6
+--- !u!114 &3411750299150423619
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1870879692423878454}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86c8f5f9496454d4fb9c810e72e0ce00, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChoiceGridCoord
+  col: 30
+  row: 16
+--- !u!114 &985836343265415424
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1870879692423878454}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0342e9d546dd8614faef7b8dc1feb1f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CardChoiceToGridHover
+  requireFrontFacing: 1
+  isFrontFacing: 1
 --- !u!1 &2469704572376952566
 GameObject:
   m_ObjectHideFlags: 0
@@ -817,6 +847,8 @@ GameObject:
   - component: {fileID: 3274681318927283961}
   - component: {fileID: 8845643742594672111}
   - component: {fileID: 7484514760654841249}
+  - component: {fileID: 8906493763880119593}
+  - component: {fileID: 1481013742660097794}
   m_Layer: 5
   m_Name: Color #3
   m_TagString: Untagged
@@ -897,6 +929,34 @@ MonoBehaviour:
   hoverScale: 1.08
   duration: 0.12
   easeOut: 0.6
+--- !u!114 &8906493763880119593
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4716610824818718238}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86c8f5f9496454d4fb9c810e72e0ce00, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChoiceGridCoord
+  col: 30
+  row: 16
+--- !u!114 &1481013742660097794
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4716610824818718238}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0342e9d546dd8614faef7b8dc1feb1f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CardChoiceToGridHover
+  requireFrontFacing: 1
+  isFrontFacing: 1
 --- !u!1 &7414662986977601716
 GameObject:
   m_ObjectHideFlags: 0
@@ -909,6 +969,8 @@ GameObject:
   - component: {fileID: 1440778520933775981}
   - component: {fileID: 5277164124824510439}
   - component: {fileID: 5479034932252453483}
+  - component: {fileID: 4417623484119539125}
+  - component: {fileID: 4794736355312653306}
   m_Layer: 5
   m_Name: Color #1
   m_TagString: Untagged
@@ -989,6 +1051,34 @@ MonoBehaviour:
   hoverScale: 1.08
   duration: 0.12
   easeOut: 0.6
+--- !u!114 &4417623484119539125
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7414662986977601716}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86c8f5f9496454d4fb9c810e72e0ce00, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChoiceGridCoord
+  col: 30
+  row: 16
+--- !u!114 &4794736355312653306
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7414662986977601716}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0342e9d546dd8614faef7b8dc1feb1f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CardChoiceToGridHover
+  requireFrontFacing: 1
+  isFrontFacing: 1
 --- !u!1 &7640415758604439624
 GameObject:
   m_ObjectHideFlags: 0
@@ -1001,6 +1091,8 @@ GameObject:
   - component: {fileID: 3633000280591187156}
   - component: {fileID: 7056374365288724331}
   - component: {fileID: 2315035424330938576}
+  - component: {fileID: 8550715347931665250}
+  - component: {fileID: 6577802576738488933}
   m_Layer: 5
   m_Name: Color #2
   m_TagString: Untagged
@@ -1081,3 +1173,31 @@ MonoBehaviour:
   hoverScale: 1.08
   duration: 0.12
   easeOut: 0.6
+--- !u!114 &8550715347931665250
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7640415758604439624}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86c8f5f9496454d4fb9c810e72e0ce00, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChoiceGridCoord
+  col: 30
+  row: 16
+--- !u!114 &6577802576738488933
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7640415758604439624}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0342e9d546dd8614faef7b8dc1feb1f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CardChoiceToGridHover
+  requireFrontFacing: 1
+  isFrontFacing: 1

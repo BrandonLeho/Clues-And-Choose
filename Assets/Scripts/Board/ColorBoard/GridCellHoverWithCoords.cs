@@ -16,18 +16,15 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     [Header("Text Fade + Content")]
     [SerializeField] TextMeshProUGUI label;
     [SerializeField] bool deactivateLabelWhenHidden = true;
-    [Tooltip("Format for coordinate text. {C}=column number, {R}=row letter.")]
     [SerializeField] string coordinateFormat = "{C} {R}";
     [SerializeField, Range(0f, 1f)] float maxLabelAlpha = 1f;
 
     [Header("Grid Sizing (Auto unless overridden)")]
-    [Tooltip("Auto-read cols/rows from GridLayoutGroup/BoardLabels/PaletteGrid when possible.")]
     [SerializeField] bool autoDetectGrid = true;
     [Min(1)] public int colsOverride = 30;
     [Min(1)] public int rowsOverride = 16;
 
     [Header("Orientation (A at top?)")]
-    [Tooltip("If auto-detect is on, we try BoardLabels.aStartsAtTop or PaletteGrid.yZeroAtTop. Otherwise use this.")]
     [SerializeField] bool aStartsAtTop = true;
 
     [Header("Optional Links")]

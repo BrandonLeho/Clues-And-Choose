@@ -52,6 +52,11 @@ public class RandomChildPaletteColor : MonoBehaviour
             Color c = palette.ColorAt(x, y);
             targets[i].img.color = c;
 
+            var coord = targets[i].t.GetComponent<ChoiceGridCoord>();
+            if (!coord) coord = targets[i].t.gameObject.AddComponent<ChoiceGridCoord>();
+            coord.col = x;
+            coord.row = y;
+
             char rowLetter = GetRowLetterBottomToTop(y, rows, palette.yZeroAtTop);
             int columnNumber = x + 1;
 
