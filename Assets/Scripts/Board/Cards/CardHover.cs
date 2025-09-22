@@ -153,6 +153,7 @@ public class CardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
     public void OnPointerClick(PointerEventData eventData)
     {
         if (!interactable || !_unlocked) return;
+        LockHover();
         onClick?.Invoke();
     }
 

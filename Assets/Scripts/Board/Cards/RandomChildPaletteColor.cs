@@ -10,16 +10,14 @@ public class RandomChildPaletteColor : MonoBehaviour
 
     [Header("Search")]
     [SerializeField] private Transform root;
+
     [Header("Label")]
     [SerializeField] private string labelFormat = "{0}{1}";
     [SerializeField] private bool padColumnsTo2 = false;
 
     [Header("Distinctness")]
-    [Tooltip("Minimum pairwise color distance (0..√3) measured in linear RGB. ~0.5-0.8 works well.")]
     [Range(0f, 1.732f)] public float minLinearRgbDistance = 0.65f;
-    [Tooltip("How many attempts to try for a distinct set before relaxing the threshold.")]
     public int maxAttemptsPerPick = 200;
-    [Tooltip("If we fail to satisfy min distance, we relax by this amount and retry.")]
     public float relaxStep = 0.1f;
 
     void Reset() { root = transform; }

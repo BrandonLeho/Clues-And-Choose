@@ -171,7 +171,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -39.8, y: -85}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 250, y: 350}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6698584579059461004
@@ -223,6 +223,7 @@ GameObject:
   - component: {fileID: 7494526242213087460}
   - component: {fileID: 8554551703784814068}
   - component: {fileID: 4258126109202983884}
+  - component: {fileID: 936909994100406677}
   m_Layer: 5
   m_Name: Color #4
   m_TagString: Untagged
@@ -288,6 +289,21 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &936909994100406677
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1870879692423878454}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: be10fd6b5cb508446bbb4bec72afd6cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChoiceHoverScale
+  hoverScale: 1.08
+  duration: 0.12
+  easeOut: 0.6
 --- !u!1 &2469704572376952566
 GameObject:
   m_ObjectHideFlags: 0
@@ -800,6 +816,7 @@ GameObject:
   - component: {fileID: 4882113614657743917}
   - component: {fileID: 3274681318927283961}
   - component: {fileID: 8845643742594672111}
+  - component: {fileID: 7484514760654841249}
   m_Layer: 5
   m_Name: Color #3
   m_TagString: Untagged
@@ -865,6 +882,21 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &7484514760654841249
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4716610824818718238}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: be10fd6b5cb508446bbb4bec72afd6cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChoiceHoverScale
+  hoverScale: 1.08
+  duration: 0.12
+  easeOut: 0.6
 --- !u!1 &7414662986977601716
 GameObject:
   m_ObjectHideFlags: 0
@@ -876,6 +908,7 @@ GameObject:
   - component: {fileID: 1028054404737696748}
   - component: {fileID: 1440778520933775981}
   - component: {fileID: 5277164124824510439}
+  - component: {fileID: 5479034932252453483}
   m_Layer: 5
   m_Name: Color #1
   m_TagString: Untagged
@@ -941,6 +974,21 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &5479034932252453483
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7414662986977601716}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: be10fd6b5cb508446bbb4bec72afd6cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChoiceHoverScale
+  hoverScale: 1.08
+  duration: 0.12
+  easeOut: 0.6
 --- !u!1 &7640415758604439624
 GameObject:
   m_ObjectHideFlags: 0
@@ -952,6 +1000,7 @@ GameObject:
   - component: {fileID: 9040053955398574366}
   - component: {fileID: 3633000280591187156}
   - component: {fileID: 7056374365288724331}
+  - component: {fileID: 2315035424330938576}
   m_Layer: 5
   m_Name: Color #2
   m_TagString: Untagged
@@ -1017,3 +1066,18 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &2315035424330938576
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7640415758604439624}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: be10fd6b5cb508446bbb4bec72afd6cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChoiceHoverScale
+  hoverScale: 1.08
+  duration: 0.12
+  easeOut: 0.6
