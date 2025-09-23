@@ -373,6 +373,7 @@ public class RouletteText : MonoBehaviour
             StartCoroutine(CoPlayWinnerSequenceWithDelay());
 
         int idx = Mathf.Clamp(GetIndexForTargetX(_targetX), 0, entries.Count - 1);
+        RosterStore.SetCurrentClueGiver(entries[idx]);
         OnSpinComplete?.Invoke(entries[idx], idx);
         //Debug.Log("Winner: " + entries[idx]);
     }

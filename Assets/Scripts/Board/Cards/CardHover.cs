@@ -29,8 +29,15 @@ public class CardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 
     bool _unlocked;
 
-    [Header("Click Gate")]
-    public bool allowClick = true;
+    [Header("Clue Giver Gate")]
+    public bool onlyClueGiverCanInteract = true;
+
+    [Header("Reject Shake (non-clue givers)")]
+    public float rejectShakeDuration = 0.15f;
+    public float rejectShakeAngle = 6f;
+    public float rejectShakeOffset = 8f;
+    public int rejectShakeWiggles = 3;
+    public float rejectReturnEase = 0.7f;
 
     [Header("Click")]
     public UnityEvent onClick;
@@ -61,11 +68,14 @@ public class CardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
             StartCoroutine(CoAutoUnlock(autoUnlockAfter));
 
         SnapToBase();
+        RosterStore.OnClueGiverChanged -= HandleClueGiverChanged;
+        RosterStore.OnClueGiverChanged += HandleClueGiverChanged;
     }
 
     void OnDisable()
     {
         if (_anim != null) StopCoroutine(_anim);
+        RosterStore.OnClueGiverChanged -= HandleClueGiverChanged;
     }
 
     public void RebindTopCard()
@@ -142,6 +152,7 @@ public class CardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
         if (!interactable || !_unlocked) return;
         if (!hoverPivot) RebindTopCard();
         if (!hoverPivot) return;
+        if (!IsLocalClueGiver()) return;
 
         Play(toHovered: true);
         hoverPivot.SetAsLastSibling();
@@ -150,13 +161,22 @@ public class CardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
     public void OnPointerExit(PointerEventData eventData)
     {
         if (!interactable || !_unlocked || !hoverPivot) return;
+        if (!IsLocalClueGiver()) return;
+
         Play(toHovered: false);
     }
 
     public void OnPointerClick(PointerEventData eventData)
     {
         if (!interactable || !_unlocked) return;
-        if (!allowClick) return;
+
+        if (!IsLocalClueGiver())
+        {
+            if (_anim != null) StopCoroutine(_anim);
+            StartCoroutine(CoRejectShake());
+            return;
+        }
+
         LockHoverKeepPose();
         onClick?.Invoke();
     }
@@ -226,10 +246,74 @@ public class CardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
         }
     }
 
+    IEnumerator CoRejectShake()
+    {
+        if (!hoverPivot) yield break;
+
+        Vector3 basePos = _basePos;
+        Quaternion baseRot = _baseRot;
+
+        float d = Mathf.Max(0.05f, rejectShakeDuration);
+        float t = 0f;
+
+        while (t < d)
+        {
+            t += Time.unscaledDeltaTime;
+            float p = Mathf.Clamp01(t / d);
+
+            float phase = p * rejectShakeWiggles * Mathf.PI * 2f;
+            float s = Mathf.Sin(phase);
+
+            float x = s * rejectShakeOffset;
+            float y = 0f;
+            float z = 0f;
+
+            float ang = s * rejectShakeAngle;
+
+            hoverPivot.anchoredPosition3D = basePos + new Vector3(x, y, z);
+            hoverPivot.localRotation = Quaternion.Euler(0f, 0f, ang) * baseRot;
+
+            yield return null;
+        }
+
+        float backT = 0f;
+        Vector3 startPos = hoverPivot.anchoredPosition3D;
+        Quaternion startRot = hoverPivot.localRotation;
+        const float backDur = 0.10f;
+        while (backT < backDur)
+        {
+            backT += Time.unscaledDeltaTime;
+            float p = Mathf.Clamp01(backT / backDur);
+            float k = Mathf.Lerp(0f, 3f, Mathf.Clamp01(rejectReturnEase));
+            float eased = 1f - Mathf.Pow(1f - p, k + 1f);
+
+            hoverPivot.anchoredPosition3D = Vector3.LerpUnclamped(startPos, basePos, eased);
+            hoverPivot.localRotation = Quaternion.Slerp(startRot, baseRot, eased);
+            yield return null;
+        }
+
+        hoverPivot.anchoredPosition3D = basePos;
+        hoverPivot.localRotation = baseRot;
+    }
+
     public void GetBaseTRS(out Vector3 pos, out Quaternion rot, out Vector3 scale)
     {
         pos = _basePos;
         rot = _baseRot;
         scale = _baseScale;
+    }
+
+    bool IsLocalClueGiver()
+    {
+        if (!onlyClueGiverCanInteract) return true;
+        if (string.IsNullOrEmpty(RosterStore.LocalPlayerName)) return false;
+        if (string.IsNullOrEmpty(RosterStore.CurrentClueGiverName)) return false;
+        return string.Equals(RosterStore.LocalPlayerName, RosterStore.CurrentClueGiverName,
+                            System.StringComparison.Ordinal);
+    }
+
+    void HandleClueGiverChanged(string _)
+    {
+        if (!IsLocalClueGiver()) SnapToBase();
     }
 }

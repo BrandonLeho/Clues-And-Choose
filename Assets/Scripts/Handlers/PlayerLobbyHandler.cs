@@ -3,6 +3,7 @@ using UnityEngine;
 using Mirror;
 using UnityEngine.UI;
 using TMPro;
+using Steamworks;
 
 namespace SteamLobbySpace
 {
@@ -23,6 +24,12 @@ namespace SteamLobbySpace
             base.OnStartLocalPlayer();
             readyButton.interactable = true;
             isReady = false;
+
+            string localName = SteamFriends.GetPersonaName();
+            RosterStore.SetLocalPlayerName(localName);
+
+            if (nameText != null)
+                nameText.text = localName;
         }
 
         public override void OnStartClient()
