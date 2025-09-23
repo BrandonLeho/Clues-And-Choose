@@ -16,7 +16,6 @@ GameObject:
   - component: {fileID: 839034816264329764}
   - component: {fileID: 7321503784007075703}
   - component: {fileID: 3331932311727374427}
-  - component: {fileID: 7785250004963566448}
   m_Layer: 5
   m_Name: Player
   m_TagString: Untagged
@@ -213,19 +212,3 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0
   DisplayName: 
---- !u!114 &7785250004963566448
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5227058378306516699}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 950d6692ccfc99445a66fa4528d7c6f3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NetPlayerInfo
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0
-  playerName: 

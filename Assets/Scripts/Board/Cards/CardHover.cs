@@ -157,7 +157,7 @@ public class CardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
     {
         if (!interactable || !_unlocked) return;
         if (!allowClick) return;
-        LockHover();
+        LockHoverKeepPose();
         onClick?.Invoke();
     }
 
@@ -216,10 +216,20 @@ public class CardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
         _unlocked = true;
     }
 
-    public void LockHover()
+    public void LockHoverKeepPose()
     {
         _unlocked = false;
-        SnapToBase();
+        if (_anim != null)
+        {
+            StopCoroutine(_anim);
+            _anim = null;
+        }
     }
 
+    public void GetBaseTRS(out Vector3 pos, out Quaternion rot, out Vector3 scale)
+    {
+        pos = _basePos;
+        rot = _baseRot;
+        scale = _baseScale;
+    }
 }

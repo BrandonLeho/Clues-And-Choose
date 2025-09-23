@@ -16,6 +16,11 @@ public class CardFlip : MonoBehaviour
     public bool oneWayFlip = true;
     public bool allowFlipBack = false;
 
+    [Header("Hover Return During Flip")]
+    public bool smoothReturnToBase = true;
+    [Range(0f, 1f)] public float hoverReturnPortion = 0.5f;
+    [Range(0f, 1f)] public float hoverReturnEaseOut = 0.6f;
+
     bool _isFlipping, _isFrontUp;
     RectTransform _hoverPivot, _flipRig, _backFace, _frontFace;
     Vector3 _basePos;
@@ -71,9 +76,18 @@ public class CardFlip : MonoBehaviour
 
         _hoverPivot = foundPivot;
 
-        _basePos = _hoverPivot.anchoredPosition3D;
-        _baseRot = _hoverPivot.localRotation;
-        _baseScale = _hoverPivot.localScale;
+        var ch = GetComponent<CardHover>();
+        if (ch != null)
+        {
+            ch.GetBaseTRS(out _basePos, out _baseRot, out _baseScale);
+        }
+        else
+        {
+            _basePos = _hoverPivot.anchoredPosition3D;
+            _baseRot = _hoverPivot.localRotation;
+            _baseScale = _hoverPivot.localScale;
+        }
+
 
         _flipRig = _hoverPivot.Find("FlipCenter") as RectTransform;
         if (!_flipRig)
@@ -125,9 +139,9 @@ public class CardFlip : MonoBehaviour
             ToggleRaycast(_backFace, true);
         }
 
-        _hoverPivot.anchoredPosition3D = _basePos;
+        /* _hoverPivot.anchoredPosition3D = _basePos;
         _hoverPivot.localRotation = _baseRot;
-        _hoverPivot.localScale = _baseScale;
+        _hoverPivot.localScale = _baseScale; */
         _hoverPivot.SetAsLastSibling();
 
         return true;
@@ -136,20 +150,14 @@ public class CardFlip : MonoBehaviour
     IEnumerator CoFlip(float fromDeg, float toDeg)
     {
         _isFlipping = true;
-
-        bool reEnableFrontHover = false;
-        if (frontHover && frontHover.enabled)
-        {
-            reEnableFrontHover = true;
-            frontHover.enabled = false;
-        }
+        if (frontHover) frontHover.SetFlipping(true);
 
         CardHover hover = lockHoverDuringFlip ? GetComponent<CardHover>() : null;
-        if (hover)
-        {
-            hover.LockHover();
-            hover.interactable = false;
-        }
+        if (hover) hover.interactable = false;
+
+        Vector3 hoveredPos = _hoverPivot.anchoredPosition3D;
+        Quaternion hoveredRot = _hoverPivot.localRotation;
+        Vector3 hoveredScale = _hoverPivot.localScale;
 
         float t = 0f;
         float dur = Mathf.Max(0.0001f, flipDuration);
@@ -160,28 +168,37 @@ public class CardFlip : MonoBehaviour
         ToggleRaycast(_backFace, !frontWillBeUp);
         ToggleRaycast(_frontFace, frontWillBeUp);
 
+        const float returnPortion = 0.5f;
+        const float returnEaseOut = 0.6f;
+
         while (t < dur)
         {
             t += Time.unscaledDeltaTime;
             float p = Mathf.Clamp01(t / dur);
+
             float k = Mathf.Lerp(0f, 3f, easeOut);
-            float eased = 1f - Mathf.Pow(1f - p, k + 1f);
+            float easedFlip = 1f - Mathf.Pow(1f - p, k + 1f);
+            SetFlipRigY(Mathf.LerpUnclamped(fromDeg, toDeg, easedFlip));
 
-            SetFlipRigY(Mathf.LerpUnclamped(fromDeg, toDeg, eased));
+            float hp = Mathf.Clamp01(p / Mathf.Max(0.0001f, returnPortion));
+            float hk = Mathf.Lerp(0f, 3f, returnEaseOut);
+            float easedHover = 1f - Mathf.Pow(1f - hp, hk + 1f);
 
-            _hoverPivot.anchoredPosition3D = _basePos;
-            _hoverPivot.localRotation = _baseRot;
-            _hoverPivot.localScale = _baseScale;
+            _hoverPivot.anchoredPosition3D = Vector3.LerpUnclamped(hoveredPos, _basePos, easedHover);
+            _hoverPivot.localRotation = Quaternion.Slerp(hoveredRot, _baseRot, easedHover);
+            _hoverPivot.localScale = Vector3.LerpUnclamped(hoveredScale, _baseScale, easedHover);
 
             yield return null;
         }
 
         SetFlipRigY(toDeg);
+        _hoverPivot.anchoredPosition3D = _basePos;
+        _hoverPivot.localRotation = _baseRot;
+        _hoverPivot.localScale = _baseScale;
 
         bool isFront = Mathf.DeltaAngle(toDeg, 180f) == 0f;
         if (frontHover)
         {
-            if (reEnableFrontHover) frontHover.enabled = true;
             frontHover.SetFlipCenter(_flipRig);
             frontHover.SetFrontFacing(isFront);
             frontHover.SetFlipping(false);
@@ -220,5 +237,12 @@ public class CardFlip : MonoBehaviour
         if (!face) return;
         var g = face.GetComponent<Graphic>();
         if (g) g.raycastTarget = enabled;
+    }
+
+    public void GetBaseTRS(out Vector3 pos, out Quaternion rot, out Vector3 scale)
+    {
+        pos = _basePos;
+        rot = _baseRot;
+        scale = _baseScale;
     }
 }

@@ -58,7 +58,6 @@
     <Compile Include="Assets\Scripts\Controller\CursorController\ChangeCursor.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerInteractionHandler.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinNeonPulse.cs" />
-    <Compile Include="Assets\Scripts\Gameloop\RouletteToGameLoopBinder.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\ColorBoard2D.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverRoulette\RouletteText.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorLockRegistry.cs" />
@@ -72,7 +71,6 @@
     <Compile Include="Assets\Scripts\Board\Coins\ValidDropSpot.cs" />
     <Compile Include="Assets\Scripts\Controller\CursorController\CursorControllerModule.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\ScoreboardGridPainter.cs" />
-    <Compile Include="Assets\Scripts\Board\Cards\CardRejectShaker.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardLabels.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\PaletteGrid.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerListBinder.cs" />
@@ -83,12 +81,12 @@
     <Compile Include="Assets\Scripts\Board\Cards\CardFlip.cs" />
     <Compile Include="Assets\Scripts\Board\GameChat\ChatUI.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardFrontHoverTilt.cs" />
-    <Compile Include="Assets\Scripts\Gameloop\NetPlayerInfo.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\PlayerNameSync.cs" />
+    <Compile Include="Assets\Scripts\Board\Cards\CardChoiceSelectController.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinVisual.cs" />
-    <Compile Include="Assets\Scripts\Gameloop\GameSettings.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinDropSnap.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorChoosingPhaseController.cs" />
+    <Compile Include="Assets\Scripts\Board\Cards\ChoiceClickRelay.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardGenerator.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinClientSanity.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceGridCoord.cs" />
@@ -107,7 +105,6 @@
     <Compile Include="Assets\Scripts\Board\Coins\CoinNetworkSpawner.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorSwatch.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\GridPalettePainter.cs" />
-    <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverRoulette\RouletteListener.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardFitter.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverRoulette\RouletteNetSync.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\GameGroupEntryAnimator.cs" />
@@ -115,12 +112,10 @@
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandlerGame.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerRow.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinDragHandler.cs" />
-    <Compile Include="Assets\Scripts\Board\Cards\ClueGiverCardGate.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\RegistryNameColorLookup.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\GridHoverRelay.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardAttachToBoard.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\SwatchHoverNeon.cs" />
-    <Compile Include="Assets\Scripts\Gameloop\GameLoopManager.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\BoardLabels.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\GameScenePlayerList.cs" />
     <Compile Include="Assets\Scripts\UI\PanelSwapper.cs" />

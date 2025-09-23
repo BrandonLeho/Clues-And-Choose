@@ -1,5 +1,40 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &724821194622770345
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1040825460392614628}
+  m_Layer: 5
+  m_Name: FocusTarget
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1040825460392614628
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 724821194622770345}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5550094897290951942}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 90, y: -100}
+  m_SizeDelta: {x: 1, y: 1}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &853494267439914457
 GameObject:
   m_ObjectHideFlags: 0
@@ -166,6 +201,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
+  - {fileID: 1040825460392614628}
   - {fileID: 1292092970188410709}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -226,6 +262,7 @@ GameObject:
   - component: {fileID: 936909994100406677}
   - component: {fileID: 3411750299150423619}
   - component: {fileID: 985836343265415424}
+  - component: {fileID: 5653480718119636227}
   m_Layer: 5
   m_Name: Color #4
   m_TagString: Untagged
@@ -334,6 +371,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardChoiceToGridHover
   requireFrontFacing: 1
   isFrontFacing: 1
+--- !u!114 &5653480718119636227
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1870879692423878454}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd789d524183ba14fac1d770fb1dd9a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChoiceClickRelay
+  controller: {fileID: 7665591576090681039}
+  coord: {fileID: 0}
+  img: {fileID: 0}
+  cg: {fileID: 0}
 --- !u!1 &2469704572376952566
 GameObject:
   m_ObjectHideFlags: 0
@@ -482,6 +535,9 @@ GameObject:
   - component: {fileID: 7561406645047676326}
   - component: {fileID: 8802596495821309032}
   - component: {fileID: 7591103361971690210}
+  - component: {fileID: 8022577447092842684}
+  - component: {fileID: 7427924630026965985}
+  - component: {fileID: 7665591576090681039}
   m_Layer: 5
   m_Name: FrontFaces
   m_TagString: Untagged
@@ -563,6 +619,63 @@ MonoBehaviour:
   minLinearRgbDistance: 0.65
   maxAttemptsPerPick: 200
   relaxStep: 0.1
+--- !u!114 &8022577447092842684
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3757834583549455463}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86c8f5f9496454d4fb9c810e72e0ce00, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChoiceGridCoord
+  col: 0
+  row: 0
+--- !u!114 &7427924630026965985
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3757834583549455463}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd789d524183ba14fac1d770fb1dd9a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChoiceClickRelay
+  controller: {fileID: 0}
+  coord: {fileID: 0}
+  img: {fileID: 0}
+  cg: {fileID: 0}
+--- !u!114 &7665591576090681039
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3757834583549455463}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b4e37a839f6a9e14f8a3a29191293216, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CardChoiceSelectController
+  choices:
+  - {fileID: 551441391050779350}
+  - {fileID: 6331684738173389668}
+  - {fileID: 2920142689360207234}
+  - {fileID: 5653480718119636227}
+  focusTarget: {fileID: 1040825460392614628}
+  selectedScale: 1.5
+  moveDuration: 0.35
+  fadeDuration: 0.25
+  easeOut: 0.7
+  disableHoverRelayOnSelect: 0
+  disableFurtherInputOnSelect: 1
+  onChoiceSelected:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &4549066936200691178
 GameObject:
   m_ObjectHideFlags: 0
@@ -849,6 +962,7 @@ GameObject:
   - component: {fileID: 7484514760654841249}
   - component: {fileID: 8906493763880119593}
   - component: {fileID: 1481013742660097794}
+  - component: {fileID: 2920142689360207234}
   m_Layer: 5
   m_Name: Color #3
   m_TagString: Untagged
@@ -957,6 +1071,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardChoiceToGridHover
   requireFrontFacing: 1
   isFrontFacing: 1
+--- !u!114 &2920142689360207234
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4716610824818718238}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd789d524183ba14fac1d770fb1dd9a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChoiceClickRelay
+  controller: {fileID: 7665591576090681039}
+  coord: {fileID: 0}
+  img: {fileID: 0}
+  cg: {fileID: 0}
 --- !u!1 &7414662986977601716
 GameObject:
   m_ObjectHideFlags: 0
@@ -971,6 +1101,7 @@ GameObject:
   - component: {fileID: 5479034932252453483}
   - component: {fileID: 4417623484119539125}
   - component: {fileID: 4794736355312653306}
+  - component: {fileID: 551441391050779350}
   m_Layer: 5
   m_Name: Color #1
   m_TagString: Untagged
@@ -1079,6 +1210,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardChoiceToGridHover
   requireFrontFacing: 1
   isFrontFacing: 1
+--- !u!114 &551441391050779350
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7414662986977601716}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd789d524183ba14fac1d770fb1dd9a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChoiceClickRelay
+  controller: {fileID: 7665591576090681039}
+  coord: {fileID: 0}
+  img: {fileID: 0}
+  cg: {fileID: 0}
 --- !u!1 &7640415758604439624
 GameObject:
   m_ObjectHideFlags: 0
@@ -1093,6 +1240,7 @@ GameObject:
   - component: {fileID: 2315035424330938576}
   - component: {fileID: 8550715347931665250}
   - component: {fileID: 6577802576738488933}
+  - component: {fileID: 6331684738173389668}
   m_Layer: 5
   m_Name: Color #2
   m_TagString: Untagged
@@ -1201,3 +1349,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardChoiceToGridHover
   requireFrontFacing: 1
   isFrontFacing: 1
+--- !u!114 &6331684738173389668
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7640415758604439624}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd789d524183ba14fac1d770fb1dd9a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChoiceClickRelay
+  controller: {fileID: 7665591576090681039}
+  coord: {fileID: 0}
+  img: {fileID: 0}
+  cg: {fileID: 0}
