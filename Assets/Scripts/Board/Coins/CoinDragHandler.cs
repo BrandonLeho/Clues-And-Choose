@@ -50,8 +50,11 @@ public class CoinDragHandler : MonoBehaviour
     NetworkCoin _netCoin;
     CoinDragSync _sync;
 
+    ICoinDragPermission[] _permGuards;
+
     void Awake()
     {
+        _permGuards = GetComponents<ICoinDragPermission>();
         _col = GetComponent<Collider2D>();
         _netCoin = GetComponent<NetworkCoin>();
         _sync = GetComponent<CoinDragSync>();
@@ -184,6 +187,8 @@ public class CoinDragHandler : MonoBehaviour
             return;
         }
 
+        if (!GuardsAllowBeginDrag()) return;
+
         _activePointerId = pointerId;
         _isDragging = true;
         _allowLocalMove = true;
@@ -258,5 +263,14 @@ public class CoinDragHandler : MonoBehaviour
             : new Vector3(sp.x, sp.y, dragZ);
         wp.z = dragZ;
         return wp;
+    }
+
+    bool GuardsAllowBeginDrag()
+    {
+        if (_permGuards == null || _permGuards.Length == 0) return true;
+        for (int i = 0; i < _permGuards.Length; i++)
+            if (_permGuards[i] != null && !_permGuards[i].CanBeginDrag())
+                return false;
+        return true;
     }
 }

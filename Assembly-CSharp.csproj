@@ -62,6 +62,7 @@
     <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverRoulette\RouletteText.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorLockRegistry.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardMarker.cs" />
+    <Compile Include="Assets\Scripts\Gameloop\ClueGiverState.cs" />
     <Compile Include="Assets\Scripts\Background\UVScroller.cs" />
     <Compile Include="Assets\Scripts\GameNetworking\NetKeepAlive.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandler.cs" />
@@ -88,7 +89,6 @@
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorChoosingPhaseController.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceClickRelay.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardGenerator.cs" />
-    <Compile Include="Assets\Scripts\Board\Coins\CoinClientSanity.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceGridCoord.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerNameColorBinder.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceHoverScale.cs" />
@@ -96,13 +96,13 @@
     <Compile Include="Assets\Scripts\Controller\DraggableItem.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\PerimeterGlowEntry.cs" />
     <Compile Include="Assets\Scripts\UI\LobbyUIManager.cs" />
-    <Compile Include="Assets\Scripts\Board\Coins\RegistryDebugLogger.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinSpawnOnPhaseEnd.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverRoulette\RouletteEntryManager.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardHover.cs" />
     <Compile Include="Assets\Scripts\Steam\SteamLobby.cs" />
     <Compile Include="Assets\Scripts\Steam\CustomNetworkManager.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinNetworkSpawner.cs" />
+    <Compile Include="Assets\Scripts\Board\Coins\CoinDragPermissionClueGiver.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorSwatch.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\GridPalettePainter.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardFitter.cs" />
@@ -124,6 +124,7 @@
     <Compile Include="Assets\Scripts\Board\Coins\CoinSpawnAfterRouletteNetwork.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ButtonSwapFlash.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\GridCellHoverWithCoords.cs" />
+    <Compile Include="Assets\Scripts\Board\Coins\ICoinDragPermission.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\SelectionController.cs" />
   </ItemGroup>
   <ItemGroup>
