@@ -1,6 +1,7 @@
 using Mirror;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Events;
 
 [DisallowMultipleComponent]
 public class ClueGiverCardGate : MonoBehaviour, IPointerClickHandler
@@ -9,60 +10,112 @@ public class ClueGiverCardGate : MonoBehaviour, IPointerClickHandler
     public CardHover cardHover;
     public CardRejectShaker rejectShaker;
     public RectTransform stackParent;
-    [Header("When can the clue giver click?")]
-    public bool requireCluePhase = true;
 
-    bool _allowClicks;
+    [Header("Rules")]
+    public bool requireCluePhase = false;
+    private bool _allowClicks;
+    private string _lastPhase;
+
+    private UnityAction<string> _phaseListener;
+    private UnityAction<string> _clueListener;
 
     void Reset()
     {
         cardHover = GetComponent<CardHover>();
         rejectShaker = GetComponent<CardRejectShaker>();
         if (!rejectShaker) rejectShaker = gameObject.AddComponent<CardRejectShaker>();
-        if (!stackParent && cardHover) rejectShaker.stackParent = cardHover.stackParent;
+    }
+
+    void Awake()
+    {
+        if (!cardHover) cardHover = GetComponent<CardHover>();
+        if (rejectShaker && !rejectShaker.stackParent && stackParent)
+            rejectShaker.stackParent = stackParent;
+
+        SetAllow(false);
     }
 
     void OnEnable()
     {
-        RefreshPermission();
         if (GameLoopManager.Exists)
         {
-            GameLoopManager.Instance.OnClueGiverChanged.AddListener(_ => RefreshPermission());
-            GameLoopManager.Instance.OnPhaseChanged.AddListener(_ => RefreshPermission());
+            _phaseListener = OnPhaseChanged;
+            _clueListener = OnClueGiverChanged;
+            GameLoopManager.Instance.OnPhaseChanged.AddListener(_phaseListener);
+            GameLoopManager.Instance.OnClueGiverChanged.AddListener(_clueListener);
         }
+
+        RefreshPermission();
+        StartCoroutine(CoDeferredRefresh());
+    }
+
+    System.Collections.IEnumerator CoDeferredRefresh()
+    {
+        yield return null;
+        RefreshPermission();
+        yield return null;
+        RefreshPermission();
     }
 
     void OnDisable()
     {
         if (GameLoopManager.Exists)
         {
-            GameLoopManager.Instance.OnClueGiverChanged.RemoveListener(_ => RefreshPermission());
-            GameLoopManager.Instance.OnPhaseChanged.RemoveListener(_ => RefreshPermission());
+            if (_phaseListener != null)
+                GameLoopManager.Instance.OnPhaseChanged.RemoveListener(_phaseListener);
+            if (_clueListener != null)
+                GameLoopManager.Instance.OnClueGiverChanged.RemoveListener(_clueListener);
         }
     }
 
-    void RefreshPermission()
+    private void OnPhaseChanged(string phase)
     {
-        _allowClicks = IsLocalClueGiver();
-        if (requireCluePhase && GameLoopManager.Exists)
+        _lastPhase = phase;
+        RefreshPermission();
+    }
+
+    private void OnClueGiverChanged(string name)
+    {
+        RefreshPermission();
+    }
+
+    private void RefreshPermission()
+    {
+        bool allow = SafeIsLocalClueGiver();
+
+        if (requireCluePhase)
+            allow &= _lastPhase == "Clue";
+
+        SetAllow(allow);
+    }
+
+    private void SetAllow(bool allow)
+    {
+        _allowClicks = allow;
+        if (cardHover != null)
         {
-            _allowClicks &= GameLoopManager.Instance != null && NetworkClient.active && true;
+            // Maybe TODO idk yet
         }
-
-        if (cardHover)
-            cardHover.allowClick = _allowClicks;
     }
 
-    bool IsLocalClueGiver()
+    private bool SafeIsLocalClueGiver()
     {
-        var localInfo = NetworkClient.localPlayer.GetComponent<NetPlayerInfo>();
-        return GameLoopManager.Instance.Client_IsLocalClueGiver(localInfo.netId);
+        if (!GameLoopManager.Exists) return false;
+        if (!NetworkClient.active) return false;
+        if (!NetworkClient.localPlayer) return false;
 
+        var localInfo = NetworkClient.localPlayer.GetComponent<NetPlayerInfo>();
+        if (!localInfo) return false;
+
+        return GameLoopManager.Instance.Client_IsLocalClueGiver(localInfo.netId);
     }
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        if (_allowClicks) return;
-        if (rejectShaker) rejectShaker.Play();
+        if (!_allowClicks)
+        {
+            if (rejectShaker) rejectShaker.Play();
+            return;
+        }
     }
 }

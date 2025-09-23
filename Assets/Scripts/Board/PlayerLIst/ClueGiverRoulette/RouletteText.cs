@@ -165,7 +165,7 @@ public class RouletteText : MonoBehaviour
         }
 
         int chosenIndex = forceTargetIndex >= 0 && forceTargetIndex < entries.Count ? forceTargetIndex : _rng.Next(0, entries.Count);
-        Debug.Log(chosenIndex);
+        //Debug.Log(chosenIndex);
 
         float baseTargetUnwrapped = -(_itemCenters[chosenIndex] - ViewportCenterX());
         int loops = Mathf.Clamp(_rng.Next(minExtraLoops, maxExtraLoops + 1), 0, 100);
@@ -374,7 +374,7 @@ public class RouletteText : MonoBehaviour
 
         int idx = Mathf.Clamp(GetIndexForTargetX(_targetX), 0, entries.Count - 1);
         OnSpinComplete?.Invoke(entries[idx], idx);
-        Debug.Log("Winner: " + entries[idx]);
+        //Debug.Log("Winner: " + entries[idx]);
     }
 
     bool TryResolveRegistryColor(string ownerName, out Color color)
