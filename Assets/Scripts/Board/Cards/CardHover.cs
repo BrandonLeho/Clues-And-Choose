@@ -29,6 +29,9 @@ public class CardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 
     bool _unlocked;
 
+    [Header("Click Gate")]
+    public bool allowClick = true;
+
     [Header("Click")]
     public UnityEvent onClick;
 
@@ -153,6 +156,7 @@ public class CardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
     public void OnPointerClick(PointerEventData eventData)
     {
         if (!interactable || !_unlocked) return;
+        if (!allowClick) return;
         LockHover();
         onClick?.Invoke();
     }

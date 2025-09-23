@@ -260,4 +260,12 @@ public class GameLoopManager : NetworkBehaviour
     [ClientRpc] private void RpcNotifyClueGiver(string name) => OnClueGiverChanged?.Invoke(name);
     [ClientRpc] private void RpcNotifyScoreChanged(string name, int score) => OnScoreChanged?.Invoke(name, score);
     [ClientRpc] private void RpcNotifyWinner(string name) => OnGameWinner?.Invoke(name);
+
+    public bool Client_IsLocalClueGiver(uint localNetId)
+    {
+        if (players == null || players.Count == 0) return false;
+        int idx = _clueGiverIndex;
+        if (idx < 0 || idx >= players.Count) return false;
+        return players[idx].netId == localNetId;
+    }
 }

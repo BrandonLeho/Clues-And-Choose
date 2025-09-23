@@ -72,6 +72,7 @@
     <Compile Include="Assets\Scripts\Board\Coins\ValidDropSpot.cs" />
     <Compile Include="Assets\Scripts\Controller\CursorController\CursorControllerModule.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\ScoreboardGridPainter.cs" />
+    <Compile Include="Assets\Scripts\Board\Cards\CardRejectShaker.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardLabels.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\PaletteGrid.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerListBinder.cs" />
@@ -113,6 +114,7 @@
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandlerGame.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerRow.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinDragHandler.cs" />
+    <Compile Include="Assets\Scripts\Board\Cards\ClueGiverCardGate.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\RegistryNameColorLookup.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\GridHoverRelay.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardAttachToBoard.cs" />
