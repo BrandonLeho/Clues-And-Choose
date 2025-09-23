@@ -82,6 +82,7 @@ public class ClueGiverCardGate : MonoBehaviour, IPointerClickHandler
     private void RefreshPermission()
     {
         bool allow = SafeIsLocalClueGiver();
+        cardHover.allowClick = _allowClicks;
 
         if (requireCluePhase)
             allow &= _lastPhase == "Clue";
@@ -112,10 +113,10 @@ public class ClueGiverCardGate : MonoBehaviour, IPointerClickHandler
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        if (!_allowClicks)
-        {
-            if (rejectShaker) rejectShaker.Play();
-            return;
-        }
+        Debug.Log($"[Gate] allow={_allowClicks}");
+
+        if (_allowClicks) return;
+        if (rejectShaker) rejectShaker.Play();
+        eventData.Use();
     }
 }
