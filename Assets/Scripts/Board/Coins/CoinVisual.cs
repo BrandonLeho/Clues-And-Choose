@@ -59,7 +59,7 @@ public class CoinVisual : MonoBehaviour
         if (forcePureWhite)
         {
             ring = Color.white;
-            fill = new Color(0.85f, 0.85f, 0.85f, 1f);
+            fill = new Color(0.55f, 0.55f, 0.55f, 1f);
         }
         else
         {

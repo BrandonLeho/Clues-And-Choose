@@ -182,6 +182,11 @@ public class CoinDragHandler : MonoBehaviour
 
     void BeginDrag(int pointerId, Vector2 worldPoint)
     {
+        if (_rejectFx != null && _rejectFx.IsPlaying)
+        {
+            return;
+        }
+
         if (debugInteract) Debug.Log($"[Drag] {name} BeginDrag called");
 
         if (_netCoin != null && !_netCoin.IsLocalOwner())
