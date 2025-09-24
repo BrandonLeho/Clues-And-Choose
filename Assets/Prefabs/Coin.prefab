@@ -67,7 +67,7 @@ MonoBehaviour:
   disableColliderWhileDragging: 0
   pickupScaleMultiplier: 1.4
   scaleLerpSpeed: 10
-  debugInteract: 1
+  debugInteract: 0
   onPickUp:
     m_PersistentCalls:
       m_Calls:

@@ -72,6 +72,13 @@ public class CoinDropSnap : MonoBehaviour
             .Where(s => s != null && s.enabledForPlacement)
             .ToList();
 
+        Debug.Log($"[DropCheck] hits={hits?.Length ?? 0} spotsAfterFilter={spots?.Count ?? 0}");
+        if (spots != null)
+        {
+            foreach (var s in spots)
+                Debug.Log($"[DropCheck] spot={s.name} enabled={s.enabledForPlacement} idx={s.spotIndex}");
+        }
+
 
         if (spots != null && spots.Count > 0)
         {
