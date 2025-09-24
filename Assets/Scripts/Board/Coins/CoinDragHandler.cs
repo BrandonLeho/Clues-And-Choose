@@ -187,13 +187,13 @@ public class CoinDragHandler : MonoBehaviour
         if (_netCoin != null && !_netCoin.IsLocalOwner())
         {
             if (debugInteract) Debug.Log($"[Drag] {name} blocked: not local owner (owner={_netCoin.ownerNetId})");
-            if (_rejectFx) _rejectFx.Play();
+            _rejectFx.Play();
             return;
         }
 
         if (!GuardsAllowBeginDrag())
         {
-            if (_rejectFx) _rejectFx.Play();
+            _rejectFx.Play();
             return;
         }
 

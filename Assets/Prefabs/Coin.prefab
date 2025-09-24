@@ -21,6 +21,7 @@ GameObject:
   - component: {fileID: 347154497940464648}
   - component: {fileID: 1232689880800201139}
   - component: {fileID: 6324342610767033781}
+  - component: {fileID: 1021044639371884836}
   m_Layer: 0
   m_Name: Coin
   m_TagString: Untagged
@@ -282,9 +283,7 @@ MonoBehaviour:
   edgeSoftness: 0.025
   glowWidth: 0.092
   glowBoost: 0.32
-  useScriptColors: 1
-  overrideFill: {r: 0.7169812, g: 0.7169812, b: 0.7169812, a: 1}
-  overrideRing: {r: 1, g: 1, b: 1, a: 1}
+  forcePureWhite: 0
 --- !u!114 &2192374657448525166
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -436,3 +435,44 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &1021044639371884836
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5861153836025292340}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 290aa779a1b526c4cb8b6f9df07bceaa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CoinRejectionFeedback
+  duration: 0.35
+  magnitude: 0.15
+  easeOut:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  sprite: {fileID: 0}
+  flashBoost: 0.35
+  flashFade: 0.12
