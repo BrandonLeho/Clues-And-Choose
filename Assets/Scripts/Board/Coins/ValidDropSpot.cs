@@ -4,47 +4,61 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class ValidDropSpot : MonoBehaviour
 {
-    [Header("Placement Gate")]
     public bool enabledForPlacement = true;
+    public bool useColliderCenter = true;
 
-    [Header("Occupancy (local view)")]
+    [Header("Occupancy")]
     public bool isOccupied = false;
-    public GameObject occupant;
 
-    [Header("Index")]
-    public int spotIndex = -1;
+    public GameObject occupant;
 
     Collider2D _col;
 
-    void Awake() { _col = GetComponent<Collider2D>(); }
+    void Awake() => _col = GetComponent<Collider2D>();
 
     public bool ContainsPoint(Vector2 worldPoint)
-        => _col && enabledForPlacement && _col.OverlapPoint(worldPoint);
+    {
+        if (!_col || !enabledForPlacement) return false;
+        return _col.OverlapPoint(worldPoint);
+    }
 
     public Vector3 GetCenterWorld()
     {
-        var c = _col ? _col.bounds.center : transform.position;
-        return new Vector3(c.x, c.y, transform.position.z);
+        if (useColliderCenter && _col)
+        {
+            var c = _col.bounds.center;
+            return new Vector3(c.x, c.y, transform.position.z);
+        }
+        return transform.position;
     }
 
-    public void SetOccupantLocal(GameObject coin)
+    public bool TryOccupy(GameObject coin)
     {
+        if (!enabledForPlacement || isOccupied) return false;
+        isOccupied = true;
         occupant = coin;
-        isOccupied = coin != null;
-        enabledForPlacement = (coin == null);
+        enabledForPlacement = false;
+        return true;
     }
 
     public void Release(GameObject coin)
     {
-        var ni = coin ? coin.GetComponent<Mirror.NetworkIdentity>() : null;
-
-        if (BoardSpotsNet.Instance && spotIndex >= 0 && ni)
+        if (occupant == coin)
         {
-            BoardSpotsNet.RequestRelease(spotIndex, ni);
-            return;
+            isOccupied = false;
+            occupant = null;
+            enabledForPlacement = true;
         }
-
-        if (occupant == coin) SetOccupantLocal(null);
     }
 
+#if UNITY_EDITOR
+    void OnDrawGizmosSelected()
+    {
+        Gizmos.color = (!isOccupied && enabledForPlacement) ? Color.green : Color.red;
+        Vector3 p = useColliderCenter && TryGetComponent<Collider2D>(out var c)
+            ? (Vector3)c.bounds.center
+            : transform.position;
+        Gizmos.DrawWireSphere(p, 0.1f);
+    }
+#endif
 }
