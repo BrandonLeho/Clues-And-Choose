@@ -282,6 +282,9 @@ MonoBehaviour:
   edgeSoftness: 0.025
   glowWidth: 0.092
   glowBoost: 0.32
+  useScriptColors: 0
+  overrideFill: {r: 0.7169812, g: 0.7169812, b: 0.7169812, a: 1}
+  overrideRing: {r: 1, g: 1, b: 1, a: 1}
 --- !u!114 &2192374657448525166
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -406,7 +409,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CoinDragPermissionClueGiver
   shakeDuration: 0.35
-  shakeMagnitude: 0.07
+  shakeMagnitude: 0.15
   shakeEase:
     serializedVersion: 2
     m_Curve:

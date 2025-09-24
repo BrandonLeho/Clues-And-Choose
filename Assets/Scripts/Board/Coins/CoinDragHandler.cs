@@ -52,8 +52,11 @@ public class CoinDragHandler : MonoBehaviour
 
     ICoinDragPermission[] _permGuards;
 
+    CoinRejectionFeedback _rejectFx;
+
     void Awake()
     {
+        _rejectFx = GetComponent<CoinRejectionFeedback>();
         _permGuards = GetComponents<ICoinDragPermission>();
         _col = GetComponent<Collider2D>();
         _netCoin = GetComponent<NetworkCoin>();
@@ -184,10 +187,15 @@ public class CoinDragHandler : MonoBehaviour
         if (_netCoin != null && !_netCoin.IsLocalOwner())
         {
             if (debugInteract) Debug.Log($"[Drag] {name} blocked: not local owner (owner={_netCoin.ownerNetId})");
+            if (_rejectFx) _rejectFx.Play();
             return;
         }
 
-        if (!GuardsAllowBeginDrag()) return;
+        if (!GuardsAllowBeginDrag())
+        {
+            if (_rejectFx) _rejectFx.Play();
+            return;
+        }
 
         _activePointerId = pointerId;
         _isDragging = true;
@@ -244,7 +252,7 @@ public class CoinDragHandler : MonoBehaviour
             ? (Vector3)Input.mousePosition
             : (pointerId >= 0 && pointerId < Input.touchCount)
                 ? (Vector3)Input.GetTouch(pointerId).position
-                : (Vector3)Input.mousePosition;
+                : Input.mousePosition;
 
         Ray ray = worldCamera ? worldCamera.ScreenPointToRay(sp)
                               : new Ray(new Vector3(sp.x, sp.y, -10f), Vector3.forward);
@@ -258,7 +266,7 @@ public class CoinDragHandler : MonoBehaviour
 
         var wp = worldCamera
             ? worldCamera.ScreenToWorldPoint(new Vector3(sp.x, sp.y,
-                  worldCamera.orthographic ? (worldCamera.nearClipPlane)
+                  worldCamera.orthographic ? worldCamera.nearClipPlane
                                            : Mathf.Abs(worldCamera.transform.position.z - dragZ)))
             : new Vector3(sp.x, sp.y, dragZ);
         wp.z = dragZ;

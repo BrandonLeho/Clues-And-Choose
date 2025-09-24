@@ -6,7 +6,7 @@ public class CoinVisual : MonoBehaviour
 {
     [Header("Colors")]
     [ColorUsage(false, true)]
-    public Color baseColor = new Color(0.2f, 0.8f, 0.8f, 1f);
+    public Color baseColor = new Color(1f, 1f, 1f, 1f);
 
     [Tooltip("Extra saturation added to ring color (HSV).")]
     [Range(0f, 0.5f)] public float ringSaturationBoost = 0.25f;
@@ -23,6 +23,11 @@ public class CoinVisual : MonoBehaviour
     [Range(0.001f, 0.2f)] public float edgeSoftness = 0.02f;
     [Range(0.0f, 0.5f)] public float glowWidth = 0.10f;
     [Range(0.0f, 5.0f)] public float glowBoost = 1.5f;
+
+    [Header("Overrides")]
+    public bool useScriptColors = true;
+    public Color overrideFill = Color.white;
+    public Color overrideRing = Color.white;
 
     SpriteRenderer _sr;
     MaterialPropertyBlock _mpb;
@@ -62,8 +67,17 @@ public class CoinVisual : MonoBehaviour
         var fill = Color.HSVToRGB(fh, fs, fv);
         fill.a = 1f;
 
-        _mpb.SetColor("_FillColor", fill);
-        _mpb.SetColor("_RingColor", ring);
+        if (useScriptColors)
+        {
+            _mpb.SetColor("_FillColor", fill);
+            _mpb.SetColor("_RingColor", ring);
+        }
+        else
+        {
+            _mpb.SetColor("_FillColor", overrideFill);
+            _mpb.SetColor("_RingColor", overrideRing);
+        }
+
         _mpb.SetFloat("_Radius", radius);
         _mpb.SetFloat("_RingThick", ringThickness);
         _mpb.SetFloat("_EdgeSoft", edgeSoftness);
