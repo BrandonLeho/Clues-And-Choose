@@ -4,59 +4,47 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class ValidDropSpot : MonoBehaviour
 {
+    [Header("Placement Gate")]
     public bool enabledForPlacement = true;
-    public bool useColliderCenter = true;
 
     [Header("Occupancy (local view)")]
     public bool isOccupied = false;
     public GameObject occupant;
 
+    [Header("Index")]
+    public int spotIndex = -1;
+
     Collider2D _col;
 
-    void Awake() => _col = GetComponent<Collider2D>();
+    void Awake() { _col = GetComponent<Collider2D>(); }
 
     public bool ContainsPoint(Vector2 worldPoint)
-    {
-        if (!_col || !enabledForPlacement) return false;
-        return _col.OverlapPoint(worldPoint);
-    }
+        => _col && enabledForPlacement && _col.OverlapPoint(worldPoint);
 
     public Vector3 GetCenterWorld()
     {
-        if (useColliderCenter && _col)
-        {
-            var c = _col.bounds.center;
-            return new Vector3(c.x, c.y, transform.position.z);
-        }
-        return transform.position;
+        var c = _col ? _col.bounds.center : transform.position;
+        return new Vector3(c.x, c.y, transform.position.z);
+    }
+
+    public void SetOccupantLocal(GameObject coin)
+    {
+        occupant = coin;
+        isOccupied = coin != null;
+        enabledForPlacement = (coin == null);
     }
 
     public void Release(GameObject coin)
     {
-        var net = GetComponent<ValidDropSpotNet>();
-        if (net && net.isActiveAndEnabled)
+        var ni = coin ? coin.GetComponent<Mirror.NetworkIdentity>() : null;
+
+        if (BoardSpotsNet.Instance && spotIndex >= 0 && ni)
         {
-            net.CmdReleaseIfOccupant(coin);
+            BoardSpotsNet.RequestRelease(spotIndex, ni);
             return;
         }
 
-        if (occupant == coin)
-        {
-            occupant = null;
-            isOccupied = false;
-            enabledForPlacement = true;
-        }
+        if (occupant == coin) SetOccupantLocal(null);
     }
 
-
-#if UNITY_EDITOR
-    void OnDrawGizmosSelected()
-    {
-        Gizmos.color = (!isOccupied && enabledForPlacement) ? Color.green : Color.red;
-        Vector3 p = useColliderCenter && TryGetComponent<Collider2D>(out var c)
-            ? (Vector3)c.bounds.center
-            : transform.position;
-        Gizmos.DrawWireSphere(p, 0.1f);
-    }
-#endif
 }

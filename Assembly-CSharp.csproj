@@ -90,11 +90,13 @@
     <Compile Include="Assets\Scripts\Board\Coins\CoinVisual.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinDropSnap.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorChoosingPhaseController.cs" />
+    <Compile Include="Assets\Scripts\Board\Coins\BoardSpotNet.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceClickRelay.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardGenerator.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceGridCoord.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerNameColorBinder.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceHoverScale.cs" />
+    <Compile Include="Assets\Scripts\Board\Coins\BoardSpotRegistry.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinSlideInIntro.cs" />
     <Compile Include="Assets\Scripts\Controller\DraggableItem.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\PerimeterGlowEntry.cs" />

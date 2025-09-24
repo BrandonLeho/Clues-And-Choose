@@ -152,8 +152,8 @@ GameObject:
   - component: {fileID: 3086260576753675894}
   - component: {fileID: 870408920436632718}
   - component: {fileID: 2405847361663254889}
-  - component: {fileID: 5468021225457676706}
   - component: {fileID: 1202920801870184155}
+  - component: {fileID: 7322854077898167382}
   m_Layer: 8
   m_Name: ColorSlot
   m_TagString: Untagged
@@ -202,7 +202,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.82077396, g: 0.25956106, b: 0, a: 1}
+  m_Color: {r: 0.826546, g: 0.20156252, b: 0, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -404,18 +404,6 @@ MonoBehaviour:
   useColliderCenter: 1
   isOccupied: 0
   occupant: {fileID: 0}
---- !u!225 &5468021225457676706
-CanvasGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7613232968694909624}
-  m_Enabled: 1
-  m_Alpha: 1
-  m_Interactable: 1
-  m_BlocksRaycasts: 1
-  m_IgnoreParentGroups: 0
 --- !u!114 &1202920801870184155
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -436,3 +424,15 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!225 &7322854077898167382
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7613232968694909624}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
