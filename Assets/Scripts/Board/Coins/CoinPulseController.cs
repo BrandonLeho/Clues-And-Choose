@@ -38,6 +38,7 @@ public class CoinPulseController : MonoBehaviour
     float _time;
     Vector3 _baseScale;
     NetworkCoin _net;
+    CoinPlacedLock _placedLock;
 
     static readonly int PID_GlowBoost = Shader.PropertyToID("_GlowBoost");
     static readonly int PID_RingThick = Shader.PropertyToID("_RingThick");
@@ -49,6 +50,8 @@ public class CoinPulseController : MonoBehaviour
         _mpb = new MaterialPropertyBlock();
         _coin = GetComponent<CoinVisual>();
         _baseScale = transform.localScale;
+
+        _placedLock = GetComponent<CoinPlacedLock>();
 
         if (!hoverCollider) hoverCollider = GetComponent<Collider2D>();
         if (!worldCamera) worldCamera = Camera.main;
@@ -87,7 +90,12 @@ public class CoinPulseController : MonoBehaviour
             if (ClueGiverState.IsLocalPlayerClueGiver()) canScale = false;
         }
 
-        float targetScale = (canScale ? Mathf.Lerp(1f, hoverScaleMultiplier, _hover01) : 1f);
+        if (_placedLock != null && _placedLock.locked)
+        {
+            canScale = false;
+        }
+
+        float targetScale = canScale ? Mathf.Lerp(1f, hoverScaleMultiplier, _hover01) : 1f;
         transform.localScale = Vector3.Lerp(
             transform.localScale, _baseScale * targetScale,
             scaleLerpSpeed * Time.deltaTime);

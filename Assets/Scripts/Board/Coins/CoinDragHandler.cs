@@ -33,7 +33,6 @@ public class CoinDragHandler : MonoBehaviour
     public UnityEvent onDrop;
 
     [Header("Input Guard")]
-    [Tooltip("Minimum time after pickup before a drop is allowed (prevents same-frame drop).")]
     [Range(0f, 0.2f)] public float dropGuardSeconds = 0.06f;
     float _noDropBefore;
 
