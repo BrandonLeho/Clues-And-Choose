@@ -60,10 +60,10 @@ public class BoardSpotsNet : NetworkBehaviour
     {
         var inst = Instance;
 
-        if (!inst)
+        if (!inst || !NetworkClient.active)
         {
             var spot = BoardSpotsRegistry.Instance?.Get(spotIndex);
-            bool ok = (spot && spot.enabledForPlacement && !spot.isOccupied);
+            bool ok = spot && spot.enabledForPlacement && !spot.isOccupied;
             if (ok) spot.SetOccupantLocal(coinNI ? coinNI.gameObject : null);
             cb?.Invoke(ok, ok ? spot.GetCenterWorld() : Vector3.zero);
             return;

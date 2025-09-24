@@ -202,7 +202,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.826546, g: 0.20156252, b: 0, a: 1}
+  m_Color: {r: 0.82077396, g: 0.25956106, b: 0, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -401,9 +401,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ValidDropSpot
   enabledForPlacement: 1
-  useColliderCenter: 1
   isOccupied: 0
   occupant: {fileID: 0}
+  spotIndex: -1
 --- !u!114 &1202920801870184155
 MonoBehaviour:
   m_ObjectHideFlags: 0

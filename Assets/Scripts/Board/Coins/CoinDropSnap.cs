@@ -69,8 +69,9 @@ public class CoinDropSnap : MonoBehaviour
         var hits = Physics2D.OverlapCircleAll(center2D, overlapRadius, validSpotLayers);
         var spots = hits?
             .Select(h => h.GetComponentInParent<ValidDropSpot>() ?? h.GetComponent<ValidDropSpot>())
-            .Where(s => s != null && s.enabledForPlacement && s.ContainsPoint(center2D))
+            .Where(s => s != null && s.enabledForPlacement)
             .ToList();
+
 
         if (spots != null && spots.Count > 0)
         {
