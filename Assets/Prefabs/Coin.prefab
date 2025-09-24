@@ -282,7 +282,7 @@ MonoBehaviour:
   edgeSoftness: 0.025
   glowWidth: 0.092
   glowBoost: 0.32
-  useScriptColors: 0
+  useScriptColors: 1
   overrideFill: {r: 0.7169812, g: 0.7169812, b: 0.7169812, a: 1}
   overrideRing: {r: 1, g: 1, b: 1, a: 1}
 --- !u!114 &2192374657448525166
@@ -308,6 +308,8 @@ MonoBehaviour:
   ringThicknessPulse: 0.08
   hoverScaleMultiplier: 1.487
   scaleLerpSpeed: 10
+  requireLocalOwnershipForHoverScale: 1
+  blockHoverScaleIfLocalIsClueGiver: 1
 --- !u!114 &347154497940464648
 MonoBehaviour:
   m_ObjectHideFlags: 0

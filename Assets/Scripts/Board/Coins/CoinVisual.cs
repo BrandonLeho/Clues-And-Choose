@@ -7,14 +7,8 @@ public class CoinVisual : MonoBehaviour
     [Header("Colors")]
     [ColorUsage(false, true)]
     public Color baseColor = new Color(1f, 1f, 1f, 1f);
-
-    [Tooltip("Extra saturation added to ring color (HSV).")]
     [Range(0f, 0.5f)] public float ringSaturationBoost = 0.25f;
-
-    [Tooltip("Extra value/brightness added to ring color (HSV).")]
     [Range(0f, 0.5f)] public float ringValueBoost = 0.25f;
-
-    [Tooltip("Darkens the fill relative to the ring. 0 = same as ring, 1 = completely black.")]
     [Range(0f, 1f)] public float fillDarkenAmount = 0.25f;
 
     [Header("Shape")]
@@ -25,9 +19,7 @@ public class CoinVisual : MonoBehaviour
     [Range(0.0f, 5.0f)] public float glowBoost = 1.5f;
 
     [Header("Overrides")]
-    public bool useScriptColors = true;
-    public Color overrideFill = Color.white;
-    public Color overrideRing = Color.white;
+    public bool forcePureWhite = false;
 
     SpriteRenderer _sr;
     MaterialPropertyBlock _mpb;
@@ -49,35 +41,42 @@ public class CoinVisual : MonoBehaviour
         Apply();
     }
 
-    void Apply()
+    public void SetForceWhite(bool on)
+    {
+        forcePureWhite = on;
+        Apply();
+    }
+
+    public void Apply()
     {
         if (_sr == null) _sr = GetComponent<SpriteRenderer>();
         if (_mpb == null) _mpb = new MaterialPropertyBlock();
 
         _sr.GetPropertyBlock(_mpb);
 
-        Color.RGBToHSV(baseColor, out var h, out var s, out var v);
-        s = Mathf.Clamp01(s + ringSaturationBoost);
-        v = Mathf.Clamp01(v + ringValueBoost);
-        var ring = Color.HSVToRGB(h, s, v);
-        ring.a = 1f;
+        Color ring, fill;
 
-        Color.RGBToHSV(ring, out var fh, out var fs, out var fv);
-        fv = Mathf.Lerp(fv, 0f, fillDarkenAmount);
-        var fill = Color.HSVToRGB(fh, fs, fv);
-        fill.a = 1f;
-
-        if (useScriptColors)
+        if (forcePureWhite)
         {
-            _mpb.SetColor("_FillColor", fill);
-            _mpb.SetColor("_RingColor", ring);
+            ring = Color.white;
+            fill = new Color(0.85f, 0.85f, 0.85f, 1f);
         }
         else
         {
-            _mpb.SetColor("_FillColor", overrideFill);
-            _mpb.SetColor("_RingColor", overrideRing);
+            Color.RGBToHSV(baseColor, out var h, out var s, out var v);
+            s = Mathf.Clamp01(s + ringSaturationBoost);
+            v = Mathf.Clamp01(v + ringValueBoost);
+            ring = Color.HSVToRGB(h, s, v);
+            ring.a = 1f;
+
+            Color.RGBToHSV(ring, out var fh, out var fs, out var fv);
+            fv = Mathf.Lerp(fv, 0f, fillDarkenAmount);
+            fill = Color.HSVToRGB(fh, fs, fv);
+            fill.a = 1f;
         }
 
+        _mpb.SetColor("_FillColor", fill);
+        _mpb.SetColor("_RingColor", ring);
         _mpb.SetFloat("_Radius", radius);
         _mpb.SetFloat("_RingThick", ringThickness);
         _mpb.SetFloat("_EdgeSoft", edgeSoftness);

@@ -22,7 +22,11 @@ public class NetworkCoin : NetworkBehaviour
     void ApplyColor(Color32 c)
     {
         if (!_visual) _visual = GetComponent<CoinVisual>();
-        if (_visual) _visual.SetBaseColor(c);
+        if (!_visual) return;
+
+        bool isPureWhite = c.r == 255 && c.g == 255 && c.b == 255 && c.a == 255;
+        _visual.SetForceWhite(isPureWhite);
+        _visual.SetBaseColor((Color)c);
     }
 
     public bool IsLocalOwner()
