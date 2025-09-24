@@ -202,7 +202,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.8226691, g: 0.23138434, b: 0, a: 1}
+  m_Color: {r: 0.82077396, g: 0.25956106, b: 0, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -296,6 +296,32 @@ MonoBehaviour:
   extraGraphicsToFade: []
   floatingLayer: {fileID: 0}
   hoverSortingOrder: 1000
+  spot: {fileID: 0}
+  coinLiftWorld: 0.12
+  coinLiftEase:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!114 &3086260576753675894
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -376,6 +402,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ValidDropSpot
   enabledForPlacement: 1
   useColliderCenter: 1
+  isOccupied: 0
+  occupant: {fileID: 0}
 --- !u!225 &5468021225457676706
 CanvasGroup:
   m_ObjectHideFlags: 0

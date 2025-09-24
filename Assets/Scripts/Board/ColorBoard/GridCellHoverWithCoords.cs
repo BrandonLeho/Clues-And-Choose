@@ -38,7 +38,7 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     [Header("Extra Graphics to Fade")]
     [SerializeField] Graphic[] extraGraphicsToFade;
 
-    [Header("Bring-To-Front Options")]
+    [Header("Bring To Front Options")]
     [SerializeField] RectTransform floatingLayer;
     [SerializeField] int hoverSortingOrder = 1000;
 
@@ -221,12 +221,15 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
         if (_isFloating)
         {
             _rt.SetParent(_origParent, true);
-            if (_origSiblingIndex >= 0) _rt.SetSiblingIndex(_origSiblingIndex);
+            if (_origSiblingIndex >= 0)
+                _rt.SetSiblingIndex(_origSiblingIndex);
+
             if (_placeholder)
             {
-                _placeholder.ignoreLayout = true;
-                _placeholder.transform.SetParent(null, false);
+                Destroy(_placeholder.gameObject);
+                _placeholder = null;
             }
+
             _isFloating = false;
         }
         else if (_tempCanvas)
