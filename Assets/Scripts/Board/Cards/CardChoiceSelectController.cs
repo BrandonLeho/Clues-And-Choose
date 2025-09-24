@@ -91,7 +91,6 @@ public class CardChoiceSelectController : MonoBehaviour
         var worldPos = selRT.position;
         CreateOrUpdatePlaceholder(selRT);
         selRT.SetParent(floatingLayer, worldPositionStays: true);
-        //selRT.position = worldPos;
         SetAnchorsPivotToCenter_KeepVisualPosition(selRT);
 
         clicked.transform.SetAsLastSibling();

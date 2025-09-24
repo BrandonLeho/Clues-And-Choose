@@ -18,7 +18,6 @@ public class BoardLabels : MonoBehaviour
     public Color numberColor = Color.white;
     public Color letterColor = Color.white;
     public int fontSize = 24;
-    [Tooltip("If > 0, overrides Font Size with (cellHeight * factor). e.g. 0.5")]
     public float sizeRelativeToCell = 0f;
 
     [Header("Offsets (cell units if enabled)")]
@@ -32,9 +31,7 @@ public class BoardLabels : MonoBehaviour
     public bool showTop = true, showBottom = true, showLeft = true, showRight = true;
 
     [Header("Advanced")]
-    [Tooltip("If true, 'A' is the top row; otherwise 'A' is bottom.")]
     public bool aStartsAtTop = false;
-    [Tooltip("Move this object to the end of its Canvas hierarchy so labels render on top.")]
     public bool bringToFront = true;
 
     RectTransform _rt, _root, _top, _bottom, _left, _right;

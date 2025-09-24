@@ -32,10 +32,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 3337803732932086652}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 50, y: -50}
-  m_SizeDelta: {x: 42, y: 42}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7968161002726239013
 CanvasRenderer:
@@ -149,10 +149,11 @@ GameObject:
   - component: {fileID: 6831479801445827105}
   - component: {fileID: 1802933713623969876}
   - component: {fileID: 6262207266150975141}
-  - component: {fileID: 6582252855736309423}
   - component: {fileID: 3086260576753675894}
   - component: {fileID: 870408920436632718}
   - component: {fileID: 2405847361663254889}
+  - component: {fileID: 5468021225457676706}
+  - component: {fileID: 1202920801870184155}
   m_Layer: 8
   m_Name: ColorSlot
   m_TagString: Untagged
@@ -201,7 +202,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.82077396, g: 0.25956106, b: 0, a: 1}
+  m_Color: {r: 0.8226691, g: 0.23138434, b: 0, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -254,7 +255,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36b46f21238220e43a6be32de58928a3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GridCellHover
-  hoverScale: 1.25
+  hoverScale: 1.45
   animSeconds: 0.18
   ease:
     serializedVersion: 2
@@ -293,18 +294,8 @@ MonoBehaviour:
   paletteGridAsset: {fileID: 11400000, guid: f7b79fcaeb77b5b42b4dbd0eab074290, type: 2}
   labelsHighlighter: {fileID: 0}
   extraGraphicsToFade: []
---- !u!225 &6582252855736309423
-CanvasGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7613232968694909624}
-  m_Enabled: 1
-  m_Alpha: 1
-  m_Interactable: 1
-  m_BlocksRaycasts: 1
-  m_IgnoreParentGroups: 0
+  floatingLayer: {fileID: 0}
+  hoverSortingOrder: 1000
 --- !u!114 &3086260576753675894
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -385,3 +376,35 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ValidDropSpot
   enabledForPlacement: 1
   useColliderCenter: 1
+--- !u!225 &5468021225457676706
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7613232968694909624}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
+--- !u!114 &1202920801870184155
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7613232968694909624}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
+  m_IgnoreLayout: 0
+  m_MinWidth: -1
+  m_MinHeight: -1
+  m_PreferredWidth: -1
+  m_PreferredHeight: -1
+  m_FlexibleWidth: -1
+  m_FlexibleHeight: -1
+  m_LayoutPriority: 1

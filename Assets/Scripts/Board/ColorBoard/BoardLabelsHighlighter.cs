@@ -7,38 +7,31 @@ using UnityEngine;
 public class BoardLabelsHighlighter : MonoBehaviour
 {
     [Header("References")]
-    [Tooltip("Your existing BoardLabels component. If left empty, will search in parents/children.")]
     public MonoBehaviour boardLabels;
 
     [Header("Outline Style")]
-    [Tooltip("Outline width when highlighted (TMP SDF). 0.1–0.35 is typical.")]
     [Range(0f, 1f)] public float highlightOutlineWidth = 0.25f;
-    [Tooltip("Outline width when not highlighted.")]
     [Range(0f, 1f)] public float idleOutlineWidth = 0f;
-    [Tooltip("Optionally change face color on highlight (alpha respected). Leave alpha at 1 for opaque.")]
     public bool tintFaceOnHighlight = false;
     public Color faceHighlightTint = Color.white;
 
     [Header("Outline Fade Settings")]
-    [Tooltip("Maximum outline width when fully highlighted.")]
     [SerializeField, Range(0f, 1f)] float maxOutlineWidth = 0.25f;
-    [Tooltip("If true, outline color alpha will also fade.")]
     [SerializeField] bool fadeOutlineAlpha = true;
 
     [Header("Label Discovery (advanced)")]
-    [Tooltip("If true, we’ll locate the 4 edge containers by name contains: Top, Bottom, Left, Right.")]
     public bool autoFindByNames = true;
 
     TextMeshProUGUI[] _top, _bottom, _left, _right;
     Material[] _topMats, _bottomMats, _leftMats, _rightMats;
     int _lastCol = -1, _lastRow = -1;
 
-
-    Color _lastColor = Color.white;
-
     static readonly int ID_OutlineWidth = Shader.PropertyToID("_OutlineWidth");
     static readonly int ID_OutlineColor = Shader.PropertyToID("_OutlineColor");
     static readonly int ID_FaceColor = Shader.PropertyToID("_FaceColor");
+
+    public float maxScale = 1.2f;
+    Vector3 _baseScale = Vector3.one;
 
     void Awake()
     {
@@ -48,14 +41,20 @@ public class BoardLabelsHighlighter : MonoBehaviour
                 .Concat(GetComponentsInChildren<MonoBehaviour>(true))
                 .FirstOrDefault(m => m && m.GetType().Name == "BoardLabels");
         }
-
         BuildCaches();
+    }
+
+    void OnDestroy()
+    {
+        if (_topMats != null) for (int i = 0; i < _topMats.Length; i++) if (_topMats[i]) Destroy(_topMats[i]);
+        if (_bottomMats != null) for (int i = 0; i < _bottomMats.Length; i++) if (_bottomMats[i]) Destroy(_bottomMats[i]);
+        if (_leftMats != null) for (int i = 0; i < _leftMats.Length; i++) if (_leftMats[i]) Destroy(_leftMats[i]);
+        if (_rightMats != null) for (int i = 0; i < _rightMats.Length; i++) if (_rightMats[i]) Destroy(_rightMats[i]);
     }
 
     void BuildCaches()
     {
         var root = boardLabels ? ((Component)boardLabels).transform : transform;
-
         Transform topT = null, bottomT = null, leftT = null, rightT = null;
         if (autoFindByNames)
         {
@@ -68,7 +67,6 @@ public class BoardLabelsHighlighter : MonoBehaviour
                 else if (n.Contains("right") && rightT == null) rightT = t;
             }
         }
-
         if (!topT || !bottomT || !leftT || !rightT)
         {
             var allParents = root.GetComponentsInChildren<RectTransform>(true);
@@ -86,18 +84,14 @@ public class BoardLabelsHighlighter : MonoBehaviour
                 else if (!rightT && g.tr != topT && g.tr != bottomT && g.tr != leftT) rightT = g.tr;
             }
         }
-
-        _top = GetSortedChildren(topT, horizontal: true);
-        _bottom = GetSortedChildren(bottomT, horizontal: true);
-        _left = GetSortedChildren(leftT, horizontal: false);
-        _right = GetSortedChildren(rightT, horizontal: false);
-
-
+        _top = GetSortedChildren(topT, true);
+        _bottom = GetSortedChildren(bottomT, true);
+        _left = GetSortedChildren(leftT, false);
+        _right = GetSortedChildren(rightT, false);
         _topMats = CreateMaterialClones(_top);
         _bottomMats = CreateMaterialClones(_bottom);
         _leftMats = CreateMaterialClones(_left);
         _rightMats = CreateMaterialClones(_right);
-
         ClearAll();
     }
 
@@ -105,14 +99,7 @@ public class BoardLabelsHighlighter : MonoBehaviour
     {
         if (!parent) return new TextMeshProUGUI[0];
         var arr = parent.GetComponentsInChildren<TextMeshProUGUI>(true);
-
-        return arr
-            .OrderBy(t =>
-            {
-                var rt = t.transform as RectTransform;
-                return horizontal ? rt.anchoredPosition.x : -rt.anchoredPosition.y;
-            })
-            .ToArray();
+        return arr.OrderBy(t => { var rt = t.transform as RectTransform; return horizontal ? rt.anchoredPosition.x : -rt.anchoredPosition.y; }).ToArray();
     }
 
     static Material[] CreateMaterialClones(TextMeshProUGUI[] labels)
@@ -127,9 +114,6 @@ public class BoardLabelsHighlighter : MonoBehaviour
         return mats;
     }
 
-    public float maxScale = 1.2f;
-    Vector3 _baseScale = Vector3.one;
-
     public void SetHighlightLerp(int colIndex, int rowIndex, Color targetColor, float progress)
     {
         if (colIndex != _lastCol || rowIndex != _lastRow)
@@ -137,15 +121,11 @@ public class BoardLabelsHighlighter : MonoBehaviour
             Clear();
             _lastCol = colIndex;
             _lastRow = rowIndex;
-            _lastColor = targetColor;
         }
-
         float width = Mathf.Lerp(idleOutlineWidth, maxOutlineWidth, progress);
         Color outline = targetColor;
         if (fadeOutlineAlpha) outline.a *= progress;
-
         Vector3 scale = Vector3.Lerp(_baseScale, Vector3.one * maxScale, progress);
-
         if (colIndex >= 0)
         {
             if (colIndex < _top.Length) ApplyFadeAndScale(_top[colIndex], _topMats[colIndex], width, outline, scale);
@@ -163,18 +143,14 @@ public class BoardLabelsHighlighter : MonoBehaviour
         if (!label || !mat) return;
         mat.SetFloat(ID_OutlineWidth, width);
         mat.SetColor(ID_OutlineColor, outline);
-
-        var rt = label.rectTransform;
-        rt.localScale = scale;
+        label.rectTransform.localScale = scale;
     }
 
     void SetLabelOutline(TextMeshProUGUI label, Material mat, float width, Color outline, bool tintFace)
     {
         if (!label || !mat) return;
-
         mat.SetFloat(ID_OutlineWidth, width);
         mat.SetColor(ID_OutlineColor, outline);
-
         if (tintFace)
         {
             var face = label.color;
@@ -208,7 +184,6 @@ public class BoardLabelsHighlighter : MonoBehaviour
     public void Highlight(int colIndex, int rowIndex, Color outlineColor)
     {
         if (colIndex == _lastCol && rowIndex == _lastRow) return;
-
         if (_lastCol >= 0)
         {
             if (_lastCol < _top.Length) ResetLabel(_top[_lastCol], _topMats[_lastCol]);
@@ -219,7 +194,6 @@ public class BoardLabelsHighlighter : MonoBehaviour
             if (_lastRow < _left.Length) ResetLabel(_left[_lastRow], _leftMats[_lastRow]);
             if (_lastRow < _right.Length) ResetLabel(_right[_lastRow], _rightMats[_lastRow]);
         }
-
         if (colIndex >= 0)
         {
             if (colIndex < _top.Length) SetLabelOutline(_top[colIndex], _topMats[colIndex], highlightOutlineWidth, outlineColor, tintFaceOnHighlight);
@@ -230,7 +204,6 @@ public class BoardLabelsHighlighter : MonoBehaviour
             if (rowIndex < _left.Length) SetLabelOutline(_left[rowIndex], _leftMats[rowIndex], highlightOutlineWidth, outlineColor, tintFaceOnHighlight);
             if (rowIndex < _right.Length) SetLabelOutline(_right[rowIndex], _rightMats[rowIndex], highlightOutlineWidth, outlineColor, tintFaceOnHighlight);
         }
-
         _lastCol = colIndex;
         _lastRow = rowIndex;
     }

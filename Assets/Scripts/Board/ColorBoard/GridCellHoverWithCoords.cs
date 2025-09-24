@@ -38,6 +38,10 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     [Header("Extra Graphics to Fade")]
     [SerializeField] Graphic[] extraGraphicsToFade;
 
+    [Header("Bring-To-Front Options")]
+    [SerializeField] RectTransform floatingLayer;
+    [SerializeField] int hoverSortingOrder = 1000;
+
     Vector3 _baseScale;
     Coroutine _anim;
     float _progress01;
@@ -47,118 +51,173 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     bool _orientationAOnTop;
     int _lastColIdx = -1, _lastRowIdx = -1;
 
+    RectTransform _rt;
+    Transform _origParent;
+    int _origSiblingIndex = -1;
+    LayoutElement _placeholder;
+    Canvas _tempCanvas;
+    bool _isFloating;
+    Image _img;
+    bool _gridCached;
+
     void Awake()
     {
-        _baseScale = transform.localScale;
-
-        CacheGridRefs();
-
-        if (label != null)
+        _rt = (RectTransform)transform;
+        _baseScale = transform.localScale == Vector3.zero ? Vector3.one : transform.localScale;
+        if (!labelsHighlighter) labelsHighlighter = GetComponentInParent<BoardLabelsHighlighter>(true);
+        if (!grid) grid = GetComponentInParent<GridLayoutGroup>(true);
+        if (!boardLabelsComponent) boardLabelsComponent = GetComponentInParent<MonoBehaviour>(true);
+        _img = GetComponent<Image>();
+        if (!_img)
+        {
+            _img = gameObject.AddComponent<Image>();
+            _img.color = new Color(0, 0, 0, 0);
+            _img.raycastTarget = true;
+        }
+        if (label)
         {
             _labelBaseColor = label.color;
             _labelBaseColor.a = maxLabelAlpha;
-
             SetLabelAlpha(0f);
             if (deactivateLabelWhenHidden) label.gameObject.SetActive(false);
         }
-
         if (extraGraphicsToFade != null && extraGraphicsToFade.Length > 0)
         {
             _extraBaseColors = new Color[extraGraphicsToFade.Length];
             for (int i = 0; i < extraGraphicsToFade.Length; i++)
-            {
-                if (extraGraphicsToFade[i] != null)
-                    _extraBaseColors[i] = extraGraphicsToFade[i].color;
-            }
+                if (extraGraphicsToFade[i]) _extraBaseColors[i] = extraGraphicsToFade[i].color;
         }
-
-        var g = GetComponent<Graphic>();
-        if (g == null)
-        {
-            var img = gameObject.AddComponent<Image>();
-            img.color = new Color(0, 0, 0, 0);
-            img.raycastTarget = true;
-        }
-
-        if (!labelsHighlighter)
-            labelsHighlighter = GetComponentInParent<BoardLabelsHighlighter>();
-
-        if (!grid) grid = GetComponentInParent<GridLayoutGroup>(true);
-        if (!labelsHighlighter) labelsHighlighter = GetComponentInParent<BoardLabelsHighlighter>(true);
-
-        if (!boardLabelsComponent)
-            boardLabelsComponent = GetComponentInParent<MonoBehaviour>(true);
-
+        CacheGridRefsOnce();
     }
 
-    void CacheGridRefs()
+    void OnEnable()
     {
-        if (!grid) grid = GetComponentInParent<GridLayoutGroup>();
+        transform.localScale = _baseScale;
+        if (label && deactivateLabelWhenHidden) label.gameObject.SetActive(false);
+        _progress01 = 0f;
+    }
 
+    public void SetHoverEnabled(bool enabled)
+    {
+        this.enabled = enabled;
+    }
+
+
+    void CacheGridRefsOnce()
+    {
+        if (_gridCached) return;
         _cols = Mathf.Max(1, colsOverride);
         _rows = Mathf.Max(1, rowsOverride);
         _orientationAOnTop = aStartsAtTop;
-
-        if (!autoDetectGrid) return;
-
-        if (grid)
+        if (autoDetectGrid)
         {
-            if (grid.constraint == GridLayoutGroup.Constraint.FixedColumnCount && grid.constraintCount > 0)
-                _cols = grid.constraintCount;
-            else if (grid.constraint == GridLayoutGroup.Constraint.FixedRowCount && grid.constraintCount > 0)
-                _rows = grid.constraintCount;
+            if (grid)
+            {
+                if (grid.constraint == GridLayoutGroup.Constraint.FixedColumnCount && grid.constraintCount > 0) _cols = grid.constraintCount;
+                else if (grid.constraint == GridLayoutGroup.Constraint.FixedRowCount && grid.constraintCount > 0) _rows = grid.constraintCount;
+            }
+            if (!boardLabelsComponent) boardLabelsComponent = GetComponentInParent<MonoBehaviour>();
+            if (boardLabelsComponent && boardLabelsComponent.GetType().Name == "BoardLabels")
+            {
+                var t = boardLabelsComponent.GetType();
+                var fCols = t.GetField("cols", BindingFlags.Public | BindingFlags.Instance);
+                var fRows = t.GetField("rows", BindingFlags.Public | BindingFlags.Instance);
+                var fAAtTop = t.GetField("aStartsAtTop", BindingFlags.Public | BindingFlags.Instance);
+                if (fCols != null) _cols = Mathf.Max(1, (int)fCols.GetValue(boardLabelsComponent));
+                if (fRows != null) _rows = Mathf.Max(1, (int)fRows.GetValue(boardLabelsComponent));
+                if (fAAtTop != null) _orientationAOnTop = (bool)fAAtTop.GetValue(boardLabelsComponent);
+            }
+            if (paletteGridAsset)
+            {
+                var t = paletteGridAsset.GetType();
+                var fCols = t.GetField("cols", BindingFlags.Public | BindingFlags.Instance);
+                var fRows = t.GetField("rows", BindingFlags.Public | BindingFlags.Instance);
+                var fYTop = t.GetField("yZeroAtTop", BindingFlags.Public | BindingFlags.Instance);
+                if (fCols != null) _cols = Mathf.Max(1, (int)fCols.GetValue(paletteGridAsset));
+                if (fRows != null) _rows = Mathf.Max(1, (int)fRows.GetValue(paletteGridAsset));
+                if (fYTop != null) _orientationAOnTop = (bool)fYTop.GetValue(paletteGridAsset);
+            }
         }
-
-
-        if (!boardLabelsComponent)
-            boardLabelsComponent = GetComponentInParent<MonoBehaviour>();
-        if (boardLabelsComponent && boardLabelsComponent.GetType().Name == "BoardLabels")
-        {
-            var t = boardLabelsComponent.GetType();
-            var fCols = t.GetField("cols", BindingFlags.Public | BindingFlags.Instance);
-            var fRows = t.GetField("rows", BindingFlags.Public | BindingFlags.Instance);
-            var fAAtTop = t.GetField("aStartsAtTop", BindingFlags.Public | BindingFlags.Instance);
-            if (fCols != null) _cols = Mathf.Max(1, (int)fCols.GetValue(boardLabelsComponent));
-            if (fRows != null) _rows = Mathf.Max(1, (int)fRows.GetValue(boardLabelsComponent));
-            if (fAAtTop != null) _orientationAOnTop = (bool)fAAtTop.GetValue(boardLabelsComponent);
-        }
-
-        if (paletteGridAsset)
-        {
-            var t = paletteGridAsset.GetType();
-            var fCols = t.GetField("cols", BindingFlags.Public | BindingFlags.Instance);
-            var fRows = t.GetField("rows", BindingFlags.Public | BindingFlags.Instance);
-            var fYTop = t.GetField("yZeroAtTop", BindingFlags.Public | BindingFlags.Instance);
-            if (fCols != null) _cols = Mathf.Max(1, (int)fCols.GetValue(paletteGridAsset));
-            if (fRows != null) _rows = Mathf.Max(1, (int)fRows.GetValue(paletteGridAsset));
-            if (fYTop != null) _orientationAOnTop = (bool)fYTop.GetValue(paletteGridAsset);
-        }
+        _gridCached = true;
     }
 
     public void OnPointerEnter(PointerEventData eventData)
     {
-        UpdateLabelToCoords();
-
+        CacheGridRefsOnce();
+        if (label) UpdateLabelToCoordsFast();
         int idx = transform.GetSiblingIndex();
-        int col = (_cols <= 0) ? 0 : (idx % _cols);
-        int row = (_cols <= 0) ? 0 : (idx / _cols);
-
+        int col = _cols <= 0 ? 0 : (idx % _cols);
+        int row = _cols <= 0 ? 0 : (idx / _cols);
         _lastColIdx = col; _lastRowIdx = row;
-
-        if (labelsHighlighter)
-        {
-            var img = GetComponent<Image>();
-            Color c = img ? img.color : Color.white;
-
-            labelsHighlighter.Highlight(col, row, c);
-        }
-
+        if (labelsHighlighter) labelsHighlighter.Highlight(col, row, _img ? _img.color : Color.white);
+        BringToFront_Begin();
         StartAnim(1f);
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
         StartAnim(0f);
+        BringToFront_End();
+    }
+
+    void BringToFront_Begin()
+    {
+        _origParent = _rt.parent;
+        _origSiblingIndex = _rt.GetSiblingIndex();
+        if (floatingLayer)
+        {
+            if (_placeholder == null)
+            {
+                var go = new GameObject("[Placeholder]", typeof(RectTransform), typeof(LayoutElement));
+                var prt = go.GetComponent<RectTransform>();
+                prt.SetParent(_origParent, false);
+                prt.SetSiblingIndex(_origSiblingIndex);
+                prt.anchorMin = _rt.anchorMin;
+                prt.anchorMax = _rt.anchorMax;
+                prt.pivot = _rt.pivot;
+                prt.sizeDelta = _rt.sizeDelta;
+                _placeholder = go.GetComponent<LayoutElement>();
+                var size = _rt.rect.size;
+                _placeholder.minWidth = _placeholder.preferredWidth = size.x;
+                _placeholder.minHeight = _placeholder.preferredHeight = size.y;
+            }
+            else
+            {
+                _placeholder.transform.SetParent(_origParent, false);
+                ((RectTransform)_placeholder.transform).SetSiblingIndex(_origSiblingIndex);
+                _placeholder.ignoreLayout = false;
+            }
+            _isFloating = true;
+            _rt.SetParent(floatingLayer, true);
+            _rt.SetAsLastSibling();
+        }
+        else
+        {
+            if (!_tempCanvas) _tempCanvas = gameObject.AddComponent<Canvas>();
+            _tempCanvas.overrideSorting = true;
+            _tempCanvas.sortingOrder = hoverSortingOrder;
+            if (!gameObject.GetComponent<GraphicRaycaster>()) gameObject.AddComponent<GraphicRaycaster>();
+        }
+    }
+
+    void BringToFront_End()
+    {
+        if (_isFloating)
+        {
+            _rt.SetParent(_origParent, true);
+            if (_origSiblingIndex >= 0) _rt.SetSiblingIndex(_origSiblingIndex);
+            if (_placeholder)
+            {
+                _placeholder.ignoreLayout = true;
+                _placeholder.transform.SetParent(null, false);
+            }
+            _isFloating = false;
+        }
+        else if (_tempCanvas)
+        {
+            _tempCanvas.overrideSorting = false;
+            _tempCanvas.sortingOrder = 0;
+        }
     }
 
     void StartAnim(float target)
@@ -171,10 +230,7 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     {
         float start = _progress01;
         float time = 0f;
-
-        if (target > start && label && deactivateLabelWhenHidden && !label.gameObject.activeSelf)
-            label.gameObject.SetActive(true);
-
+        if (target > start && label && deactivateLabelWhenHidden && !label.gameObject.activeSelf) label.gameObject.SetActive(true);
         while (time < animSeconds)
         {
             time += Time.unscaledDeltaTime;
@@ -183,16 +239,14 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
             Apply(_progress01);
             yield return null;
         }
-
         _progress01 = target;
         Apply(_progress01);
-
         if (Mathf.Approximately(_progress01, 0f))
         {
-            if (labelsHighlighter && _lastColIdx >= 0 && _lastRowIdx >= 0)
-                labelsHighlighter.Clear();
-
+            if (labelsHighlighter && _lastColIdx >= 0 && _lastRowIdx >= 0) labelsHighlighter.Clear();
             _lastColIdx = _lastRowIdx = -1;
+            BringToFront_End();
+            if (label && deactivateLabelWhenHidden) label.gameObject.SetActive(false);
         }
     }
 
@@ -200,9 +254,7 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     {
         float s = Mathf.Lerp(1f, hoverScale, p);
         transform.localScale = _baseScale * s;
-
         if (label) SetLabelAlpha(p);
-
         if (_extraBaseColors != null)
         {
             for (int i = 0; i < extraGraphicsToFade.Length; i++)
@@ -214,15 +266,9 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
                 g.color = c;
             }
         }
-
         if (labelsHighlighter && _lastColIdx >= 0 && _lastRowIdx >= 0)
-        {
-            var img = GetComponent<Image>();
-            Color c = img ? img.color : Color.white;
-            labelsHighlighter.SetHighlightLerp(_lastColIdx, _lastRowIdx, c, p);
-        }
+            labelsHighlighter.SetHighlightLerp(_lastColIdx, _lastRowIdx, _img ? _img.color : Color.white, p);
     }
-
 
     void SetLabelAlpha(float a)
     {
@@ -231,26 +277,17 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
         label.color = c;
     }
 
-    void UpdateLabelToCoords()
+    void UpdateLabelToCoordsFast()
     {
-        if (!label) return;
-
-        CacheGridRefs();
-
         int idx = transform.GetSiblingIndex();
-        if (_cols <= 0) _cols = 1;
-
-        int col = (idx % _cols);
-        int row = (idx / _cols);
+        int col = idx % _cols;
+        int row = idx / _cols;
         int letterIndex = _orientationAOnTop ? row : (_rows - 1 - row);
-        letterIndex = Mathf.Clamp(letterIndex, 0, Mathf.Max(0, _rows - 1));
-
+        if (letterIndex < 0) letterIndex = 0;
+        if (letterIndex > _rows - 1) letterIndex = _rows - 1;
         string rowLetter = IndexToLetters(letterIndex);
         int colNumber = col + 1;
-
-        label.text = coordinateFormat
-            .Replace("{C}", colNumber.ToString())
-            .Replace("{R}", rowLetter);
+        label.text = coordinateFormat.Replace("{C}", colNumber.ToString()).Replace("{R}", rowLetter);
     }
 
     static string IndexToLetters(int idx)
