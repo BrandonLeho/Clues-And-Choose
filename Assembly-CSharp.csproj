@@ -65,6 +65,7 @@
     <Compile Include="Assets\Scripts\Gameloop\ClueGiverState.cs" />
     <Compile Include="Assets\Scripts\Background\UVScroller.cs" />
     <Compile Include="Assets\Scripts\GameNetworking\NetKeepAlive.cs" />
+    <Compile Include="Assets\Scripts\Board\Coins\ValidDropSpotNet.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandler.cs" />
     <Compile Include="Assets\Scripts\Steamworks.NET\SteamManager.cs" />
     <Compile Include="Assets\Scripts\Gameloop\NameToNetIdRegistry.cs" />

@@ -7,9 +7,8 @@ public class ValidDropSpot : MonoBehaviour
     public bool enabledForPlacement = true;
     public bool useColliderCenter = true;
 
-    [Header("Occupancy")]
+    [Header("Occupancy (local view)")]
     public bool isOccupied = false;
-
     public GameObject occupant;
 
     Collider2D _col;
@@ -32,24 +31,23 @@ public class ValidDropSpot : MonoBehaviour
         return transform.position;
     }
 
-    public bool TryOccupy(GameObject coin)
-    {
-        if (!enabledForPlacement || isOccupied) return false;
-        isOccupied = true;
-        occupant = coin;
-        enabledForPlacement = false;
-        return true;
-    }
-
     public void Release(GameObject coin)
     {
+        var net = GetComponent<ValidDropSpotNet>();
+        if (net && net.isActiveAndEnabled)
+        {
+            net.CmdReleaseIfOccupant(coin);
+            return;
+        }
+
         if (occupant == coin)
         {
-            isOccupied = false;
             occupant = null;
+            isOccupied = false;
             enabledForPlacement = true;
         }
     }
+
 
 #if UNITY_EDITOR
     void OnDrawGizmosSelected()

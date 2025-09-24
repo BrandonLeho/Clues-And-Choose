@@ -78,26 +78,28 @@ public class CoinDropSnap : MonoBehaviour
                 .OrderBy(s => Vector2.SqrMagnitude(center2D - (Vector2)s.GetCenterWorld()))
                 .First();
 
-            if (best.TryOccupy(gameObject))
+            var net = best.GetComponent<ValidDropSpotNet>();
+            if (net != null && net.isActiveAndEnabled)
+            {
+                if (_snapRoutine != null) { StopCoroutine(_snapRoutine); _snapRoutine = null; }
+                _snapRoutine = StartCoroutine(ClaimAndSnapNetworked(best, net));
+                return;
+            }
+            else
             {
                 Vector3 target = best.GetCenterWorld();
                 if (keepCurrentZ) target.z = transform.position.z;
-
-                _occupiedSpot = best;
                 StartSnapTween(target, updateLastValid: true);
 
-                if (lockCoinAfterPlacement)
-                {
-                    var lockGuard = GetComponent<CoinPlacedLock>();
-                    if (lockGuard != null) lockGuard.Lock();
-                }
+                var lockGuard = GetComponent<CoinPlacedLock>();
+                if (lockGuard != null) lockGuard.Lock();
                 return;
             }
         }
 
-        Vector3 back = _lastValidWorldPos;
-        if (!keepCurrentZ) back.z = _spawnZ;
-        StartSnapTween(back, updateLastValid: false);
+        Vector3 backPos = _lastValidWorldPos;
+        if (!keepCurrentZ) backPos.z = _spawnZ;
+        StartSnapTween(backPos, updateLastValid: false);
     }
 
     void StartSnapTween(Vector3 target, bool updateLastValid)
@@ -168,5 +170,42 @@ public class CoinDropSnap : MonoBehaviour
         }
         var lockGuard = GetComponent<CoinPlacedLock>();
         if (lockGuard != null) lockGuard.Unlock();
+    }
+
+    IEnumerator ClaimAndSnapNetworked(ValidDropSpot best, ValidDropSpotNet net)
+    {
+        bool got = false, ok = false;
+        Vector3 snapPos = Vector3.zero;
+
+        System.Action<bool, Vector3> cb = (success, pos) =>
+        {
+            got = true; ok = success; snapPos = pos;
+        };
+        net.OnClientClaimResult = cb;
+        net.CmdRequestClaim(gameObject);
+
+        float t = 0f, timeout = 1.0f;
+        while (!got && t < timeout)
+        {
+            t += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        if (got && ok)
+        {
+            Vector3 target = snapPos;
+            if (keepCurrentZ) target.z = transform.position.z;
+
+            var lockGuard = GetComponent<CoinPlacedLock>();
+            if (lockGuard != null) lockGuard.Lock();
+
+            StartSnapTween(target, updateLastValid: true);
+        }
+        else
+        {
+            Vector3 back = _lastValidWorldPos;
+            if (!keepCurrentZ) back.z = _spawnZ;
+            StartSnapTween(back, updateLastValid: false);
+        }
     }
 }
