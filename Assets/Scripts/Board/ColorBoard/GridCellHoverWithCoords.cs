@@ -42,6 +42,12 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     [SerializeField] RectTransform floatingLayer;
     [SerializeField] int hoverSortingOrder = 1000;
 
+    [Header("Occupant Coin Lift (when hovered)")]
+    [SerializeField] ValidDropSpot spot;
+    [SerializeField] float coinLiftWorld = 0.12f;
+    [SerializeField] AnimationCurve coinLiftEase;
+
+
     Vector3 _baseScale;
     Coroutine _anim;
     float _progress01;
@@ -59,6 +65,12 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     bool _isFloating;
     Image _img;
     bool _gridCached;
+
+    Transform _occupantCoin;
+    CoinPlacedLock _occupantLock;
+    Vector3 _coinBaseWorld;
+    bool _coinBaseCached;
+
 
     void Awake()
     {
@@ -87,6 +99,7 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
             for (int i = 0; i < extraGraphicsToFade.Length; i++)
                 if (extraGraphicsToFade[i]) _extraBaseColors[i] = extraGraphicsToFade[i].color;
         }
+        if (!spot) spot = GetComponent<ValidDropSpot>();
         CacheGridRefsOnce();
     }
 
@@ -152,6 +165,9 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
         if (labelsHighlighter) labelsHighlighter.Highlight(col, row, _img ? _img.color : Color.white);
         BringToFront_Begin();
         StartAnim(1f);
+        TryBindOccupant();
+        CacheCoinBaseIfNeeded();
+
     }
 
     public void OnPointerExit(PointerEventData eventData)
@@ -254,6 +270,7 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     {
         float s = Mathf.Lerp(1f, hoverScale, p);
         transform.localScale = _baseScale * s;
+
         if (label) SetLabelAlpha(p);
         if (_extraBaseColors != null)
         {
@@ -268,6 +285,27 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
         }
         if (labelsHighlighter && _lastColIdx >= 0 && _lastRowIdx >= 0)
             labelsHighlighter.SetHighlightLerp(_lastColIdx, _lastRowIdx, _img ? _img.color : Color.white, p);
+
+        if (!spot) spot = GetComponent<ValidDropSpot>();
+        if (spot && spot.isOccupied && spot.occupant)
+        {
+            if (_occupantCoin == null || _occupantLock == null)
+                TryBindOccupant();
+
+            if (_occupantCoin != null && _occupantLock != null && _occupantLock.locked)
+            {
+                if (!_coinBaseCached) _coinBaseWorld = _occupantCoin.position;
+
+                float t = coinLiftEase != null ? coinLiftEase.Evaluate(p) : ease.Evaluate(p);
+                Vector3 worldUpFromCell = _rt ? _rt.TransformDirection(Vector3.up) : Vector3.up;
+                Vector3 lifted = _coinBaseWorld + worldUpFromCell * (coinLiftWorld * t);
+
+                _occupantCoin.position = lifted;
+            }
+        }
+
+        if (Mathf.Approximately(p, 0f))
+            ClearCoinCacheIfIdle();
     }
 
     void SetLabelAlpha(float a)
@@ -321,4 +359,36 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
         }
     }
 #endif
+
+    void TryBindOccupant()
+    {
+        _occupantCoin = null;
+        _occupantLock = null;
+
+        if (spot && spot.isOccupied && spot.occupant)
+        {
+            _occupantCoin = spot.occupant.transform;
+            _occupantLock = spot.occupant.GetComponent<CoinPlacedLock>();
+        }
+    }
+
+    void CacheCoinBaseIfNeeded()
+    {
+        if (_occupantCoin == null || _occupantLock == null) return;
+        if (!_occupantLock.locked) return; // lift only if placed+locked
+        if (_coinBaseCached) return;
+
+        _coinBaseWorld = _occupantCoin.position;
+        _coinBaseCached = true;
+    }
+
+    void ClearCoinCacheIfIdle()
+    {
+        if (Mathf.Approximately(_progress01, 0f))
+        {
+            _coinBaseCached = false;
+            _occupantCoin = null;
+            _occupantLock = null;
+        }
+    }
 }
