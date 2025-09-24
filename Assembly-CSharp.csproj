@@ -106,6 +106,7 @@
     <Compile Include="Assets\Scripts\Steam\SteamLobby.cs" />
     <Compile Include="Assets\Scripts\Steam\CustomNetworkManager.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinNetworkSpawner.cs" />
+    <Compile Include="Assets\Scripts\Board\Coins\CoinPlacedLock.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinDragPermissionClueGiver.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorSwatch.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\GridPalettePainter.cs" />

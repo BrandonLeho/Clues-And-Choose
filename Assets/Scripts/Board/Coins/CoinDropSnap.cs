@@ -6,31 +6,27 @@ using UnityEngine;
 public class CoinDropSnap : MonoBehaviour
 {
     [Header("Detection")]
-    [Tooltip("Physics2D overlap is run at the coin's center. If none match, coin snaps back.")]
     public float overlapRadius = 0.05f;
-
-    [Tooltip("Optional: restrict detection to these layers (leave empty to detect all).")]
     public LayerMask validSpotLayers = ~0;
 
     [Header("Z Handling")]
-    [Tooltip("Keep the coin's current Z when snapping. If false, use the drop spot's Z.")]
     public bool keepCurrentZ = true;
 
     [Header("Snap Tween")]
-    [Tooltip("Time (seconds) to tween into the snap position.")]
     public float snapDuration = 0.18f;
-
-    [Tooltip("Ease curve for the tween (x=time 0..1, y=0..1).")]
     public AnimationCurve snapEase = AnimationCurve.EaseInOut(0, 0, 1, 1);
-
-    [Tooltip("If true, send intermediate network updates while tweening so others see smooth motion.")]
     public bool sendNetworkDuringTween = true;
+
+    [Header("Placement Rules")]
+    [Tooltip("When true, once placed on a valid spot the coin is locked and cannot be picked up again.")]
+    public bool lockCoinAfterPlacement = true;
 
     Vector3 _lastValidWorldPos;
     float _spawnZ;
     CoinDragHandler _drag;
     CoinDragSync _sync;
     Coroutine _snapRoutine;
+    ValidDropSpot _occupiedSpot;
 
     void Awake()
     {
@@ -82,18 +78,26 @@ public class CoinDropSnap : MonoBehaviour
                 .OrderBy(s => Vector2.SqrMagnitude(center2D - (Vector2)s.GetCenterWorld()))
                 .First();
 
-            Vector3 target = best.GetCenterWorld();
-            if (keepCurrentZ) target.z = transform.position.z;
+            if (best.TryOccupy(gameObject))
+            {
+                Vector3 target = best.GetCenterWorld();
+                if (keepCurrentZ) target.z = transform.position.z;
 
-            StartSnapTween(target, updateLastValid: true);
-        }
-        else
-        {
-            Vector3 back = _lastValidWorldPos;
-            if (!keepCurrentZ) back.z = _spawnZ;
+                _occupiedSpot = best;
+                StartSnapTween(target, updateLastValid: true);
 
-            StartSnapTween(back, updateLastValid: false);
+                if (lockCoinAfterPlacement)
+                {
+                    var lockGuard = GetComponent<CoinPlacedLock>();
+                    if (lockGuard != null) lockGuard.Lock();
+                }
+                return;
+            }
         }
+
+        Vector3 back = _lastValidWorldPos;
+        if (!keepCurrentZ) back.z = _spawnZ;
+        StartSnapTween(back, updateLastValid: false);
     }
 
     void StartSnapTween(Vector3 target, bool updateLastValid)
@@ -153,5 +157,16 @@ public class CoinDropSnap : MonoBehaviour
     {
         _lastValidWorldPos = worldPos;
         if (alsoSetZ) _spawnZ = worldPos.z;
+    }
+
+    public void ReleasePlacementLockAndSpot()
+    {
+        if (_occupiedSpot != null)
+        {
+            _occupiedSpot.Release(gameObject);
+            _occupiedSpot = null;
+        }
+        var lockGuard = GetComponent<CoinPlacedLock>();
+        if (lockGuard != null) lockGuard.Unlock();
     }
 }

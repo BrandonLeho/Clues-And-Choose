@@ -4,11 +4,13 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class ValidDropSpot : MonoBehaviour
 {
-    [Tooltip("If false, the spot temporarily rejects placement.")]
     public bool enabledForPlacement = true;
-
-    [Tooltip("Use collider bounds center instead of transform.position for centering.")]
     public bool useColliderCenter = true;
+
+    [Header("Occupancy")]
+    public bool isOccupied = false;
+
+    public GameObject occupant;
 
     Collider2D _col;
 
@@ -30,10 +32,29 @@ public class ValidDropSpot : MonoBehaviour
         return transform.position;
     }
 
+    public bool TryOccupy(GameObject coin)
+    {
+        if (!enabledForPlacement || isOccupied) return false;
+        isOccupied = true;
+        occupant = coin;
+        enabledForPlacement = false;
+        return true;
+    }
+
+    public void Release(GameObject coin)
+    {
+        if (occupant == coin)
+        {
+            isOccupied = false;
+            occupant = null;
+            enabledForPlacement = true;
+        }
+    }
+
 #if UNITY_EDITOR
     void OnDrawGizmosSelected()
     {
-        Gizmos.color = enabledForPlacement ? Color.green : Color.red;
+        Gizmos.color = (!isOccupied && enabledForPlacement) ? Color.green : Color.red;
         Vector3 p = useColliderCenter && TryGetComponent<Collider2D>(out var c)
             ? (Vector3)c.bounds.center
             : transform.position;
