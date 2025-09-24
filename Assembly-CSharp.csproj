@@ -49,6 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\Board\ColorChooser\BackgroundDeselect.cs" />
+    <Compile Include="Assets\Scripts\Board\Coins\BoardSpotsSanity.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\RandomChildPaletteColor.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\BoardLabelsHighlighter.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorPickMirrorBinder.cs" />
