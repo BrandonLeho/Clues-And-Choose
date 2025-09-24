@@ -4,12 +4,14 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class ValidDropSpot : MonoBehaviour
 {
+    [Header("Index (unique across board)")]
+    public int spotIndex = -1;
+
     public bool enabledForPlacement = true;
     public bool useColliderCenter = true;
 
-    [Header("Occupancy")]
+    [Header("Occupancy (local mirror of server state)")]
     public bool isOccupied = false;
-
     public GameObject occupant;
 
     Collider2D _col;
@@ -32,23 +34,18 @@ public class ValidDropSpot : MonoBehaviour
         return transform.position;
     }
 
-    public bool TryOccupy(GameObject coin)
+    public void ForceOccupy(GameObject coin)
     {
-        if (!enabledForPlacement || isOccupied) return false;
         isOccupied = true;
         occupant = coin;
         enabledForPlacement = false;
-        return true;
     }
 
-    public void Release(GameObject coin)
+    public void ForceClear()
     {
-        if (occupant == coin)
-        {
-            isOccupied = false;
-            occupant = null;
-            enabledForPlacement = true;
-        }
+        isOccupied = false;
+        occupant = null;
+        enabledForPlacement = true;
     }
 
 #if UNITY_EDITOR

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Linq;
+using Mirror;
 using UnityEngine;
 
 [RequireComponent(typeof(CoinDragHandler))]
@@ -18,7 +19,6 @@ public class CoinDropSnap : MonoBehaviour
     public bool sendNetworkDuringTween = true;
 
     [Header("Placement Rules")]
-    [Tooltip("When true, once placed on a valid spot the coin is locked and cannot be picked up again.")]
     public bool lockCoinAfterPlacement = true;
 
     Vector3 _lastValidWorldPos;
@@ -64,9 +64,7 @@ public class CoinDropSnap : MonoBehaviour
     void OnDrop()
     {
         Vector2 center2D = new Vector2(transform.position.x, transform.position.y);
-
         var hits = Physics2D.OverlapCircleAll(center2D, overlapRadius, validSpotLayers);
-
         var spots = hits?
             .Select(h => h.GetComponentInParent<ValidDropSpot>() ?? h.GetComponent<ValidDropSpot>())
             .Where(s => s != null && s.enabledForPlacement && s.ContainsPoint(center2D))
@@ -74,31 +72,53 @@ public class CoinDropSnap : MonoBehaviour
 
         if (spots != null && spots.Count > 0)
         {
-            var best = spots
-                .OrderBy(s => Vector2.SqrMagnitude(center2D - (Vector2)s.GetCenterWorld()))
-                .First();
+            var best = spots.OrderBy(s => Vector2.SqrMagnitude(center2D - (Vector2)s.GetCenterWorld())).First();
 
-            if (best.TryOccupy(gameObject))
+            var netId = GetComponent<NetworkIdentity>();
+            var board = BoardSpotsNet.Instance;
+
+            if (netId != null && board != null)
             {
-                Vector3 target = best.GetCenterWorld();
-                if (keepCurrentZ) target.z = transform.position.z;
+                if (_snapRoutine != null) { StopCoroutine(_snapRoutine); _snapRoutine = null; }
 
-                _occupiedSpot = best;
-                StartSnapTween(target, updateLastValid: true);
-
-                if (lockCoinAfterPlacement)
+                board.RequestClaim(best.spotIndex, netId, (ok, center) =>
                 {
-                    var lockGuard = GetComponent<CoinPlacedLock>();
-                    if (lockGuard != null) lockGuard.Lock();
-                }
+                    if (ok)
+                    {
+                        Vector3 target = center;
+                        if (keepCurrentZ) target.z = transform.position.z;
+
+                        _occupiedSpot = best;
+                        StartSnapTween(target, updateLastValid: true);
+
+                        if (lockCoinAfterPlacement)
+                        {
+                            var guard = GetComponent<CoinPlacedLock>();
+                            if (guard) guard.Lock();
+                        }
+                    }
+                    else
+                    {
+                        Vector3 back = _lastValidWorldPos;
+                        if (!keepCurrentZ) back.z = _spawnZ;
+                        StartSnapTween(back, updateLastValid: false);
+                    }
+                });
                 return;
             }
+
+            best.ForceOccupy(gameObject);
+            Vector3 targetOffline = best.GetCenterWorld();
+            if (keepCurrentZ) targetOffline.z = transform.position.z;
+            _occupiedSpot = best;
+            StartSnapTween(targetOffline, updateLastValid: true);
         }
 
-        Vector3 back = _lastValidWorldPos;
-        if (!keepCurrentZ) back.z = _spawnZ;
-        StartSnapTween(back, updateLastValid: false);
+        Vector3 fallback = _lastValidWorldPos;
+        if (!keepCurrentZ) fallback.z = _spawnZ;
+        StartSnapTween(fallback, updateLastValid: false);
     }
+
 
     void StartSnapTween(Vector3 target, bool updateLastValid)
     {
@@ -163,7 +183,11 @@ public class CoinDropSnap : MonoBehaviour
     {
         if (_occupiedSpot != null)
         {
-            _occupiedSpot.Release(gameObject);
+            var id = GetComponent<NetworkIdentity>();
+            if (id && BoardSpotsNet.Instance)
+            {
+                BoardSpotsNet.Instance.CmdReleaseSpotByCoin(id.netId);
+            }
             _occupiedSpot = null;
         }
         var lockGuard = GetComponent<CoinPlacedLock>();
