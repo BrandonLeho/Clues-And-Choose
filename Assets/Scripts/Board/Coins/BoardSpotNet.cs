@@ -60,6 +60,8 @@ public class BoardSpotsNet : NetworkBehaviour
     {
         var inst = Instance;
 
+        Debug.Log($"[Claim] path={(inst && NetworkClient.active ? "server" : "local")} idx={spotIndex}");
+
         if (!inst || !NetworkClient.active)
         {
             var spot = BoardSpotsRegistry.Instance?.Get(spotIndex);
@@ -82,8 +84,18 @@ public class BoardSpotsNet : NetworkBehaviour
     [Command(requiresAuthority = false)]
     void CmdRequestClaim(int spotIndex, uint coinNetId, int nonce, NetworkConnectionToClient sender = null)
     {
-        if (!NetworkServer.spawned.TryGetValue(coinNetId, out var coinNI) ||
-            coinNI.connectionToClient != sender)
+
+        if (!NetworkServer.spawned.TryGetValue(coinNetId, out var coinNI))
+        {
+            TargetClaimResult(sender, nonce, false, Vector3.zero);
+            return;
+        }
+
+        var owner = coinNI.connectionToClient;
+
+        Debug.Log($"[CmdRequestClaim] idx={spotIndex} coin={coinNetId} owner={(owner == null ? "SERVER" : owner.connectionId.ToString())} sender={sender?.connectionId}");
+
+        if (owner != null && owner != sender)
         {
             TargetClaimResult(sender, nonce, false, Vector3.zero);
             return;
