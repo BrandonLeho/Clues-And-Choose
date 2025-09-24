@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Linq;
 using UnityEngine;
+using Mirror;
 
 [RequireComponent(typeof(CoinDragHandler))]
 public class CoinDropSnap : MonoBehaviour
@@ -66,7 +67,6 @@ public class CoinDropSnap : MonoBehaviour
         Vector2 center2D = new Vector2(transform.position.x, transform.position.y);
 
         var hits = Physics2D.OverlapCircleAll(center2D, overlapRadius, validSpotLayers);
-
         var spots = hits?
             .Select(h => h.GetComponentInParent<ValidDropSpot>() ?? h.GetComponent<ValidDropSpot>())
             .Where(s => s != null && s.enabledForPlacement && s.ContainsPoint(center2D))
@@ -74,27 +74,34 @@ public class CoinDropSnap : MonoBehaviour
 
         if (spots != null && spots.Count > 0)
         {
-            var best = spots
-                .OrderBy(s => Vector2.SqrMagnitude(center2D - (Vector2)s.GetCenterWorld()))
-                .First();
+            var best = spots.OrderBy(s => Vector2.SqrMagnitude(center2D - (Vector2)s.GetCenterWorld())).First();
+            int idx = best.spotIndex;
 
-            var net = best.GetComponent<ValidDropSpotNet>();
-            if (net != null && net.isActiveAndEnabled)
+            var ni = GetComponent<NetworkIdentity>();
+            if (!ni)
             {
-                if (_snapRoutine != null) { StopCoroutine(_snapRoutine); _snapRoutine = null; }
-                _snapRoutine = StartCoroutine(ClaimAndSnapNetworked(best, net));
+                best.SetOccupantLocal(gameObject);
+                StartSnapTween(best.GetCenterWorld(), updateLastValid: true);
+                GetComponent<CoinPlacedLock>()?.Lock();
                 return;
             }
-            else
-            {
-                Vector3 target = best.GetCenterWorld();
-                if (keepCurrentZ) target.z = transform.position.z;
-                StartSnapTween(target, updateLastValid: true);
 
-                var lockGuard = GetComponent<CoinPlacedLock>();
-                if (lockGuard != null) lockGuard.Lock();
-                return;
-            }
+            BoardSpotsNet.RequestClaim(idx, ni, (ok, snapWorld) =>
+            {
+                if (ok)
+                {
+                    if (keepCurrentZ) snapWorld.z = transform.position.z;
+                    StartSnapTween(snapWorld, updateLastValid: true);
+                    GetComponent<CoinPlacedLock>()?.Lock();
+                }
+                else
+                {
+                    Vector3 back = _lastValidWorldPos;
+                    if (!keepCurrentZ) back.z = _spawnZ;
+                    StartSnapTween(back, updateLastValid: false);
+                }
+            });
+            return;
         }
 
         Vector3 backPos = _lastValidWorldPos;
