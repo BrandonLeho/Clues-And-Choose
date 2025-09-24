@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using kcp2k;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -24,6 +23,10 @@ public class CardChoiceSelectController : MonoBehaviour
     public bool disableHoverRelayOnSelect = true;
     public bool disableFurtherInputOnSelect = true;
 
+    [Header("Layout Placeholder")]
+    public bool usePlaceholderOnSelect = true;
+    public bool removePlaceholderAfterSelect = false;
+
     [Serializable]
     public struct ChoicePayload
     {
@@ -40,10 +43,11 @@ public class CardChoiceSelectController : MonoBehaviour
     bool locked;
     public bool HasLockedSelection => locked;
 
-    void Reset()
-    {
-        AutoFindChoices();
-    }
+    RectTransform placeholder;
+    int placeholderIndex = -1;
+    public RectTransform floatingLayer;
+
+    void Reset() => AutoFindChoices();
 
     void Awake()
     {
@@ -78,6 +82,18 @@ public class CardChoiceSelectController : MonoBehaviour
             if (relay) relay.HoverExit();
         }
 
+        var selRT = (RectTransform)clicked.transform;
+        if (usePlaceholderOnSelect)
+        {
+            CreateOrUpdatePlaceholder(selRT);
+        }
+
+        var worldPos = selRT.position;
+        CreateOrUpdatePlaceholder(selRT);
+        selRT.SetParent(floatingLayer, worldPositionStays: true);
+        //selRT.position = worldPos;
+        SetAnchorsPivotToCenter_KeepVisualPosition(selRT);
+
         clicked.transform.SetAsLastSibling();
 
         StartCoroutine(CoAnimateSelection(clicked, col, row, color));
@@ -95,22 +111,14 @@ public class CardChoiceSelectController : MonoBehaviour
 
         var scaleT = GetScaleTarget(selected);
         var selRT = (RectTransform)selected.transform;
+
+        Vector2 endPos = Vector2.zero;
+        Vector2 startPos = selRT.anchoredPosition;
         Vector3 startScale = scaleT.localScale;
         Vector3 endScale = startScale * selectedScale;
 
-        var parentRT = (RectTransform)selRT.parent;
-        Vector2 focusLocalPos;
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            parentRT,
-            RectTransformUtility.WorldToScreenPoint(null, focusTarget.position),
-            null,
-            out focusLocalPos
-        );
-
-        Vector2 startPos = selRT.anchoredPosition;
-        Vector2 endPos = focusLocalPos;
-
-        float t = 0f, d = Mathf.Max(0.0001f, moveDuration);
+        float t = 0f;
+        float d = Mathf.Max(0.0001f, moveDuration);
         while (t < d)
         {
             t += Time.unscaledDeltaTime;
@@ -122,6 +130,7 @@ public class CardChoiceSelectController : MonoBehaviour
             scaleT.localScale = Vector3.LerpUnclamped(startScale, endScale, eased);
             yield return null;
         }
+
         selRT.anchoredPosition = endPos;
         scaleT.localScale = endScale;
         FreezeHoverScale(selected, scaleT, endScale);
@@ -138,6 +147,11 @@ public class CardChoiceSelectController : MonoBehaviour
             foreach (var ch in choices)
                 if (ch && ch.cg && ch != selected)
                     ch.cg.blocksRaycasts = false;
+        }
+
+        if (removePlaceholderAfterSelect)
+        {
+            ClearPlaceholder();
         }
     }
 
@@ -190,5 +204,53 @@ public class CardChoiceSelectController : MonoBehaviour
         if (scaleT) scaleT.localScale = lockedScale;
     }
 
+    void CreateOrUpdatePlaceholder(RectTransform selected)
+    {
+        if (!selected) return;
+
+        if (placeholder) ClearPlaceholder();
+
+        placeholderIndex = selected.GetSiblingIndex();
+
+        var go = new GameObject("Placeholder", typeof(RectTransform));
+        placeholder = go.GetComponent<RectTransform>();
+        placeholder.SetParent(selected.parent, worldPositionStays: false);
+        placeholder.SetSiblingIndex(placeholderIndex);
+
+        placeholder.anchorMin = selected.anchorMin;
+        placeholder.anchorMax = selected.anchorMax;
+        placeholder.pivot = selected.pivot;
+        placeholder.sizeDelta = selected.sizeDelta;
+        placeholder.anchoredPosition3D = selected.anchoredPosition3D;
+
+    }
+
+    public void ClearPlaceholder()
+    {
+        if (placeholder)
+        {
+            if (placeholder.gameObject) Destroy(placeholder.gameObject);
+            placeholder = null;
+        }
+        placeholderIndex = -1;
+    }
+
+    static void SetAnchorsPivotToCenter_KeepVisualPosition(RectTransform rt)
+    {
+        if (!rt || !(rt.parent is RectTransform parent)) return;
+
+        Vector3[] wc = new Vector3[4];
+        rt.GetWorldCorners(wc);
+        Vector3 worldCenter = (wc[0] + wc[2]) * 0.5f;
+        Vector2 size = rt.rect.size;
+
+        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.sizeDelta = size;
+
+        rt.position = worldCenter;
+        var p = rt.anchoredPosition3D;
+        rt.anchoredPosition3D = new Vector3(p.x, p.y, 0f);
+    }
 
 }
