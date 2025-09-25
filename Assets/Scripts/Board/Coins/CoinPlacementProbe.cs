@@ -18,7 +18,9 @@ public class CoinPlacementProbe : MonoBehaviour
     public Camera uiCamera;
     public RectTransform gridMask;
     public bool requireInsideGridToShow = true;
+    public bool startHiddenOnPickup = true;
 
+    bool _suppressUntilInside;
     bool _arrowShown;
     CoinDragHandler _drag;
     Transform _arrowInst;
@@ -74,7 +76,7 @@ public class CoinPlacementProbe : MonoBehaviour
                 _arrowSR.sortingOrder = _coinSR.sortingOrder + Mathf.Max(1, arrowSortingOrderDelta);
             }
             ApplyArrowLocalTransformImmediate();
-
+            _suppressUntilInside = startHiddenOnPickup;
             SetArrowShown(IsProbeInsideGrid());
         }
     }
@@ -87,19 +89,39 @@ public class CoinPlacementProbe : MonoBehaviour
         _arrowInst = null;
         _arrowSR = null;
         _arrowShown = false;
+        _suppressUntilInside = false;
     }
 
     void Update()
     {
         if (!_isDragging || !_arrowInst) return;
+
         ApplyArrowLocalTransformImmediate();
+
         if (alignSortingWithCoin && _coinSR && _arrowSR)
         {
             _arrowSR.sortingLayerID = _coinSR.sortingLayerID;
             _arrowSR.sortingOrder = _coinSR.sortingOrder + Mathf.Max(1, arrowSortingOrderDelta);
         }
 
-        SetArrowShown(IsProbeInsideGrid());
+        bool inside = IsProbeInsideGrid();
+
+        if (_suppressUntilInside)
+        {
+            if (inside)
+            {
+                _suppressUntilInside = false;
+                SetArrowShown(true);
+            }
+            else
+            {
+                SetArrowShown(false);
+            }
+        }
+        else
+        {
+            SetArrowShown(inside);
+        }
     }
 
     void ApplyArrowLocalTransformImmediate()
