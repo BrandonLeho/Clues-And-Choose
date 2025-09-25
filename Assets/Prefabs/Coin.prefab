@@ -393,18 +393,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7de7175428d9f7e41972e80b636ec617, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CoinPlacementProbe
+  probeOffsetLocal: {x: 0, y: -3.75}
   arrowPrefab: {fileID: 6507791230212047339, guid: 05552090a6b5ca34e861e0fbe094bf54, type: 3}
-  arrowZOffset: -0.01
-  arrowFollowLerp: 20
-  rotateArrowToProbe: 1
+  arrowOffsetLocal: {x: 0, y: -2.5}
+  arrowLocalZ: 0.01
+  arrowUseProbeDirection: 1
+  arrowRotationLocal: 0
   alignSortingWithCoin: 1
   arrowSortingOrderDelta: -1
-  probeOffsetLocal: {x: 0, y: -3}
-  offsetIsLocal: 1
+  uiCamera: {fileID: 0}
   gizmoShowProbe: 0
   gizmoColor: {r: 0.2, g: 1, b: 0.6, a: 0.9}
   gizmoSize: 10
-  uiCamera: {fileID: 0}
 --- !u!212 &1064723657170599284
 SpriteRenderer:
   m_ObjectHideFlags: 0

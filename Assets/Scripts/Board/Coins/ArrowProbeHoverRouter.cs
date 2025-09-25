@@ -10,21 +10,7 @@ public class ArrowProbeHoverRouter : MonoBehaviour
     [SerializeField] EventSystem eventSystem;
     [SerializeField] bool debugLogs = false;
 
-    [Header("Optional: hard toggle raycasts while dragging")]
-    [SerializeField] bool disableGraphicRaycastsWhileDragging = true;
-    [SerializeField] RectTransform gridRoot;
-
     GridCellHoverWithCoords _current;
-    List<Graphic> _graphics;
-    bool _raycastsDisabled;
-
-    void Awake()
-    {
-        if (gridRoot)
-        {
-            _graphics = new List<Graphic>(gridRoot.GetComponentsInChildren<Graphic>(true));
-        }
-    }
 
     void Reset()
     {
@@ -35,20 +21,6 @@ public class ArrowProbeHoverRouter : MonoBehaviour
     void Update()
     {
         var probe = CoinPlacementProbe.Active;
-
-        if (disableGraphicRaycastsWhileDragging && _graphics != null)
-        {
-            if (probe != null && !_raycastsDisabled)
-            {
-                foreach (var g in _graphics) g.raycastTarget = false;
-                _raycastsDisabled = true;
-            }
-            else if (probe == null && _raycastsDisabled)
-            {
-                foreach (var g in _graphics) g.raycastTarget = true;
-                _raycastsDisabled = false;
-            }
-        }
 
         if (probe == null)
         {
