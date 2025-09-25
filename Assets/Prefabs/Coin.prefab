@@ -64,7 +64,7 @@ MonoBehaviour:
   targetRenderer: {fileID: 2606012495560826973}
   sortingOrderBoost: 50
   disableColliderWhileDragging: 0
-  pickupScaleMultiplier: 1.4
+  pickupScaleMultiplier: 1.25
   scaleLerpSpeed: 10
   debugInteract: 0
   onPickUp:
@@ -514,7 +514,7 @@ MonoBehaviour:
   shape: 1.25
   transitionSpeed: 10
   ringThicknessPulse: 0.08
-  hoverScaleMultiplier: 1.487
+  hoverScaleMultiplier: 1.15
   scaleLerpSpeed: 10
   requireLocalOwnershipForHoverScale: 1
   blockHoverScaleIfLocalIsClueGiver: 1
