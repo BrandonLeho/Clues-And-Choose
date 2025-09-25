@@ -119,7 +119,6 @@
     <Compile Include="Assets\Scripts\Board\Coins\CoinDragSync.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandlerGame.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerRow.cs" />
-    <Compile Include="Assets\Scripts\Board\Coins\Arrow\ArrowLagAnimator.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinDragHandler.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverRoulette\RouletteToRoundBridge.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\RegistryNameColorLookup.cs" />
