@@ -399,9 +399,9 @@ MonoBehaviour:
   rotateArrowToProbe: 1
   alignSortingWithCoin: 1
   arrowSortingOrderDelta: -1
-  probeOffsetLocal: {x: 0, y: -2.5}
+  probeOffsetLocal: {x: 0, y: -3}
   offsetIsLocal: 1
-  gizmoShowProbe: 1
+  gizmoShowProbe: 0
   gizmoColor: {r: 0.2, g: 1, b: 0.6, a: 0.9}
   gizmoSize: 10
   uiCamera: {fileID: 0}
