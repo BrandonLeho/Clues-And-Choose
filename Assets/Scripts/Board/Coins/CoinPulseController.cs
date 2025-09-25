@@ -45,15 +45,15 @@ public class CoinPulseController : MonoBehaviour
 
     void Awake()
     {
-        _net = GetComponent<NetworkCoin>();
+        _net = GetComponentInParent<NetworkCoin>();
         _sr = GetComponent<SpriteRenderer>();
         _mpb = new MaterialPropertyBlock();
         _coin = GetComponent<CoinVisual>();
         _baseScale = transform.localScale;
 
-        _placedLock = GetComponent<CoinPlacedLock>();
+        _placedLock = GetComponentInParent<CoinPlacedLock>();
 
-        if (!hoverCollider) hoverCollider = GetComponent<Collider2D>();
+        if (!hoverCollider) hoverCollider = GetComponentInParent<Collider2D>();
         if (!worldCamera) worldCamera = Camera.main;
     }
 
@@ -84,6 +84,8 @@ public class CoinPulseController : MonoBehaviour
         _sr.SetPropertyBlock(_mpb);
 
         bool canScale = (!requireLocalOwnershipForHoverScale) || (_net != null && _net.IsLocalOwner());
+
+        Debug.Log(canScale);
 
         if (blockHoverScaleIfLocalIsClueGiver && canScale)
         {
