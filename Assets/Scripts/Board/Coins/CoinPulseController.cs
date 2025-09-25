@@ -96,6 +96,7 @@ public class CoinPulseController : MonoBehaviour
         }
 
         float targetScale = canScale ? Mathf.Lerp(1f, hoverScaleMultiplier, _hover01) : 1f;
+
         transform.localScale = Vector3.Lerp(
             transform.localScale, _baseScale * targetScale,
             scaleLerpSpeed * Time.deltaTime);
