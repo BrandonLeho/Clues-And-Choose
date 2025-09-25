@@ -451,4 +451,23 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
         }
         _fixedGridIndex = myIndex;
     }
+
+    public void ProbeEnter()
+    {
+        if (!isActiveAndEnabled) return;
+        CacheGridRefsOnce();
+        if (label) UpdateLabelToCoordsFast();
+        BringToFront_Begin();
+        StartAnim(1f);
+        _isHovering = true;
+    }
+
+    public void ProbeExit()
+    {
+        if (!isActiveAndEnabled) return;
+        _isHovering = false;
+        StartAnim(0f);
+        BringToFront_End();
+    }
+
 }
