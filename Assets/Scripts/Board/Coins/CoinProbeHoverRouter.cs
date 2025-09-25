@@ -23,8 +23,15 @@ public class CoinProbeUIHoverRouter : MonoBehaviour
     {
         _probe = GetComponent<CoinPlacementProbe>();
         _drag = GetComponent<CoinDragHandler>();
-        if (!uiCamera) uiCamera = Camera.main;
+
+        if (!uiRaycaster)
+            uiRaycaster = FindFirstObjectByType<GraphicRaycaster>();
+
+        if (!uiCamera)
+            uiCamera = Camera.main;
+
         _ped = new PointerEventData(EventSystem.current);
+
         if (_drag)
         {
             _drag.onPickUp.AddListener(() => _active = true);
