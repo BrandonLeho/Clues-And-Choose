@@ -158,5 +158,11 @@ public class BoardSpotsNet : NetworkBehaviour
             if (occupancy.ContainsKey(idx)) occupancy[idx] = 0;
             RpcApplySpot(idx, 0);
         }
+
+        if (NetworkServer.spawned.TryGetValue(coinNetId, out var idObj))
+        {
+            var lockComp = idObj.GetComponent<CoinPlacedLock>();
+            if (lockComp) lockComp.ServerSetLocked(false);
+        }
     }
 }

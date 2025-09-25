@@ -141,12 +141,10 @@ public class CoinSlideInIntro : NetworkBehaviour
     IEnumerator Co_ClientAnim(Vector3 start, Vector3 target, double startAtServerTime,
                               float speed, float sRot, float eRot, float sAlpha, float eAlpha)
     {
-        // Place at start pose
         transform.position = start;
         transform.rotation = Quaternion.Euler(0, 0, sRot);
         SetAlpha(sAlpha);
 
-        // Wait for the synchronized start time
         while (NetworkTime.time < startAtServerTime) yield return null;
 
         float dist = Vector3.Distance(start, target);

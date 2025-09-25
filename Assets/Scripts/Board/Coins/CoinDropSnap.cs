@@ -94,7 +94,11 @@ public class CoinDropSnap : MonoBehaviour
                         if (lockCoinAfterPlacement)
                         {
                             var guard = GetComponent<CoinPlacedLock>();
-                            if (guard) guard.Lock();
+                            if (guard)
+                            {
+                                if (guard.isServer) guard.ServerSetLocked(true);
+                                else guard.CmdSetLocked(true);
+                            }
                         }
                     }
                     else

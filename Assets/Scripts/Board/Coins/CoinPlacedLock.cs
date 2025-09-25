@@ -1,11 +1,29 @@
+using Mirror;
 using UnityEngine;
 
-public class CoinPlacedLock : MonoBehaviour, ICoinDragPermission
+public class CoinPlacedLock : NetworkBehaviour, ICoinDragPermission
 {
-    public bool locked;
+    [SyncVar] public bool locked;
 
     public bool CanBeginDrag() => !locked;
 
-    public void Lock() => locked = true;
-    public void Unlock() => locked = false;
+    [Server] public void ServerSetLocked(bool value) => locked = value;
+
+    [Command]
+    public void CmdSetLocked(bool value)
+    {
+        locked = value;
+    }
+
+    public void Lock()
+    {
+        if (isServer) locked = true;
+        else CmdSetLocked(true);
+    }
+
+    public void Unlock()
+    {
+        if (isServer) locked = false;
+        else CmdSetLocked(false);
+    }
 }

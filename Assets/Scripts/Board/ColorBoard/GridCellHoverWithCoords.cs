@@ -295,16 +295,7 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
             if (_occupantCoin == null || _occupantLock == null)
                 TryBindOccupant();
 
-            if (spot && spot.isOccupied && spot.occupant == null)
-            {
-                spot.TryResolveOccupantFromNet();
-                if (_occupantCoin == null && spot.occupant)
-                {
-                    _occupantCoin = spot.occupant.transform;
-                    _occupantLock = spot.occupant.GetComponent<CoinPlacedLock>();
-                }
-            }
-
+            Debug.Log(_occupantCoin + " " + _occupantLock + " " + _occupantLock.locked);
 
             if (_occupantCoin != null && _occupantLock != null && _occupantLock.locked)
             {
@@ -379,17 +370,10 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
         _occupantCoin = null;
         _occupantLock = null;
 
-        if (!spot) spot = GetComponent<ValidDropSpot>();
-        if (spot)
+        if (spot && spot.isOccupied && spot.occupant)
         {
-            if (spot.isOccupied && spot.occupant == null)
-                spot.TryResolveOccupantFromNet();
-
-            if (spot.isOccupied && spot.occupant)
-            {
-                _occupantCoin = spot.occupant.transform;
-                _occupantLock = spot.occupant.GetComponent<CoinPlacedLock>();
-            }
+            _occupantCoin = spot.occupant.transform;
+            _occupantLock = spot.occupant.GetComponent<CoinPlacedLock>();
         }
     }
 
