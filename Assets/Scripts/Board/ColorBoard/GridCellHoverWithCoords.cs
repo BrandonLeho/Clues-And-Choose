@@ -73,10 +73,10 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     bool _isHovering;
     bool _liftEnabledForThisHover;
 
+    bool _bypassProbeGate;
+
     Transform _homeParent;
     int _fixedGridIndex = -1;
-
-    bool _allowProbeEvent;
 
     void Awake()
     {
@@ -168,7 +168,7 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
 
     public void OnPointerEnter(PointerEventData eventData)
     {
-        if (IgnorePointerNow(eventData)) return;
+        if (IgnorePointerNow()) return;
         CacheGridRefsOnce();
         if (label) UpdateLabelToCoordsFast();
 
@@ -183,7 +183,7 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        if (IgnorePointerNow(eventData)) return;
+        if (IgnorePointerNow()) return;
         _isHovering = false;
         StartAnim(0f);
         BringToFront_End();
@@ -456,26 +456,24 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
         _fixedGridIndex = myIndex;
     }
 
-    bool IgnorePointerNow(PointerEventData e)
+    public void ProbeEnter()
     {
-        return CoinPlacementProbe.ProbeMode && !_allowProbeEvent;
-    }
-
-    public void ProbeEnterAtScreen(Vector2 screenPos, EventSystem es)
-    {
-        _allowProbeEvent = true;
-
-        var ped = new PointerEventData(es) { position = screenPos };
-
-        OnPointerEnter(ped);
-
-        _allowProbeEvent = false;
+        if (_isHovering) return;
+        _bypassProbeGate = true;
+        OnPointerEnter(null);
+        _bypassProbeGate = false;
     }
 
     public void ProbeExit()
     {
-        _allowProbeEvent = true;
+        if (_isHovering == false) return;
+        _bypassProbeGate = true;
         OnPointerExit(null);
-        _allowProbeEvent = false;
+        _bypassProbeGate = false;
+    }
+
+    bool IgnorePointerNow()
+    {
+        return CoinPlacementProbe.ProbeMode && !_bypassProbeGate;
     }
 }
