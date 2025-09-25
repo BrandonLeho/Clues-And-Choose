@@ -69,9 +69,9 @@
     <Compile Include="Assets\Scripts\Steamworks.NET\SteamManager.cs" />
     <Compile Include="Assets\Scripts\Gameloop\NameToNetIdRegistry.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardStackFlyInAnimator.cs" />
-    <Compile Include="Assets\Scripts\Board\Coins\CoinProbeHoverRouter.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ConfirmButtonNeonHover.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\ValidDropSpot.cs" />
+    <Compile Include="Assets\Scripts\Board\Coins\ArrowProbeHoverRouter.cs" />
     <Compile Include="Assets\Scripts\Controller\CursorController\CursorControllerModule.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\ScoreboardGridPainter.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardLabels.cs" />

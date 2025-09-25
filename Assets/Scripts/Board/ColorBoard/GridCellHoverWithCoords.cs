@@ -454,20 +454,11 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
 
     public void ProbeEnter()
     {
-        if (!isActiveAndEnabled) return;
-        CacheGridRefsOnce();
-        if (label) UpdateLabelToCoordsFast();
-        BringToFront_Begin();
-        StartAnim(1f);
-        _isHovering = true;
+        if (!_isHovering) OnPointerEnter(null);
     }
 
     public void ProbeExit()
     {
-        if (!isActiveAndEnabled) return;
-        _isHovering = false;
-        StartAnim(0f);
-        BringToFront_End();
+        if (_isHovering) OnPointerExit(null);
     }
-
 }

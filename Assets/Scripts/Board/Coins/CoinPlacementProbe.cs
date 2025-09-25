@@ -27,6 +27,16 @@ public class CoinPlacementProbe : MonoBehaviour
     SpriteRenderer _coinSR;
     bool _isDragging;
 
+    public static CoinPlacementProbe Active { get; private set; }
+    public Camera uiCamera;
+
+    public Vector2 GetProbeScreenPosition()
+    {
+        var cam = uiCamera ? uiCamera : Camera.main;
+        return cam ? (Vector2)cam.WorldToScreenPoint(GetProbeWorld())
+                : (Vector2)GetProbeWorld();
+    }
+
     public Vector3 GetProbeWorld()
     {
         Vector3 local = new Vector3(probeOffsetLocal.x, probeOffsetLocal.y, 0f);
@@ -57,6 +67,7 @@ public class CoinPlacementProbe : MonoBehaviour
 
     void OnPickUp()
     {
+        Active = this;
         _isDragging = true;
         if (arrowPrefab)
         {
@@ -73,6 +84,7 @@ public class CoinPlacementProbe : MonoBehaviour
 
     void OnDrop()
     {
+        if (Active == this) Active = null;
         _isDragging = false;
         if (_arrowInst) Destroy(_arrowInst.gameObject);
         _arrowInst = null;
