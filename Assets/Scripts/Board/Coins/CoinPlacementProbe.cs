@@ -77,7 +77,7 @@ public class CoinPlacementProbe : MonoBehaviour
             }
             ApplyArrowLocalTransformImmediate();
             _suppressUntilInside = startHiddenOnPickup;
-            SetArrowShown(IsProbeInsideGrid());
+            SetArrowShown(false);
         }
     }
 
