@@ -5,76 +5,81 @@ using UnityEngine.UI;
 
 public class ArrowProbeHoverRouter : MonoBehaviour
 {
-    [Header("UI Raycast")]
-    [SerializeField] GraphicRaycaster raycaster;
+    [Header("Scope")]
+    [SerializeField] RectTransform gridRoot;
+    [SerializeField] bool includeInactive = false;
+
+    [Header("Cameras / Systems")]
+    [SerializeField] Canvas gridCanvas;
     [SerializeField] EventSystem eventSystem;
+
+    [Header("Debug")]
     [SerializeField] bool debugLogs = false;
 
-    [Header("Optional: hard toggle raycasts while dragging")]
-    [SerializeField] bool disableGraphicRaycastsWhileDragging = true;
-    [SerializeField] RectTransform gridRoot;
-
+    readonly List<GridCellHoverWithCoords> _cells = new();
     GridCellHoverWithCoords _current;
-    List<Graphic> _graphics;
-    bool _raycastsDisabled;
-
-    void Awake()
-    {
-        if (gridRoot)
-        {
-            _graphics = new List<Graphic>(gridRoot.GetComponentsInChildren<Graphic>(true));
-        }
-    }
+    Camera _uiCam;
 
     void Reset()
     {
-        if (!raycaster) raycaster = FindFirstObjectByType<GraphicRaycaster>();
+        if (!gridCanvas) gridCanvas = GetComponentInParent<Canvas>();
         if (!eventSystem) eventSystem = FindFirstObjectByType<EventSystem>();
+        if (!gridRoot && gridCanvas) gridRoot = gridCanvas.transform as RectTransform;
+    }
+
+    void Awake()
+    {
+        if (!gridCanvas) gridCanvas = GetComponentInParent<Canvas>();
+        if (!eventSystem) eventSystem = FindFirstObjectByType<EventSystem>();
+        if (!gridRoot && gridCanvas) gridRoot = gridCanvas.transform as RectTransform;
+
+        _uiCam = (gridCanvas && gridCanvas.renderMode != RenderMode.ScreenSpaceOverlay)
+            ? gridCanvas.worldCamera
+            : null;
+
+        RebuildCellList();
+    }
+
+    public void RebuildCellList()
+    {
+        _cells.Clear();
+        if (!gridRoot) return;
+        var tmp = gridRoot.GetComponentsInChildren<GridCellHoverWithCoords>(includeInactive);
+        _cells.AddRange(tmp);
+        _cells.Sort((a, b) =>
+        {
+            int ia = a.transform.GetSiblingIndex();
+            int ib = b.transform.GetSiblingIndex();
+            return ib.CompareTo(ia);
+        });
     }
 
     void Update()
     {
         var probe = CoinPlacementProbe.Active;
-
-        if (disableGraphicRaycastsWhileDragging && _graphics != null)
-        {
-            if (probe != null && !_raycastsDisabled)
-            {
-                foreach (var g in _graphics) g.raycastTarget = false;
-                _raycastsDisabled = true;
-            }
-            else if (probe == null && _raycastsDisabled)
-            {
-                foreach (var g in _graphics) g.raycastTarget = true;
-                _raycastsDisabled = false;
-            }
-        }
-
         if (probe == null)
         {
             ClearCurrent();
             return;
         }
 
-        if (!raycaster || !eventSystem)
-        {
-            if (debugLogs) Debug.LogWarning("[ArrowProbeHoverRouter] Missing raycaster or EventSystem.");
-            ClearCurrent();
-            return;
-        }
-
         Vector2 screenPos = probe.GetProbeScreenPosition();
 
-        var ped = new PointerEventData(eventSystem) { position = screenPos };
-        var results = new List<RaycastResult>();
-        raycaster.Raycast(ped, results);
-
         GridCellHoverWithCoords target = null;
-        for (int i = 0; i < results.Count; i++)
+
+        for (int i = 0; i < _cells.Count; i++)
         {
-            var t = results[i].gameObject.transform;
-            target = t.GetComponentInParent<GridCellHoverWithCoords>();
-            if (target) break;
+            var cell = _cells[i];
+            if (!cell || !cell.isActiveAndEnabled) continue;
+
+            var rt = cell.transform as RectTransform;
+            if (!rt) continue;
+
+            if (RectTransformUtility.RectangleContainsScreenPoint(rt, screenPos, _uiCam))
+            {
+                target = cell;
+                break;
+            }
         }
 
         if (target != _current)
@@ -82,7 +87,11 @@ public class ArrowProbeHoverRouter : MonoBehaviour
             if (debugLogs) Debug.Log($"[ArrowProbeHoverRouter] Hover -> {(target ? target.name : "none")}");
             if (_current) _current.ProbeExit();
             _current = target;
-            if (_current) _current.ProbeEnter();
+            if (_current) _current.ProbeEnterAtScreen(screenPos, eventSystem);
+        }
+        else if (_current)
+        {
+            _current.ProbeEnterAtScreen(screenPos, eventSystem);
         }
     }
 

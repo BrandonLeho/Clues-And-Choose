@@ -76,6 +76,8 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     Transform _homeParent;
     int _fixedGridIndex = -1;
 
+    bool _allowProbeEvent;
+
     void Awake()
     {
         _rt = (RectTransform)transform;
@@ -166,7 +168,7 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
 
     public void OnPointerEnter(PointerEventData eventData)
     {
-        if (IgnorePointerNow()) return;
+        if (IgnorePointerNow(eventData)) return;
         CacheGridRefsOnce();
         if (label) UpdateLabelToCoordsFast();
 
@@ -181,7 +183,7 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        if (IgnorePointerNow()) return;
+        if (IgnorePointerNow(eventData)) return;
         _isHovering = false;
         StartAnim(0f);
         BringToFront_End();
@@ -454,18 +456,26 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
         _fixedGridIndex = myIndex;
     }
 
-    public void ProbeEnter()
+    bool IgnorePointerNow(PointerEventData e)
     {
-        if (!_isHovering) OnPointerEnter(null);
+        return CoinPlacementProbe.ProbeMode && !_allowProbeEvent;
+    }
+
+    public void ProbeEnterAtScreen(Vector2 screenPos, EventSystem es)
+    {
+        _allowProbeEvent = true;
+
+        var ped = new PointerEventData(es) { position = screenPos };
+
+        OnPointerEnter(ped);
+
+        _allowProbeEvent = false;
     }
 
     public void ProbeExit()
     {
-        if (_isHovering) OnPointerExit(null);
-    }
-
-    bool IgnorePointerNow()
-    {
-        return CoinPlacementProbe.ProbeMode;
+        _allowProbeEvent = true;
+        OnPointerExit(null);
+        _allowProbeEvent = false;
     }
 }
