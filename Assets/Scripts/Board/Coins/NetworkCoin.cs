@@ -9,7 +9,7 @@ public class NetworkCoin : NetworkBehaviour
 
     CoinVisual _visual;
 
-    void Awake() => _visual = GetComponent<CoinVisual>();
+    void Awake() => _visual = GetComponentInChildren<CoinVisual>();
 
     public override void OnStartClient()
     {
@@ -21,7 +21,7 @@ public class NetworkCoin : NetworkBehaviour
 
     void ApplyColor(Color32 c)
     {
-        if (!_visual) _visual = GetComponent<CoinVisual>();
+        if (!_visual) _visual = GetComponentInChildren<CoinVisual>();
         if (!_visual) return;
 
         bool isPureWhite = c.r == 255 && c.g == 255 && c.b == 255 && c.a == 255;
