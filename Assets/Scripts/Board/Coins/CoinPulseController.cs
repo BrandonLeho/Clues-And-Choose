@@ -85,8 +85,6 @@ public class CoinPulseController : MonoBehaviour
 
         bool canScale = (!requireLocalOwnershipForHoverScale) || (_net != null && _net.IsLocalOwner());
 
-        Debug.Log(canScale);
-
         if (blockHoverScaleIfLocalIsClueGiver && canScale)
         {
             if (ClueGiverState.IsLocalPlayerClueGiver()) canScale = false;
