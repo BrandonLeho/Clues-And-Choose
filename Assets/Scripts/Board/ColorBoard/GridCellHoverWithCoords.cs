@@ -42,11 +42,10 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     [SerializeField] RectTransform floatingLayer;
     [SerializeField] int hoverSortingOrder = 1000;
 
-    [Header("Occupant Coin Lift (when hovered)")]
+    [Header("Occupant Coin Lift")]
     [SerializeField] ValidDropSpot spot;
     [SerializeField] float coinLiftWorld = 0.12f;
     [SerializeField] AnimationCurve coinLiftEase;
-
 
     Vector3 _baseScale;
     Coroutine _anim;
@@ -74,13 +73,20 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     bool _isHovering;
     bool _liftEnabledForThisHover;
 
+    Transform _homeParent;
+    int _fixedGridIndex = -1;
+
     void Awake()
     {
         _rt = (RectTransform)transform;
         _baseScale = transform.localScale == Vector3.zero ? Vector3.one : transform.localScale;
+
         if (!labelsHighlighter) labelsHighlighter = GetComponentInParent<BoardLabelsHighlighter>(true);
         if (!grid) grid = GetComponentInParent<GridLayoutGroup>(true);
         if (!boardLabelsComponent) boardLabelsComponent = GetComponentInParent<MonoBehaviour>(true);
+
+        _homeParent = transform.parent;
+
         _img = GetComponent<Image>();
         if (!_img)
         {
@@ -103,6 +109,7 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
         }
         if (!spot) spot = GetComponent<ValidDropSpot>();
         CacheGridRefsOnce();
+        ComputeFixedGridIndex();
     }
 
     void OnEnable()
@@ -112,13 +119,12 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
         _progress01 = 0f;
         _isHovering = false;
         _liftEnabledForThisHover = false;
+
+        if (_homeParent == null) _homeParent = transform.parent;
+        if (_fixedGridIndex < 0) ComputeFixedGridIndex();
     }
 
-    public void SetHoverEnabled(bool enabled)
-    {
-        this.enabled = enabled;
-    }
-
+    public void SetHoverEnabled(bool enabled) => this.enabled = enabled;
 
     void CacheGridRefsOnce()
     {
@@ -167,7 +173,6 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
         StartAnim(1f);
 
         TryBindOccupant();
-
         _isHovering = true;
         _liftEnabledForThisHover = _occupantLock != null && _occupantLock.locked;
         if (_liftEnabledForThisHover) CacheCoinBaseIfNeeded();
@@ -190,9 +195,7 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
             _occupantCoin = null;
             _occupantLock = null;
         }
-
     }
-
 
     void BringToFront_Begin()
     {
@@ -239,15 +242,12 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
         if (_isFloating)
         {
             _rt.SetParent(_origParent, true);
-            if (_origSiblingIndex >= 0)
-                _rt.SetSiblingIndex(_origSiblingIndex);
-
+            if (_origSiblingIndex >= 0) _rt.SetSiblingIndex(_origSiblingIndex);
             if (_placeholder)
             {
                 Destroy(_placeholder.gameObject);
                 _placeholder = null;
             }
-
             _isFloating = false;
         }
         else if (_tempCanvas)
@@ -310,8 +310,7 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
         if (!spot) spot = GetComponent<ValidDropSpot>();
         if (spot && spot.isOccupied && spot.occupant)
         {
-            if (_occupantCoin == null || _occupantLock == null)
-                TryBindOccupant();
+            if (_occupantCoin == null || _occupantLock == null) TryBindOccupant();
 
             bool liftNow =
                 _occupantCoin != null &&
@@ -330,19 +329,12 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
                 var hover = _occupantCoin ? _occupantCoin.GetComponentInChildren<CoinHoverOffset>() : null;
                 float liftWorld = Mathf.Lerp(0f, coinLiftWorld, _progress01);
 
-                if (hover)
-                {
-                    hover.SetWorldLift(liftWorld);
-                }
-                else
-                {
-                    _occupantCoin.position = _coinBaseWorld + Vector3.up * liftWorld;
-                }
+                if (hover) hover.SetWorldLift(liftWorld);
+                else _occupantCoin.position = _coinBaseWorld + Vector3.up * liftWorld;
             }
         }
 
-        if (Mathf.Approximately(p, 0f))
-            ClearCoinCacheIfIdle();
+        if (Mathf.Approximately(p, 0f)) ClearCoinCacheIfIdle();
     }
 
     void SetLabelAlpha(float a)
@@ -354,15 +346,19 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
 
     void UpdateLabelToCoordsFast()
     {
-        int idx = transform.GetSiblingIndex();
+        int idx = GetStableGridIndex();
         int col = idx % _cols;
         int row = idx / _cols;
+
         int letterIndex = _orientationAOnTop ? row : (_rows - 1 - row);
-        if (letterIndex < 0) letterIndex = 0;
-        if (letterIndex > _rows - 1) letterIndex = _rows - 1;
+        letterIndex = Mathf.Clamp(letterIndex, 0, _rows - 1);
+
         string rowLetter = IndexToLetters(letterIndex);
         int colNumber = col + 1;
-        label.text = coordinateFormat.Replace("{C}", colNumber.ToString()).Replace("{R}", rowLetter);
+        if (label) label.text = coordinateFormat.Replace("{C}", colNumber.ToString()).Replace("{R}", rowLetter);
+
+        _lastColIdx = col;
+        _lastRowIdx = row;
     }
 
     static string IndexToLetters(int idx)
@@ -401,7 +397,6 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     {
         _occupantCoin = null;
         _occupantLock = null;
-
         if (spot && spot.isOccupied && spot.occupant)
         {
             _occupantCoin = spot.occupant.transform;
@@ -414,7 +409,6 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
         if (_occupantCoin == null || _occupantLock == null) return;
         if (!_occupantLock.locked) return;
         if (_coinBaseCached) return;
-
         _coinBaseWorld = _occupantCoin.position;
         _coinBaseCached = true;
     }
@@ -427,17 +421,34 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
             _occupantCoin = null;
             _occupantLock = null;
 
-            if (Mathf.Approximately(_progress01, 0f))
+            if (Mathf.Approximately(_progress01, 0f) && _occupantCoin)
             {
-                if (_occupantCoin)
-                {
-                    var hover = _occupantCoin.GetComponentInChildren<CoinHoverOffset>();
-                    if (hover) hover.ResetOffset();
-                }
-                _coinBaseCached = false;
-                _occupantCoin = null;
-                _occupantLock = null;
+                var hover = _occupantCoin.GetComponentInChildren<CoinHoverOffset>();
+                if (hover) hover.ResetOffset();
             }
         }
+    }
+
+    int GetStableGridIndex()
+    {
+        if (_fixedGridIndex >= 0) return _fixedGridIndex;
+        ComputeFixedGridIndex();
+        return Mathf.Max(0, _fixedGridIndex);
+    }
+
+    void ComputeFixedGridIndex()
+    {
+        if (_homeParent == null) _homeParent = transform.parent;
+        if (_homeParent == null) { _fixedGridIndex = 0; return; }
+
+        int count = 0, myIndex = 0;
+        for (int i = 0; i < _homeParent.childCount; i++)
+        {
+            var child = _homeParent.GetChild(i);
+            if (!child.GetComponent<GridCellHoverWithCoords>()) continue;
+            if (child == transform) myIndex = count;
+            count++;
+        }
+        _fixedGridIndex = myIndex;
     }
 }
