@@ -16,10 +16,10 @@ public class CoinPlacementProbe : MonoBehaviour
     public bool alignSortingWithCoin = true;
     public int arrowSortingOrderDelta = -1;
     public Camera uiCamera;
-    public bool gizmoShowProbe = true;
-    public Color gizmoColor = new Color(0.2f, 1f, 0.6f, 0.9f);
-    public float gizmoSize = 0.06f;
+    public RectTransform gridMask;
+    public bool requireInsideGridToShow = true;
 
+    bool _arrowShown;
     CoinDragHandler _drag;
     Transform _arrowInst;
     SpriteRenderer _arrowSR;
@@ -42,6 +42,13 @@ public class CoinPlacementProbe : MonoBehaviour
             _drag.onPickUp.AddListener(OnPickUp);
             _drag.onDrop.AddListener(OnDrop);
         }
+
+        if (!gridMask)
+        {
+            var found = GameObject.Find("ColorGrid");
+            if (found)
+                gridMask = found.GetComponent<RectTransform>();
+        }
     }
 
     void OnDestroy()
@@ -57,7 +64,6 @@ public class CoinPlacementProbe : MonoBehaviour
     {
         Active = this;
         _isDragging = true;
-
         if (arrowPrefab)
         {
             _arrowInst = Instantiate(arrowPrefab, transform);
@@ -68,6 +74,8 @@ public class CoinPlacementProbe : MonoBehaviour
                 _arrowSR.sortingOrder = _coinSR.sortingOrder + Mathf.Max(1, arrowSortingOrderDelta);
             }
             ApplyArrowLocalTransformImmediate();
+
+            SetArrowShown(IsProbeInsideGrid());
         }
     }
 
@@ -78,6 +86,7 @@ public class CoinPlacementProbe : MonoBehaviour
         if (_arrowInst) Destroy(_arrowInst.gameObject);
         _arrowInst = null;
         _arrowSR = null;
+        _arrowShown = false;
     }
 
     void Update()
@@ -89,6 +98,8 @@ public class CoinPlacementProbe : MonoBehaviour
             _arrowSR.sortingLayerID = _coinSR.sortingLayerID;
             _arrowSR.sortingOrder = _coinSR.sortingOrder + Mathf.Max(1, arrowSortingOrderDelta);
         }
+
+        SetArrowShown(IsProbeInsideGrid());
     }
 
     void ApplyArrowLocalTransformImmediate()
@@ -104,13 +115,21 @@ public class CoinPlacementProbe : MonoBehaviour
         else _arrowInst.localRotation = Quaternion.Euler(0f, 0f, arrowRotationLocal);
     }
 
-    void OnDrawGizmosSelected()
+    bool IsProbeInsideGrid()
     {
-        if (!gizmoShowProbe) return;
-        Gizmos.color = gizmoColor;
-        Vector3 localProbe = new Vector3(probeOffsetLocal.x, probeOffsetLocal.y, 0f);
-        Vector3 worldProbe = transform.TransformPoint(localProbe);
-        Gizmos.DrawSphere(worldProbe, gizmoSize);
-        Gizmos.DrawLine(transform.position, worldProbe);
+        if (!requireInsideGridToShow) return true;
+        if (!gridMask) return true;
+        var cam = uiCamera ? uiCamera : Camera.main;
+        Vector2 sp = GetProbeScreenPosition();
+        return RectTransformUtility.RectangleContainsScreenPoint(gridMask, sp, cam);
+    }
+
+    void SetArrowShown(bool shown)
+    {
+        if (_arrowInst == null) { _arrowShown = false; return; }
+        if (_arrowShown == shown) return;
+
+        _arrowInst.gameObject.SetActive(shown);
+        _arrowShown = shown;
     }
 }
