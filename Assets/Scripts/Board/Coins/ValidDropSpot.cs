@@ -1,3 +1,4 @@
+using Mirror;
 using UnityEngine;
 
 [RequireComponent(typeof(Collider2D))]
@@ -46,5 +47,26 @@ public class ValidDropSpot : MonoBehaviour
         isOccupied = false;
         occupant = null;
         enabledForPlacement = true;
+    }
+
+    public bool TryResolveOccupantFromNet()
+    {
+        if (!isOccupied || occupant != null) return occupant != null;
+
+        var board = BoardSpotsNet.Instance;
+        if (board == null) return false;
+
+        if (board.occupancy != null && board.occupancy.ContainsKey(spotIndex))
+        {
+            uint coinNetId = board.occupancy[spotIndex];
+            if (coinNetId != 0 && NetworkClient.active && NetworkClient.spawned != null
+                && NetworkClient.spawned.TryGetValue(coinNetId, out var id))
+            {
+                occupant = id != null ? id.gameObject : null;
+                if (occupant != null) enabledForPlacement = false;
+                return occupant != null;
+            }
+        }
+        return false;
     }
 }
