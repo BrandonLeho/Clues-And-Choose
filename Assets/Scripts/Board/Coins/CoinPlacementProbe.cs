@@ -105,6 +105,8 @@ public class CoinPlacementProbe : MonoBehaviour
         }
 
         bool inside = IsProbeInsideGrid();
+        Debug.Log("Inside: " + inside);
+        Debug.Log("SupressUntilInside: " + _suppressUntilInside);
 
         if (_suppressUntilInside)
         {
