@@ -105,8 +105,6 @@ public class CoinPlacementProbe : MonoBehaviour
         }
 
         bool inside = IsProbeInsideGrid();
-        Debug.Log("Inside: " + inside);
-        Debug.Log("SupressUntilInside: " + _suppressUntilInside);
 
         if (_suppressUntilInside)
         {
@@ -150,8 +148,8 @@ public class CoinPlacementProbe : MonoBehaviour
 
     void SetArrowShown(bool shown)
     {
+
         if (_arrowInst == null) { _arrowShown = false; return; }
-        if (_arrowShown == shown) return;
 
         _arrowInst.gameObject.SetActive(shown);
         _arrowShown = shown;
