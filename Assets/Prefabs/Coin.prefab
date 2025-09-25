@@ -23,6 +23,7 @@ GameObject:
   - component: {fileID: 473077769761800147}
   - component: {fileID: 1064723657170599284}
   - component: {fileID: 5770278430232050148}
+  - component: {fileID: 4499053817108974166}
   m_Layer: 0
   m_Name: Coin
   m_TagString: Untagged
@@ -44,6 +45,7 @@ Transform:
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 50855883203061400}
+  - {fileID: 1067883775078126356}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &4930192264046914011
@@ -452,7 +454,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CoinPlacementProbe
   probeOffsetLocal: {x: 0, y: -3.75}
-  arrowPrefab: {fileID: 0}
+  arrowPrefab: {fileID: 6507791230212047339, guid: 05552090a6b5ca34e861e0fbe094bf54, type: 3}
   arrowOffsetLocal: {x: 0, y: -2.5}
   arrowLocalZ: -0.01
   arrowUseProbeDirection: 1
@@ -463,6 +465,25 @@ MonoBehaviour:
   gridMask: {fileID: 0}
   requireInsideGridToShow: 1
   startHiddenOnPickup: 1
+--- !u!114 &4499053817108974166
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5861153836025292340}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f77ec191604b0134399cd67c498269c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ArrowLagAnimator
+  tip: {fileID: 1067883775078126356}
+  tipRestDistance: 1
+  positionLagTime: 0.08
+  rotationLagTime: 0.08
+  bendAmplitude: 0.06
+  maxBendOffset: 0.15
+  overshootDamping: 0.9
 --- !u!1 &7401751637502646406
 GameObject:
   m_ObjectHideFlags: 0
@@ -602,3 +623,34 @@ MonoBehaviour:
   scaleLerpSpeed: 10
   requireLocalOwnershipForHoverScale: 1
   blockHoverScaleIfLocalIsClueGiver: 1
+--- !u!1 &7823700783170354904
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1067883775078126356}
+  m_Layer: 0
+  m_Name: Tip
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1067883775078126356
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7823700783170354904}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -2.5, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7955328306791421603}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
