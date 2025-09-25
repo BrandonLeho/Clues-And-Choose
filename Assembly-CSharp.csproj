@@ -82,11 +82,11 @@
     <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverRoulette\RouletteRosterBinder.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardFlip.cs" />
     <Compile Include="Assets\Scripts\Gameloop\RoundManager.cs" />
-    <Compile Include="Assets\Scripts\Board\Coins\ArrowPlacementGuide.cs" />
     <Compile Include="Assets\Scripts\Board\GameChat\ChatUI.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardFrontHoverTilt.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\PlayerNameSync.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardChoiceSelectController.cs" />
+    <Compile Include="Assets\Scripts\Board\Coins\CoinPlacementProbe.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinVisual.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinDropSnap.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorChoosingPhaseController.cs" />

@@ -21,10 +21,6 @@ public class CoinDropSnap : MonoBehaviour
     [Header("Placement Rules")]
     public bool lockCoinAfterPlacement = true;
 
-    [Header("Placement Probe")]
-    public ArrowPlacementGuide placementGuide;
-    public bool useProbeForPlacement = true;
-
     Vector3 _lastValidWorldPos;
     float _spawnZ;
     CoinDragHandler _drag;
@@ -32,10 +28,13 @@ public class CoinDropSnap : MonoBehaviour
     Coroutine _snapRoutine;
     ValidDropSpot _occupiedSpot;
 
+    CoinPlacementProbe _probe;
+
     void Awake()
     {
         _drag = GetComponent<CoinDragHandler>();
         _sync = GetComponent<CoinDragSync>();
+        _probe = GetComponent<CoinPlacementProbe>();
 
         _drag.onPickUp.AddListener(OnPickUp);
         _drag.onDrop.AddListener(OnDrop);
@@ -67,21 +66,18 @@ public class CoinDropSnap : MonoBehaviour
 
     void OnDrop()
     {
-        Vector2 sample2D;
-        if (useProbeForPlacement && placementGuide != null)
-            sample2D = placementGuide.GetProbeWorld();
-        else
-            sample2D = new Vector2(transform.position.x, transform.position.y);
+        Vector3 probeWorld = (_probe != null) ? _probe.GetProbeWorld() : transform.position;
+        Vector2 center2D = new Vector2(probeWorld.x, probeWorld.y);
 
-        var hits = Physics2D.OverlapCircleAll(sample2D, overlapRadius, validSpotLayers);
+        var hits = Physics2D.OverlapCircleAll(center2D, overlapRadius, validSpotLayers);
         var spots = hits?
             .Select(h => h.GetComponentInParent<ValidDropSpot>() ?? h.GetComponent<ValidDropSpot>())
-            .Where(s => s != null && s.enabledForPlacement && s.ContainsPoint(sample2D))
+            .Where(s => s != null && s.enabledForPlacement && s.ContainsPoint(center2D))
             .ToList();
 
         if (spots != null && spots.Count > 0)
         {
-            var best = spots.OrderBy(s => Vector2.SqrMagnitude(sample2D - (Vector2)s.GetCenterWorld())).First();
+            var best = spots.OrderBy(s => Vector2.SqrMagnitude(center2D - (Vector2)s.GetCenterWorld())).First();
 
             var netId = GetComponent<NetworkIdentity>();
             var board = BoardSpotsNet.Instance;
@@ -121,6 +117,7 @@ public class CoinDropSnap : MonoBehaviour
             if (keepCurrentZ) targetOffline.z = transform.position.z;
             _occupiedSpot = best;
             StartSnapTween(targetOffline, updateLastValid: true);
+            return;
         }
 
         Vector3 fallback = _lastValidWorldPos;
@@ -128,14 +125,9 @@ public class CoinDropSnap : MonoBehaviour
         StartSnapTween(fallback, updateLastValid: false);
     }
 
-
-
     void StartSnapTween(Vector3 target, bool updateLastValid)
     {
-        if (_snapRoutine != null)
-        {
-            StopCoroutine(_snapRoutine);
-        }
+        if (_snapRoutine != null) StopCoroutine(_snapRoutine);
         _snapRoutine = StartCoroutine(SnapTweenRoutine(target, updateLastValid));
     }
 
@@ -169,17 +161,8 @@ public class CoinDropSnap : MonoBehaviour
         }
 
         transform.position = target;
-
-        if (_sync != null)
-        {
-            _sync.OwnerSnapTo(target);
-        }
-
-        if (updateLastValid)
-        {
-            _lastValidWorldPos = target;
-        }
-
+        if (_sync != null) _sync.OwnerSnapTo(target);
+        if (updateLastValid) _lastValidWorldPos = target;
         _snapRoutine = null;
     }
 
