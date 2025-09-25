@@ -21,6 +21,10 @@ public class CoinDropSnap : MonoBehaviour
     [Header("Placement Rules")]
     public bool lockCoinAfterPlacement = true;
 
+    [Header("Placement Probe")]
+    public ArrowPlacementGuide placementGuide;
+    public bool useProbeForPlacement = true;
+
     Vector3 _lastValidWorldPos;
     float _spawnZ;
     CoinDragHandler _drag;
@@ -63,16 +67,21 @@ public class CoinDropSnap : MonoBehaviour
 
     void OnDrop()
     {
-        Vector2 center2D = new Vector2(transform.position.x, transform.position.y);
-        var hits = Physics2D.OverlapCircleAll(center2D, overlapRadius, validSpotLayers);
+        Vector2 sample2D;
+        if (useProbeForPlacement && placementGuide != null)
+            sample2D = placementGuide.GetProbeWorld();
+        else
+            sample2D = new Vector2(transform.position.x, transform.position.y);
+
+        var hits = Physics2D.OverlapCircleAll(sample2D, overlapRadius, validSpotLayers);
         var spots = hits?
             .Select(h => h.GetComponentInParent<ValidDropSpot>() ?? h.GetComponent<ValidDropSpot>())
-            .Where(s => s != null && s.enabledForPlacement && s.ContainsPoint(center2D))
+            .Where(s => s != null && s.enabledForPlacement && s.ContainsPoint(sample2D))
             .ToList();
 
         if (spots != null && spots.Count > 0)
         {
-            var best = spots.OrderBy(s => Vector2.SqrMagnitude(center2D - (Vector2)s.GetCenterWorld())).First();
+            var best = spots.OrderBy(s => Vector2.SqrMagnitude(sample2D - (Vector2)s.GetCenterWorld())).First();
 
             var netId = GetComponent<NetworkIdentity>();
             var board = BoardSpotsNet.Instance;
@@ -118,6 +127,7 @@ public class CoinDropSnap : MonoBehaviour
         if (!keepCurrentZ) fallback.z = _spawnZ;
         StartSnapTween(fallback, updateLastValid: false);
     }
+
 
 
     void StartSnapTween(Vector3 target, bool updateLastValid)

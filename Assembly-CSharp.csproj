@@ -82,6 +82,7 @@
     <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverRoulette\RouletteRosterBinder.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardFlip.cs" />
     <Compile Include="Assets\Scripts\Gameloop\RoundManager.cs" />
+    <Compile Include="Assets\Scripts\Board\Coins\ArrowPlacementGuide.cs" />
     <Compile Include="Assets\Scripts\Board\GameChat\ChatUI.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardFrontHoverTilt.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\PlayerNameSync.cs" />
@@ -105,9 +106,9 @@
     <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverRoulette\RouletteEntryManager.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardHover.cs" />
     <Compile Include="Assets\Scripts\Steam\SteamLobby.cs" />
+    <Compile Include="Assets\Scripts\Board\Coins\CoinPlacedLock.cs" />
     <Compile Include="Assets\Scripts\Steam\CustomNetworkManager.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinNetworkSpawner.cs" />
-    <Compile Include="Assets\Scripts\Board\Coins\CoinPlacedLock.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinDragPermissionClueGiver.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorSwatch.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\GridPalettePainter.cs" />

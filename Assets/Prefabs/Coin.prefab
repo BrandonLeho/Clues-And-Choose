@@ -1,5 +1,36 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &419075074426554828
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4909412692714940185}
+  m_Layer: 0
+  m_Name: ProbeTip
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4909412692714940185
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 419075074426554828}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -3, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7955328306791421603}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &5861153836025292340
 GameObject:
   m_ObjectHideFlags: 0
@@ -42,6 +73,7 @@ Transform:
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 50855883203061400}
+  - {fileID: 4909412692714940185}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &4930192264046914011
@@ -248,6 +280,8 @@ MonoBehaviour:
     m_RotationOrder: 4
   sendNetworkDuringTween: 1
   lockCoinAfterPlacement: 1
+  placementGuide: {fileID: 0}
+  useProbeForPlacement: 1
 --- !u!114 &1232689880800201139
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -391,6 +425,7 @@ GameObject:
   - component: {fileID: 2606012495560826973}
   - component: {fileID: 5673315733290900095}
   - component: {fileID: 7477690167078550230}
+  - component: {fileID: 1294448626784099326}
   m_Layer: 0
   m_Name: Visual
   m_TagString: Untagged
@@ -459,7 +494,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_Sprite: {fileID: 7482667652216324306, guid: 434775e67a94b784e9c43dbb3244822c, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -518,3 +553,19 @@ MonoBehaviour:
   scaleLerpSpeed: 10
   requireLocalOwnershipForHoverScale: 1
   blockHoverScaleIfLocalIsClueGiver: 1
+--- !u!114 &1294448626784099326
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7401751637502646406}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7de7175428d9f7e41972e80b636ec617, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ArrowPlacementGuide
+  arrowPrefab: {fileID: 6477255627723182590, guid: 05552090a6b5ca34e861e0fbe094bf54, type: 3}
+  arrowOffset: {x: 0, y: -0.35}
+  pointArrowUpTowardCoin: 0
+  probeTip: {fileID: 0}
