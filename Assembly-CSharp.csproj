@@ -122,6 +122,7 @@
     <Compile Include="Assets\Scripts\Board\PlayerLIst\RegistryNameColorLookup.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\GridHoverRelay.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardAttachToBoard.cs" />
+    <Compile Include="Assets\Scripts\Board\Coins\CoinHoverOffset.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\SwatchHoverNeon.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\BoardLabels.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\GameScenePlayerList.cs" />

@@ -5,11 +5,7 @@ public class CoinPlacedLock : NetworkBehaviour, ICoinDragPermission
 {
     [SyncVar] public bool locked;
 
-    public Transform liftTarget;
-
     public bool CanBeginDrag() => !locked;
-    public void Lock() => locked = true;
-    public void Unlock() => locked = false;
 
     public void SetLocked(bool v)
     {
