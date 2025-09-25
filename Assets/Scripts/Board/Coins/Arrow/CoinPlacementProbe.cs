@@ -7,7 +7,10 @@ public class CoinPlacementProbe : MonoBehaviour
     public static CoinPlacementProbe Active { get; private set; }
     public static bool ProbeMode => Active != null;
 
+    [Header("Probe")]
     public Vector2 probeOffsetLocal = new Vector2(0f, -0.6f);
+
+    [Header("Arrow")]
     public Transform arrowPrefab;
     public Vector2 arrowOffsetLocal = new Vector2(0f, -0.6f);
     public float arrowLocalZ = 0f;
@@ -15,15 +18,16 @@ public class CoinPlacementProbe : MonoBehaviour
     public float arrowRotationLocal = 0f;
     public bool alignSortingWithCoin = true;
     public int arrowSortingOrderDelta = -1;
+
+    [Header("Arrow Lag Settings")]
+    public float arrowLagSpeed = 10f;
+    public float arrowRotationLagSpeed = 10f;
+
+    [Header("Visibility")]
     public Camera uiCamera;
     public RectTransform gridMask;
     public bool requireInsideGridToShow = true;
     public bool startHiddenOnPickup = true;
-
-    [SerializeField] bool useTipLag = true;
-    [SerializeField] string tipTransformName = "Tip";
-    [SerializeField] float tipLagSeconds = 0.08f;
-    [SerializeField] float tipDistanceLocalY = 1.0f;
 
     bool _suppressUntilInside;
     bool _arrowShown;
@@ -32,11 +36,13 @@ public class CoinPlacementProbe : MonoBehaviour
     SpriteRenderer _arrowSR;
     SpriteRenderer _coinSR;
     bool _isDragging;
-    Transform _arrowTip;
-    float _tipAngleSmoothed;
-    float _tipAngleVel;
 
-    public Vector3 GetProbeWorld() => transform.TransformPoint(new Vector3(probeOffsetLocal.x, probeOffsetLocal.y, 0f));
+    Vector3 _arrowSmoothedPos;
+    Quaternion _arrowSmoothedRot;
+
+    public Vector3 GetProbeWorld() =>
+        transform.TransformPoint(new Vector3(probeOffsetLocal.x, probeOffsetLocal.y, 0f));
+
     public Vector2 GetProbeScreenPosition()
     {
         var cam = uiCamera ? uiCamera : Camera.main;
@@ -56,7 +62,8 @@ public class CoinPlacementProbe : MonoBehaviour
         if (!gridMask)
         {
             var found = GameObject.Find("ColorGrid");
-            if (found) gridMask = found.GetComponent<RectTransform>();
+            if (found)
+                gridMask = found.GetComponent<RectTransform>();
         }
     }
 
@@ -73,19 +80,9 @@ public class CoinPlacementProbe : MonoBehaviour
     {
         Active = this;
         _isDragging = true;
-
         if (arrowPrefab)
         {
             _arrowInst = Instantiate(arrowPrefab, transform);
-            _arrowTip = _arrowInst ? _arrowInst.Find(tipTransformName) : null;
-            _tipAngleVel = 0f;
-            if (_arrowInst) _tipAngleSmoothed = _arrowInst.localEulerAngles.z;
-            if (_arrowTip)
-            {
-                _arrowTip.localPosition = new Vector3(0f, tipDistanceLocalY, 0f);
-                _arrowTip.localEulerAngles = Vector3.zero;
-            }
-
             _arrowSR = _arrowInst.GetComponentInChildren<SpriteRenderer>();
             if (alignSortingWithCoin && _coinSR && _arrowSR)
             {
@@ -93,7 +90,9 @@ public class CoinPlacementProbe : MonoBehaviour
                 _arrowSR.sortingOrder = _coinSR.sortingOrder + Mathf.Max(1, arrowSortingOrderDelta);
             }
 
-            ApplyArrowLocalTransformImmediate();
+            _arrowSmoothedPos = new Vector3(arrowOffsetLocal.x, arrowOffsetLocal.y, arrowLocalZ);
+            _arrowSmoothedRot = Quaternion.Euler(0f, 0f, arrowRotationLocal);
+
             _suppressUntilInside = startHiddenOnPickup;
             SetArrowShown(false);
         }
@@ -103,21 +102,18 @@ public class CoinPlacementProbe : MonoBehaviour
     {
         _isDragging = false;
         if (Active == this) Active = null;
-
         if (_arrowInst) Destroy(_arrowInst.gameObject);
         _arrowInst = null;
         _arrowSR = null;
         _arrowShown = false;
         _suppressUntilInside = false;
-        _arrowTip = null;
-        _tipAngleVel = 0f;
     }
 
     void Update()
     {
         if (!_isDragging || !_arrowInst) return;
 
-        ApplyArrowLocalTransformImmediate();
+        UpdateArrowLag();
 
         if (alignSortingWithCoin && _coinSR && _arrowSR)
         {
@@ -125,16 +121,8 @@ public class CoinPlacementProbe : MonoBehaviour
             _arrowSR.sortingOrder = _coinSR.sortingOrder + Mathf.Max(1, arrowSortingOrderDelta);
         }
 
-        if (useTipLag && _arrowInst && _arrowTip)
-        {
-            float shaftZ = _arrowInst.localEulerAngles.z;
-            _tipAngleSmoothed = Mathf.SmoothDampAngle(_tipAngleSmoothed, shaftZ, ref _tipAngleVel, Mathf.Max(0.0001f, tipLagSeconds));
-            float tipLocalZ = Mathf.DeltaAngle(0f, _tipAngleSmoothed - shaftZ);
-            _arrowTip.localEulerAngles = new Vector3(0f, 0f, tipLocalZ);
-            _arrowTip.localPosition = new Vector3(0f, tipDistanceLocalY, 0f);
-        }
-
         bool inside = IsProbeInsideGrid();
+
         if (_suppressUntilInside)
         {
             if (inside)
@@ -142,23 +130,37 @@ public class CoinPlacementProbe : MonoBehaviour
                 _suppressUntilInside = false;
                 SetArrowShown(true);
             }
-            else SetArrowShown(false);
+            else
+            {
+                SetArrowShown(false);
+            }
         }
-        else SetArrowShown(inside);
+        else
+        {
+            SetArrowShown(inside);
+        }
     }
 
-    void ApplyArrowLocalTransformImmediate()
+    void UpdateArrowLag()
     {
-        if (!_arrowInst) return;
-        _arrowInst.localPosition = new Vector3(arrowOffsetLocal.x, arrowOffsetLocal.y, arrowLocalZ);
+        Vector3 targetPos = new Vector3(arrowOffsetLocal.x, arrowOffsetLocal.y, arrowLocalZ);
+        _arrowSmoothedPos = Vector3.Lerp(_arrowSmoothedPos, targetPos, Time.deltaTime * arrowLagSpeed);
 
+        Quaternion targetRot;
         if (arrowUseProbeDirection)
         {
             Vector2 dir = probeOffsetLocal.sqrMagnitude > 1e-6f ? probeOffsetLocal : Vector2.down;
             float ang = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-            _arrowInst.localRotation = Quaternion.Euler(0f, 0f, ang);
+            targetRot = Quaternion.Euler(0f, 0f, ang);
         }
-        else _arrowInst.localRotation = Quaternion.Euler(0f, 0f, arrowRotationLocal);
+        else
+        {
+            targetRot = Quaternion.Euler(0f, 0f, arrowRotationLocal);
+        }
+        _arrowSmoothedRot = Quaternion.Lerp(_arrowSmoothedRot, targetRot, Time.deltaTime * arrowRotationLagSpeed);
+
+        _arrowInst.localPosition = _arrowSmoothedPos;
+        _arrowInst.localRotation = _arrowSmoothedRot;
     }
 
     bool IsProbeInsideGrid()
@@ -172,7 +174,7 @@ public class CoinPlacementProbe : MonoBehaviour
 
     void SetArrowShown(bool shown)
     {
-        if (!_arrowInst) { _arrowShown = false; return; }
+        if (_arrowInst == null) { _arrowShown = false; return; }
         _arrowInst.gameObject.SetActive(shown);
         _arrowShown = shown;
     }

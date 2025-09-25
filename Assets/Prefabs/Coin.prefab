@@ -23,7 +23,6 @@ GameObject:
   - component: {fileID: 473077769761800147}
   - component: {fileID: 1064723657170599284}
   - component: {fileID: 5770278430232050148}
-  - component: {fileID: 4499053817108974166}
   m_Layer: 0
   m_Name: Coin
   m_TagString: Untagged
@@ -461,29 +460,12 @@ MonoBehaviour:
   arrowRotationLocal: 0
   alignSortingWithCoin: 1
   arrowSortingOrderDelta: -1
+  arrowLagSpeed: 10
+  arrowRotationLagSpeed: 10
   uiCamera: {fileID: 0}
   gridMask: {fileID: 0}
   requireInsideGridToShow: 1
   startHiddenOnPickup: 1
---- !u!114 &4499053817108974166
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5861153836025292340}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f77ec191604b0134399cd67c498269c3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ArrowLagAnimator
-  tip: {fileID: 1067883775078126356}
-  tipRestDistance: 1
-  positionLagTime: 0.08
-  rotationLagTime: 0.08
-  bendAmplitude: 0.06
-  maxBendOffset: 0.15
-  overshootDamping: 0.9
 --- !u!1 &7401751637502646406
 GameObject:
   m_ObjectHideFlags: 0
