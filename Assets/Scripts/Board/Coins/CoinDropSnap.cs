@@ -70,14 +70,6 @@ public class CoinDropSnap : MonoBehaviour
             .Where(s => s != null && s.enabledForPlacement && s.ContainsPoint(center2D))
             .ToList();
 
-        Debug.Log($"[DROP] hits={hits?.Length ?? 0}  spots={spots?.Count ?? 0} pos={transform.position}");
-
-        if (spots != null)
-        {
-            foreach (var s in spots)
-                Debug.Log($"[DROP] candidate spot idx={s.spotIndex} enabled={s.enabledForPlacement} occupied={s.isOccupied} hasCollider={s.TryGetComponent<Collider2D>(out _)} center={s.GetCenterWorld()}");
-        }
-
         if (spots != null && spots.Count > 0)
         {
             var best = spots.OrderBy(s => Vector2.SqrMagnitude(center2D - (Vector2)s.GetCenterWorld())).First();
@@ -89,12 +81,8 @@ public class CoinDropSnap : MonoBehaviour
             {
                 if (_snapRoutine != null) { StopCoroutine(_snapRoutine); _snapRoutine = null; }
 
-                Debug.Log($"[DROP] RequestClaim spot={best.spotIndex} coin={GetComponent<NetworkIdentity>()?.netId.ToString() ?? "noNetId"}");
-
                 board.RequestClaim(best.spotIndex, netId, (ok, center) =>
                 {
-                    Debug.Log($"[DROP] ClaimResult ok={ok} spot={best.spotIndex} center={center}");
-
                     if (ok)
                     {
                         Vector3 target = center;
@@ -116,9 +104,6 @@ public class CoinDropSnap : MonoBehaviour
                         StartSnapTween(back, updateLastValid: false);
                     }
                 });
-
-                Debug.Log($"[DROP] best idx={best.spotIndex} enabled={best.enabledForPlacement} occupied={best.isOccupied}");
-
                 return;
             }
 
@@ -132,9 +117,6 @@ public class CoinDropSnap : MonoBehaviour
         Vector3 fallback = _lastValidWorldPos;
         if (!keepCurrentZ) fallback.z = _spawnZ;
         StartSnapTween(fallback, updateLastValid: false);
-
-        Debug.LogWarning("[DROP] No BoardSpotsNet or NetworkIdentity on coin; using offline fallback.");
-
     }
 
 

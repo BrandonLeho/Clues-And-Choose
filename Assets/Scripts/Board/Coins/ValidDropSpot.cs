@@ -20,16 +20,7 @@ public class ValidDropSpot : MonoBehaviour
 
     public bool ContainsPoint(Vector2 worldPoint)
     {
-        if (!_col) Debug.LogWarning($"[SPOT {spotIndex}] No Collider2D on {name}");
-        if (!_col || !enabledForPlacement)
-            Debug.Log($"[SPOT {spotIndex}] ContainsPoint early-exit: col={_col != null} enabled={enabledForPlacement}");
-
         if (!_col || !enabledForPlacement) return false;
-
-        bool hit = _col.OverlapPoint(worldPoint);
-        if (!hit) Debug.Log($"[SPOT {spotIndex}] OverlapPoint miss at {worldPoint}");
-        return hit;
-
         return _col.OverlapPoint(worldPoint);
     }
 
