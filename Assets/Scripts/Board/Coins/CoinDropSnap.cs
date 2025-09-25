@@ -94,7 +94,7 @@ public class CoinDropSnap : MonoBehaviour
                         if (lockCoinAfterPlacement)
                         {
                             var guard = GetComponent<CoinPlacedLock>();
-                            if (guard) guard.Lock();
+                            if (guard) guard.SetLocked(true);
                         }
                     }
                     else
@@ -191,6 +191,6 @@ public class CoinDropSnap : MonoBehaviour
             _occupiedSpot = null;
         }
         var lockGuard = GetComponent<CoinPlacedLock>();
-        if (lockGuard != null) lockGuard.Unlock();
+        if (lockGuard != null) lockGuard.SetLocked(false);
     }
 }
