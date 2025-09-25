@@ -74,6 +74,10 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     bool _isHovering;
     bool _liftEnabledForThisHover;
 
+    Transform _liftTarget;
+    Vector3 _liftBaseLocal;
+    bool _liftBaseCached;
+
     void Awake()
     {
         _rt = (RectTransform)transform;
@@ -300,23 +304,16 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
             if (_occupantCoin == null || _occupantLock == null)
                 TryBindOccupant();
 
-            bool liftNow =
-                _occupantCoin != null &&
-                _occupantLock != null &&
-                _occupantLock.locked &&
-                (_isHovering || (_progress01 > 0f && _liftEnabledForThisHover));
-
-            if (liftNow)
+            if (_occupantCoin != null && _occupantLock != null && _occupantLock.locked && (_isHovering || (_progress01 > 0f && _liftEnabledForThisHover)))
             {
-                if (!_coinBaseCached)
-                {
-                    _coinBaseWorld = _occupantCoin.position;
-                    _coinBaseCached = true;
-                }
+                if (!_liftBaseCached) { _liftBaseLocal = _liftTarget.localPosition; _liftBaseCached = true; }
 
                 float t = coinLiftEase != null ? coinLiftEase.Evaluate(p) : ease.Evaluate(p);
+
                 Vector3 worldUpFromCell = _rt ? _rt.TransformDirection(Vector3.up) : Vector3.up;
-                _occupantCoin.position = _coinBaseWorld + worldUpFromCell * (coinLiftWorld * t);
+                Vector3 localUp = _liftTarget.InverseTransformDirection(worldUpFromCell).normalized;
+
+                _liftTarget.localPosition = _liftBaseLocal + localUp * (coinLiftWorld * t);
             }
         }
 
@@ -380,29 +377,40 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     {
         _occupantCoin = null;
         _occupantLock = null;
+        _liftTarget = null;
+        _liftBaseCached = false;
 
         if (spot && spot.isOccupied && spot.occupant)
         {
             _occupantCoin = spot.occupant.transform;
             _occupantLock = spot.occupant.GetComponent<CoinPlacedLock>();
+
+            if (_occupantLock && _occupantLock.liftTarget)
+                _liftTarget = _occupantLock.liftTarget;
+            else
+                _liftTarget = _occupantCoin;
         }
     }
 
+
     void CacheCoinBaseIfNeeded()
     {
-        if (_occupantCoin == null || _occupantLock == null) return;
-        if (!_occupantLock.locked) return; // lift only if placed+locked
-        if (_coinBaseCached) return;
+        if (_occupantCoin == null || _occupantLock == null || _liftTarget == null) return;
+        if (!_occupantLock.locked) return;
+        if (_liftBaseCached) return;
 
-        _coinBaseWorld = _occupantCoin.position;
-        _coinBaseCached = true;
+        _liftBaseLocal = _liftTarget.localPosition;
+        _liftBaseCached = true;
     }
 
     void ClearCoinCacheIfIdle()
     {
         if (Mathf.Approximately(_progress01, 0f))
         {
-            _coinBaseCached = false;
+            if (_liftTarget) _liftTarget.localPosition = _liftBaseLocal;
+            _liftBaseCached = false;
+            _liftTarget = null;
+
             _occupantCoin = null;
             _occupantLock = null;
         }

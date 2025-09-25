@@ -468,4 +468,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5b9fa4259bb3b04b9921f083a69cd8a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CoinPlacedLock
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
   locked: 0
+  liftTarget: {fileID: 7955328306791421603}
