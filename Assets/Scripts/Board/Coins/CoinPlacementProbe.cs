@@ -61,7 +61,7 @@ public class CoinPlacementProbe : MonoBehaviour
         if (arrowPrefab)
         {
             _arrowInst = Instantiate(arrowPrefab, transform);
-            _arrowSR = _arrowInst.GetComponentInChildren<SpriteRenderer>();
+            _arrowSR = _arrowInst.GetComponent<SpriteRenderer>();
             if (alignSortingWithCoin && _coinSR && _arrowSR)
             {
                 _arrowSR.sortingLayerID = _coinSR.sortingLayerID;
