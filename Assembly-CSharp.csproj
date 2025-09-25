@@ -71,7 +71,6 @@
     <Compile Include="Assets\Scripts\Board\Cards\CardStackFlyInAnimator.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ConfirmButtonNeonHover.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\ValidDropSpot.cs" />
-    <Compile Include="Assets\Scripts\Board\Coins\ArrowProbeHoverRouter.cs" />
     <Compile Include="Assets\Scripts\Controller\CursorController\CursorControllerModule.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\ScoreboardGridPainter.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardLabels.cs" />
@@ -87,7 +86,6 @@
     <Compile Include="Assets\Scripts\Board\Cards\CardFrontHoverTilt.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\PlayerNameSync.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardChoiceSelectController.cs" />
-    <Compile Include="Assets\Scripts\Board\Coins\CoinPlacementProbe.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinVisual.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinDropSnap.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorChoosingPhaseController.cs" />
@@ -95,6 +93,7 @@
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceClickRelay.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardGenerator.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceGridCoord.cs" />
+    <Compile Include="Assets\Scripts\Board\Coins\Arrow\CoinPlacementProbe.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerNameColorBinder.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceHoverScale.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinSlideInIntro.cs" />
@@ -113,12 +112,14 @@
     <Compile Include="Assets\Scripts\Board\Coins\CoinDragPermissionClueGiver.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorSwatch.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\GridPalettePainter.cs" />
+    <Compile Include="Assets\Scripts\Board\Coins\Arrow\ArrowProbeHoverRouter.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardFitter.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverRoulette\RouletteNetSync.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\GameGroupEntryAnimator.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinDragSync.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandlerGame.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerRow.cs" />
+    <Compile Include="Assets\Scripts\Board\Coins\Arrow\ArrowLagAnimator.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinDragHandler.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverRoulette\RouletteToRoundBridge.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\RegistryNameColorLookup.cs" />
