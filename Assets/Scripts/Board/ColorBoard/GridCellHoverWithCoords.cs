@@ -71,6 +71,8 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     Vector3 _coinBaseWorld;
     bool _coinBaseCached;
 
+    bool _isHovering;
+    bool _liftEnabledForThisHover;
 
     void Awake()
     {
@@ -108,6 +110,8 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
         transform.localScale = _baseScale;
         if (label && deactivateLabelWhenHidden) label.gameObject.SetActive(false);
         _progress01 = 0f;
+        _isHovering = false;
+        _liftEnabledForThisHover = false;
     }
 
     public void SetHoverEnabled(bool enabled)
@@ -158,23 +162,24 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     {
         CacheGridRefsOnce();
         if (label) UpdateLabelToCoordsFast();
-        int idx = transform.GetSiblingIndex();
-        int col = _cols <= 0 ? 0 : (idx % _cols);
-        int row = _cols <= 0 ? 0 : (idx / _cols);
-        _lastColIdx = col; _lastRowIdx = row;
-        if (labelsHighlighter) labelsHighlighter.Highlight(col, row, _img ? _img.color : Color.white);
+
         BringToFront_Begin();
         StartAnim(1f);
-        TryBindOccupant();
-        CacheCoinBaseIfNeeded();
 
+        TryBindOccupant();
+
+        _isHovering = true;
+        _liftEnabledForThisHover = _occupantLock != null && _occupantLock.locked;
+        if (_liftEnabledForThisHover) CacheCoinBaseIfNeeded();
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
+        _isHovering = false;
         StartAnim(0f);
         BringToFront_End();
     }
+
 
     void BringToFront_Begin()
     {
@@ -295,17 +300,23 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
             if (_occupantCoin == null || _occupantLock == null)
                 TryBindOccupant();
 
-            Debug.Log(_occupantCoin + " " + _occupantLock + " " + _occupantLock.locked);
+            bool liftNow =
+                _occupantCoin != null &&
+                _occupantLock != null &&
+                _occupantLock.locked &&
+                (_isHovering || (_progress01 > 0f && _liftEnabledForThisHover));
 
-            if (_occupantCoin != null && _occupantLock != null && _occupantLock.locked)
+            if (liftNow)
             {
-                if (!_coinBaseCached) _coinBaseWorld = _occupantCoin.position;
+                if (!_coinBaseCached)
+                {
+                    _coinBaseWorld = _occupantCoin.position;
+                    _coinBaseCached = true;
+                }
 
                 float t = coinLiftEase != null ? coinLiftEase.Evaluate(p) : ease.Evaluate(p);
                 Vector3 worldUpFromCell = _rt ? _rt.TransformDirection(Vector3.up) : Vector3.up;
-                Vector3 lifted = _coinBaseWorld + worldUpFromCell * (coinLiftWorld * t);
-
-                _occupantCoin.position = lifted;
+                _occupantCoin.position = _coinBaseWorld + worldUpFromCell * (coinLiftWorld * t);
             }
         }
 
