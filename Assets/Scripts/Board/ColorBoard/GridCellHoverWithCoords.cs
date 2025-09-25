@@ -166,6 +166,7 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
 
     public void OnPointerEnter(PointerEventData eventData)
     {
+        if (IgnorePointerNow()) return;
         CacheGridRefsOnce();
         if (label) UpdateLabelToCoordsFast();
 
@@ -180,6 +181,7 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
 
     public void OnPointerExit(PointerEventData eventData)
     {
+        if (IgnorePointerNow()) return;
         _isHovering = false;
         StartAnim(0f);
         BringToFront_End();
@@ -460,5 +462,10 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     public void ProbeExit()
     {
         if (_isHovering) OnPointerExit(null);
+    }
+
+    bool IgnorePointerNow()
+    {
+        return CoinPlacementProbe.ProbeMode;
     }
 }

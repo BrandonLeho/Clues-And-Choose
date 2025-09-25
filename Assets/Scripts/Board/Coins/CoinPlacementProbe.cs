@@ -28,6 +28,7 @@ public class CoinPlacementProbe : MonoBehaviour
     bool _isDragging;
 
     public static CoinPlacementProbe Active { get; private set; }
+    public static bool ProbeMode => Active != null;
     public Camera uiCamera;
 
     public Vector2 GetProbeScreenPosition()
