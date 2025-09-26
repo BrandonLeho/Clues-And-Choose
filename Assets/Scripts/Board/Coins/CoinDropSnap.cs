@@ -21,6 +21,23 @@ public class CoinDropSnap : MonoBehaviour
     [Header("Placement Rules")]
     public bool lockCoinAfterPlacement = true;
 
+    [Header("Impact Hop / Stretch / Squash")]
+    public bool useHop = true;
+    public float hopHeight = 0.08f;
+    [Range(0f, 1f)] public float hopPeakT = 0.35f;
+    public float fallStretchY = 1.18f;
+    public float fallSquashX = 0.92f;
+    public float fallStretchSensitivity = 12f;
+    public float landSquashX = 1.12f;
+    public float landSquashY = 0.88f;
+    public float landSquashTime = 0.10f;
+    public AnimationCurve landSquashEase = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
+    [Header("landing pulse")]
+    public ImpactPulse landingPulse;
+    public bool tryFindPulseOnMainCamera = true;
+
+
     Vector3 _lastValidWorldPos;
     float _spawnZ;
     CoinDragHandler _drag;
@@ -151,6 +168,8 @@ public class CoinDropSnap : MonoBehaviour
     IEnumerator SnapTweenRoutine(Vector3 target, bool updateLastValid)
     {
         Vector3 start = transform.position;
+        Vector3 originalScale = transform.localScale;
+
         if (snapDuration <= 0.0001f)
         {
             transform.position = target;
@@ -159,29 +178,101 @@ public class CoinDropSnap : MonoBehaviour
             yield break;
         }
 
+        if (!landingPulse && tryFindPulseOnMainCamera && Camera.main)
+            landingPulse = Camera.main.GetComponentInChildren<ImpactPulse>();
+
         float t = 0f;
+        float lastY = start.y;
+
         while (t < snapDuration)
         {
             float p = t / snapDuration;
             float eased = snapEase != null ? snapEase.Evaluate(p) : p;
 
             Vector3 pos = Vector3.LerpUnclamped(start, target, eased);
+
+            if (useHop && hopHeight > 0f)
+            {
+                float peak = Mathf.Clamp01(hopPeakT <= 0f ? 0.001f : (hopPeakT >= 1f ? 0.999f : hopPeakT));
+                float h;
+                if (p <= peak)
+                {
+                    float n = p / peak;
+                    h = -((n - 1f) * (n - 1f)) + 1f;
+                }
+                else
+                {
+                    float n = (p - peak) / (1f - peak);
+                    h = -(n * n) + 1f;
+                }
+                pos.y += hopHeight * Mathf.Max(0f, h);
+            }
+
             transform.position = pos;
 
-            if (sendNetworkDuringTween && _sync != null)
+            float vy = (pos.y - lastY) / Mathf.Max(Time.deltaTime, 1e-5f);
+            lastY = pos.y;
+
+            if (useHop && vy < -0.001f)
             {
-                _sync.OwnerSendPositionThrottled(pos);
+                float fallSpeed01 = 1f - Mathf.Exp(vy * fallStretchSensitivity * Time.deltaTime); // vy is negative
+                float sx = Mathf.Lerp(1f, Mathf.Max(0.01f, fallSquashX), Mathf.Clamp01(fallSpeed01));
+                float sy = Mathf.Lerp(1f, Mathf.Max(1f, fallStretchY), Mathf.Clamp01(fallSpeed01));
+                transform.localScale = new Vector3(originalScale.x * sx, originalScale.y * sy, originalScale.z);
             }
+            else
+            {
+                transform.localScale = Vector3.Lerp(transform.localScale, originalScale, 12f * Time.deltaTime);
+            }
+
+            if (sendNetworkDuringTween && _sync != null)
+                _sync.OwnerSendPositionThrottled(pos);
 
             t += Time.deltaTime;
             yield return null;
         }
 
         transform.position = target;
+        transform.localScale = originalScale;
         if (_sync != null) _sync.OwnerSnapTo(target);
         if (updateLastValid) _lastValidWorldPos = target;
         _snapRoutine = null;
+
+        yield return StartCoroutine(Co_LandingSquash(originalScale));
+
+        if (landingPulse) landingPulse.Play();
     }
+
+    IEnumerator Co_LandingSquash(Vector3 originalScale)
+    {
+        if (landSquashTime <= 0f) yield break;
+
+        Vector3 squash = new Vector3(originalScale.x * landSquashX, originalScale.y * landSquashY, originalScale.z);
+        float t = 0f;
+        float half = landSquashTime * 0.45f;
+        float back = landSquashTime - half;
+
+        while (t < half)
+        {
+            float e = landSquashEase.Evaluate(t / Mathf.Max(1e-6f, half));
+            transform.localScale = Vector3.LerpUnclamped(originalScale, squash, e);
+            t += Time.deltaTime;
+            yield return null;
+        }
+
+        t = 0f;
+        while (t < back)
+        {
+            float e = landSquashEase.Evaluate(t / Mathf.Max(1e-6f, back));
+            transform.localScale = Vector3.LerpUnclamped(squash, originalScale, e);
+            t += Time.deltaTime;
+            yield return null;
+        }
+
+        transform.localScale = originalScale;
+    }
+
+
 
     public void SetHome(Vector3 worldPos, bool alsoSetZ = true)
     {
