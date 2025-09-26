@@ -343,7 +343,7 @@ public class CoinPlacementProbe : MonoBehaviour
         _tipMPB.SetFloat("_GradStart", Mathf.Clamp01(gradientStart));
         _tipMPB.SetFloat("_GradEnd", Mathf.Clamp01(Mathf.Max(gradientEnd, gradientStart + 0.001f)));
         _tipMPB.SetFloat("_GradPower", gradientPower);
-        _tipMPB.SetFloat("_GradAngle", 90f);
+        _tipMPB.SetFloat("_GradAngle", gradientAngle);
 
         _tipSR.SetPropertyBlock(_tipMPB);
     }
