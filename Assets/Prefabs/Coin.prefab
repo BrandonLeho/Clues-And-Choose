@@ -495,6 +495,10 @@ MonoBehaviour:
   topDesaturate: 0.2
   bottomDarken: 0.25
   tipColorLerpTime: 0.15
+  gradientStart: 0
+  gradientEnd: 0.6
+  gradientPower: 1
+  gradientAngle: -90
 --- !u!114 &1589490137157167867
 MonoBehaviour:
   m_ObjectHideFlags: 0
