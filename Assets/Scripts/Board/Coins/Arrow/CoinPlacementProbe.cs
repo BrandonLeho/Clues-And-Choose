@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.UI;
 
 [RequireComponent(typeof(CoinDragHandler))]
 [DisallowMultipleComponent]
@@ -8,73 +7,51 @@ public class CoinPlacementProbe : MonoBehaviour
     public static CoinPlacementProbe Active { get; private set; }
     public static bool ProbeMode => Active != null;
 
-    [Header("Probe & Arrow Placement")]
+    [Header("Probe Settings")]
     public Vector2 probeOffsetLocal = new Vector2(0f, -0.6f);
+
+    [Header("Arrow References & Positioning")]
     public Transform arrowPrefab;
     public Vector2 arrowOffsetLocal = new Vector2(0f, -0.6f);
     public float arrowLocalZ = 0f;
-
-    [Header("Arrow Orientation")]
     public bool arrowUseProbeDirection = false;
     public float arrowRotationLocal = 0f;
 
-    [Header("Sorting")]
+    [Header("Arrow Rendering")]
     public bool alignSortingWithCoin = true;
     public int arrowSortingOrderDelta = -1;
 
-    [Header("Tip Lag")]
+    [Header("Arrow Tip Animation")]
     public float tipRotationSmoothTime = 0.08f;
     public float tipTrailAngleBoost = 8f;
     public float velocityToDegrees = 2.0f;
     public Vector2 tipGraphicPivotNudgeLocal = Vector2.zero;
 
-    [Header("Visibility / Mask")]
+    [Header("UI & Grid Settings")]
     public Camera uiCamera;
     public RectTransform gridMask;
     public bool requireInsideGridToShow = true;
     public bool startHiddenOnPickup = true;
 
-    [Header("Entry/Exit Animation")]
+    [Header("Arrow Show/Hide Animation")]
     public float entryDuration = 0.15f;
     public float exitDuration = 0.15f;
     public float hiddenXAngle = 95f;
     public AnimationCurve ease = AnimationCurve.EaseInOut(0, 0, 1, 1);
-
-    [Header("Tip Gradient")]
-    public Material tipGradientMaterialTemplate;
-    public Color fallbackTipColor = Color.white;
-    [Range(0f, 1f)] public float topDesaturate = 0.2f;
-    [Range(0f, 1f)] public float bottomDarken = 0.25f;
-    public float tipColorLerpTime = 0.15f;
-
-    [Header("Arrow Gradient Controls")]
-    [Range(0f, 1f)] public float gradientStart = 0f;
-    [Range(0f, 1f)] public float gradientEnd = 0.6f;
-    [Range(0.1f, 4f)] public float gradientPower = 1f;
-    [Range(-180f, 180f)] public float gradientAngle = -90f;
-
 
     bool _suppressUntilInside;
     CoinDragHandler _drag;
     Transform _arrowInst;
     SpriteRenderer _arrowSR;
     Transform _tipGraphic;
-    SpriteRenderer _tipSR;
     SpriteRenderer _coinSR;
     bool _isDragging;
-
     float _tipAngleVel;
     float _tipAngleCurrent;
     Vector3 _prevBaseWorld;
-
     bool _targetShown;
     float _animT;
     bool _animating;
-
-    MaterialPropertyBlock _tipMPB;
-    Material _tipMatInst;
-    Color _tipCurrent;
-    Color _tipTarget;
 
     public Vector3 GetProbeWorld() =>
         transform.TransformPoint(new Vector3(probeOffsetLocal.x, probeOffsetLocal.y, 0f));
@@ -115,54 +92,41 @@ public class CoinPlacementProbe : MonoBehaviour
     {
         Active = this;
         _isDragging = true;
-        if (!arrowPrefab) return;
 
-        _arrowInst = Instantiate(arrowPrefab, transform);
-        _arrowSR = _arrowInst.GetComponentInChildren<SpriteRenderer>();
-
-        var tipTransform = _arrowInst.Find("Shaft");
-        _tipGraphic = tipTransform ? tipTransform : (_arrowSR ? _arrowSR.transform : _arrowInst);
-        _tipSR = tipTransform ? tipTransform.GetComponent<SpriteRenderer>() : _arrowSR;
-
-        if (alignSortingWithCoin && _coinSR && _arrowSR)
+        if (arrowPrefab)
         {
-            _arrowSR.sortingLayerID = _coinSR.sortingLayerID;
-            _arrowSR.sortingOrder = _coinSR.sortingOrder + Mathf.Max(1, arrowSortingOrderDelta);
-            if (_tipSR && _tipSR != _arrowSR)
+            _arrowInst = Instantiate(arrowPrefab, transform);
+            _arrowSR = _arrowInst.GetComponentInChildren<SpriteRenderer>();
+            _tipGraphic = _arrowSR ? _arrowSR.transform : _arrowInst;
+
+            if (alignSortingWithCoin && _coinSR && _arrowSR)
             {
-                _tipSR.sortingLayerID = _arrowSR.sortingLayerID;
-                _tipSR.sortingOrder = _arrowSR.sortingOrder + 1;
+                _arrowSR.sortingLayerID = _coinSR.sortingLayerID;
+                _arrowSR.sortingOrder = _coinSR.sortingOrder + Mathf.Max(1, arrowSortingOrderDelta);
             }
+
+            _arrowInst.localPosition = new Vector3(arrowOffsetLocal.x, arrowOffsetLocal.y, arrowLocalZ);
+
+            float startAngleZ = arrowUseProbeDirection
+                ? Mathf.Atan2(probeOffsetLocal.y, probeOffsetLocal.x) * Mathf.Rad2Deg
+                : arrowRotationLocal;
+
+            if (_tipGraphic != null)
+            {
+                _tipGraphic.localPosition = new Vector3(tipGraphicPivotNudgeLocal.x, tipGraphicPivotNudgeLocal.y, 0f);
+                _tipGraphic.localRotation = Quaternion.Euler(0f, 0f, startAngleZ);
+            }
+            _tipAngleCurrent = startAngleZ;
+            _tipAngleVel = 0f;
+            _prevBaseWorld = _arrowInst.position;
+
+            _suppressUntilInside = startHiddenOnPickup;
+            _animT = 0f;
+            _targetShown = false;
+            _animating = false;
+            _arrowInst.gameObject.SetActive(true);
+            ApplyArrowPose();
         }
-
-        _arrowInst.localPosition = new Vector3(arrowOffsetLocal.x, arrowOffsetLocal.y, arrowLocalZ);
-
-        float startAngleZ = arrowUseProbeDirection
-            ? Mathf.Atan2(probeOffsetLocal.y, probeOffsetLocal.x) * Mathf.Rad2Deg
-            : arrowRotationLocal;
-
-        if (_tipGraphic != null)
-        {
-            _tipGraphic.localPosition = new Vector3(tipGraphicPivotNudgeLocal.x, tipGraphicPivotNudgeLocal.y, 0f);
-            _tipGraphic.localRotation = Quaternion.Euler(0f, 0f, startAngleZ);
-        }
-
-        _tipAngleCurrent = startAngleZ;
-        _tipAngleVel = 0f;
-        _prevBaseWorld = _arrowInst.position;
-
-        _suppressUntilInside = startHiddenOnPickup;
-        _animT = 0f;
-        _targetShown = false;
-        _animating = false;
-
-        _arrowInst.gameObject.SetActive(true);
-        ApplyArrowPose();
-
-        _tipCurrent = fallbackTipColor;
-        _tipTarget = fallbackTipColor;
-        EnsureTipGradientMaterialBound();
-        ApplyTipGradientImmediate();
     }
 
     void OnDrop()
@@ -174,14 +138,11 @@ public class CoinPlacementProbe : MonoBehaviour
         _arrowInst = null;
         _arrowSR = null;
         _tipGraphic = null;
-        _tipSR = null;
 
         _suppressUntilInside = false;
         _animT = 0f;
         _animating = false;
         _targetShown = false;
-        _tipMPB = null;
-        _tipMatInst = null;
     }
 
     void Update()
@@ -194,17 +155,9 @@ public class CoinPlacementProbe : MonoBehaviour
         {
             _arrowSR.sortingLayerID = _coinSR.sortingLayerID;
             _arrowSR.sortingOrder = _coinSR.sortingOrder + Mathf.Max(1, arrowSortingOrderDelta);
-            if (_tipSR && _tipSR != _arrowSR)
-            {
-                _tipSR.sortingLayerID = _arrowSR.sortingLayerID;
-                _tipSR.sortingOrder = _arrowSR.sortingOrder + 1;
-            }
         }
 
         UpdateTipLagRotation();
-        UpdateTipGradientColorTarget();
-        EaseTipGradientColor();
-        CommitTipGradient();
 
         bool inside = IsProbeInsideGrid();
         if (_suppressUntilInside)
@@ -233,7 +186,8 @@ public class CoinPlacementProbe : MonoBehaviour
         Vector3 v3 = (baseWorld - _prevBaseWorld) / Mathf.Max(Time.deltaTime, 1e-5f);
         _prevBaseWorld = baseWorld;
 
-        Vector2 aim = new Vector2(Mathf.Cos(targetAngleDeg * Mathf.Deg2Rad), Mathf.Sin(targetAngleDeg * Mathf.Deg2Rad));
+        Vector2 aim = new Vector2(Mathf.Cos(targetAngleDeg * Mathf.Deg2Rad),
+                                  Mathf.Sin(targetAngleDeg * Mathf.Deg2Rad));
         Vector2 v = new Vector2(v3.x, v3.y);
 
         float crossZ = aim.x * v.y - aim.y * v.x;
@@ -242,7 +196,13 @@ public class CoinPlacementProbe : MonoBehaviour
         float extra = Mathf.Clamp(signedExtra, -tipTrailAngleBoost, tipTrailAngleBoost);
         float targetWithTrail = targetAngleDeg + extra;
 
-        _tipAngleCurrent = Mathf.SmoothDampAngle(_tipAngleCurrent, targetWithTrail, ref _tipAngleVel, Mathf.Max(0.0001f, tipRotationSmoothTime));
+        _tipAngleCurrent = Mathf.SmoothDampAngle(
+            _tipAngleCurrent,
+            targetWithTrail,
+            ref _tipAngleVel,
+            Mathf.Max(0.0001f, tipRotationSmoothTime)
+        );
+
         _tipGraphic.localRotation = Quaternion.Euler(0f, 0f, _tipAngleCurrent);
     }
 
@@ -303,57 +263,4 @@ public class CoinPlacementProbe : MonoBehaviour
         float x = Mathf.LerpUnclamped(hiddenXAngle, 0f, e);
         _arrowInst.localRotation = Quaternion.Euler(x, 0f, 0f);
     }
-
-    void EnsureTipGradientMaterialBound()
-    {
-        if (!_tipSR) return;
-        if (tipGradientMaterialTemplate)
-        {
-            _tipMatInst = new Material(tipGradientMaterialTemplate);
-            _tipSR.sharedMaterial = _tipMatInst;
-        }
-
-        if (_tipMPB == null) _tipMPB = new MaterialPropertyBlock();
-        _tipSR.GetPropertyBlock(_tipMPB);
-    }
-
-    void UpdateTipGradientColorTarget()
-    {
-        var currentCell = ArrowProbeHoverRouter.Current;
-        _tipTarget = currentCell ? (currentCell.GetComponent<Image>()?.color ?? fallbackTipColor) : fallbackTipColor;
-    }
-
-    void EaseTipGradientColor()
-    {
-        if (_tipColorLerpTimeSafe <= 0f) { _tipCurrent = _tipTarget; return; }
-        float k = 1f - Mathf.Exp(-Time.deltaTime / _tipColorLerpTimeSafe);
-        _tipCurrent = Color.Lerp(_tipCurrent, _tipTarget, k);
-    }
-
-    void CommitTipGradient()
-    {
-        if (!_tipSR) return;
-        if (_tipMPB == null) _tipMPB = new MaterialPropertyBlock();
-
-        Color baseC = _tipCurrent;
-
-        Color bottom = Color.Lerp(baseC, Color.black, bottomDarken);
-
-        _tipMPB.SetColor("_ColorBottom", bottom);
-        _tipMPB.SetFloat("_GradStart", Mathf.Clamp01(gradientStart));
-        _tipMPB.SetFloat("_GradEnd", Mathf.Clamp01(Mathf.Max(gradientEnd, gradientStart + 0.001f)));
-        _tipMPB.SetFloat("_GradPower", gradientPower);
-        _tipMPB.SetFloat("_GradAngle", gradientAngle);
-
-        _tipSR.SetPropertyBlock(_tipMPB);
-    }
-
-
-    void ApplyTipGradientImmediate()
-    {
-        _tipCurrent = _tipTarget;
-        CommitTipGradient();
-    }
-
-    float _tipColorLerpTimeSafe => Mathf.Max(0.0001f, tipColorLerpTime);
 }
