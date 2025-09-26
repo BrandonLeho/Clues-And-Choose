@@ -51,7 +51,7 @@ public class CoinPlacementProbe : MonoBehaviour
     [Range(0f, 1f)] public float gradientStart = 0f;
     [Range(0f, 1f)] public float gradientEnd = 0.6f;
     [Range(0.1f, 4f)] public float gradientPower = 1f;
-    [Range(-180f, 180f)] public float gradientAngle = 90f;
+    [Range(-180f, 180f)] public float gradientAngle = -90f;
 
 
     bool _suppressUntilInside;
