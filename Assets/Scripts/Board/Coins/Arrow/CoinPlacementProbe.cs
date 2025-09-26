@@ -8,44 +8,39 @@ public class CoinPlacementProbe : MonoBehaviour
     public static bool ProbeMode => Active != null;
 
     public Vector2 probeOffsetLocal = new Vector2(0f, -0.6f);
-
-    [Header("Arrow")]
     public Transform arrowPrefab;
     public Vector2 arrowOffsetLocal = new Vector2(0f, -0.6f);
     public float arrowLocalZ = 0f;
-
     public bool arrowUseProbeDirection = false;
     public float arrowRotationLocal = 0f;
-
     public bool alignSortingWithCoin = true;
     public int arrowSortingOrderDelta = -1;
-
-    [Header("Tip Lag (rotation-only)")]
     public float tipRotationSmoothTime = 0.08f;
     public float tipTrailAngleBoost = 8f;
     public float velocityToDegrees = 2.0f;
-
-    [Header("Optional pivot fine-tune")]
     public Vector2 tipGraphicPivotNudgeLocal = Vector2.zero;
-
-    [Header("Visibility")]
     public Camera uiCamera;
     public RectTransform gridMask;
     public bool requireInsideGridToShow = true;
     public bool startHiddenOnPickup = true;
+    public float entryDuration = 0.15f;
+    public float exitDuration = 0.15f;
+    public float hiddenXAngle = 95f;
+    public AnimationCurve ease = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
     bool _suppressUntilInside;
-    bool _arrowShown;
     CoinDragHandler _drag;
     Transform _arrowInst;
     SpriteRenderer _arrowSR;
     Transform _tipGraphic;
     SpriteRenderer _coinSR;
     bool _isDragging;
-
     float _tipAngleVel;
     float _tipAngleCurrent;
     Vector3 _prevBaseWorld;
+    bool _targetShown;
+    float _animT;
+    bool _animating;
 
     public Vector3 GetProbeWorld() =>
         transform.TransformPoint(new Vector3(probeOffsetLocal.x, probeOffsetLocal.y, 0f));
@@ -90,7 +85,6 @@ public class CoinPlacementProbe : MonoBehaviour
         if (arrowPrefab)
         {
             _arrowInst = Instantiate(arrowPrefab, transform);
-
             _arrowSR = _arrowInst.GetComponentInChildren<SpriteRenderer>();
             _tipGraphic = _arrowSR ? _arrowSR.transform : _arrowInst;
 
@@ -102,22 +96,25 @@ public class CoinPlacementProbe : MonoBehaviour
 
             _arrowInst.localPosition = new Vector3(arrowOffsetLocal.x, arrowOffsetLocal.y, arrowLocalZ);
 
-            float startAngle = arrowUseProbeDirection
+            float startAngleZ = arrowUseProbeDirection
                 ? Mathf.Atan2(probeOffsetLocal.y, probeOffsetLocal.x) * Mathf.Rad2Deg
                 : arrowRotationLocal;
 
             if (_tipGraphic != null)
             {
                 _tipGraphic.localPosition = new Vector3(tipGraphicPivotNudgeLocal.x, tipGraphicPivotNudgeLocal.y, 0f);
-                _tipGraphic.localRotation = Quaternion.Euler(0f, 0f, startAngle);
+                _tipGraphic.localRotation = Quaternion.Euler(0f, 0f, startAngleZ);
             }
-            _tipAngleCurrent = startAngle;
+            _tipAngleCurrent = startAngleZ;
             _tipAngleVel = 0f;
-
             _prevBaseWorld = _arrowInst.position;
 
             _suppressUntilInside = startHiddenOnPickup;
-            SetArrowShown(false);
+            _animT = 0f;
+            _targetShown = false;
+            _animating = false;
+            _arrowInst.gameObject.SetActive(true);
+            ApplyArrowPose();
         }
     }
 
@@ -131,8 +128,10 @@ public class CoinPlacementProbe : MonoBehaviour
         _arrowSR = null;
         _tipGraphic = null;
 
-        _arrowShown = false;
         _suppressUntilInside = false;
+        _animT = 0f;
+        _animating = false;
+        _targetShown = false;
     }
 
     void Update()
@@ -159,10 +158,9 @@ public class CoinPlacementProbe : MonoBehaviour
             }
             else SetArrowShown(false);
         }
-        else
-        {
-            SetArrowShown(inside);
-        }
+        else SetArrowShown(inside);
+
+        TickArrowAnimator();
     }
 
     void UpdateTipLagRotation()
@@ -178,15 +176,13 @@ public class CoinPlacementProbe : MonoBehaviour
         _prevBaseWorld = baseWorld;
 
         Vector2 aim = new Vector2(Mathf.Cos(targetAngleDeg * Mathf.Deg2Rad),
-                                Mathf.Sin(targetAngleDeg * Mathf.Deg2Rad));
+                                  Mathf.Sin(targetAngleDeg * Mathf.Deg2Rad));
         Vector2 v = new Vector2(v3.x, v3.y);
 
         float crossZ = aim.x * v.y - aim.y * v.x;
         float speed = v.magnitude;
-
         float signedExtra = -Mathf.Sign(crossZ) * speed * velocityToDegrees;
         float extra = Mathf.Clamp(signedExtra, -tipTrailAngleBoost, tipTrailAngleBoost);
-
         float targetWithTrail = targetAngleDeg + extra;
 
         _tipAngleCurrent = Mathf.SmoothDampAngle(
@@ -199,7 +195,6 @@ public class CoinPlacementProbe : MonoBehaviour
         _tipGraphic.localRotation = Quaternion.Euler(0f, 0f, _tipAngleCurrent);
     }
 
-
     bool IsProbeInsideGrid()
     {
         if (!requireInsideGridToShow) return true;
@@ -211,8 +206,50 @@ public class CoinPlacementProbe : MonoBehaviour
 
     void SetArrowShown(bool shown)
     {
-        if (_arrowInst == null) { _arrowShown = false; return; }
-        _arrowInst.gameObject.SetActive(shown);
-        _arrowShown = shown;
+        if (_arrowInst == null) { _targetShown = false; return; }
+        if (shown && !_arrowInst.gameObject.activeSelf)
+            _arrowInst.gameObject.SetActive(true);
+
+        _targetShown = shown;
+        _animating = true;
+    }
+
+    void TickArrowAnimator()
+    {
+        if (_arrowInst == null) return;
+
+        float target = _targetShown ? 1f : 0f;
+        if (!Mathf.Approximately(_animT, target))
+        {
+            float dur = _targetShown ? Mathf.Max(0.0001f, entryDuration) : Mathf.Max(0.0001f, exitDuration);
+            float step = Time.deltaTime / dur;
+            _animT = Mathf.MoveTowards(_animT, target, step);
+            _animating = true;
+            ApplyArrowPose();
+        }
+
+        if (Mathf.Approximately(_animT, 0f) && !_targetShown)
+        {
+            ApplyArrowPose();
+            if (_arrowInst.gameObject.activeSelf)
+                _arrowInst.gameObject.SetActive(false);
+            _animating = false;
+        }
+
+        if (Mathf.Approximately(_animT, 1f) && _targetShown)
+        {
+            ApplyArrowPose();
+            _animating = false;
+        }
+    }
+
+    void ApplyArrowPose()
+    {
+        if (_arrowInst == null) return;
+
+        float t = Mathf.Clamp01(_animT);
+        float e = ease != null ? ease.Evaluate(t) : t;
+        float x = Mathf.LerpUnclamped(hiddenXAngle, 0f, e);
+        _arrowInst.localRotation = Quaternion.Euler(x, 0f, 0f);
     }
 }
