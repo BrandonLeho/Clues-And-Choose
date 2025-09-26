@@ -23,6 +23,7 @@ GameObject:
   - component: {fileID: 1064723657170599284}
   - component: {fileID: 5770278430232050148}
   - component: {fileID: 1589490137157167867}
+  - component: {fileID: 2742345573114156977}
   m_Layer: 0
   m_Name: Coin
   m_TagString: Untagged
@@ -449,7 +450,7 @@ MonoBehaviour:
   arrowUseProbeDirection: 1
   arrowRotationLocal: 0
   alignSortingWithCoin: 1
-  arrowSortingOrderDelta: -1
+  arrowSortingOrderDelta: 1
   tipRotationSmoothTime: 0.1
   tipTrailAngleBoost: 45
   velocityToDegrees: 15
@@ -497,6 +498,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e4f4f87abcc9ea041a0364e126bae149, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CoinCursorBridge
+--- !u!114 &2742345573114156977
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5861153836025292340}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 205a5d9f536b7dc489cdc06adaff6c9a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CoinDragPermissionDuringAnim
+  blocked: 1
+  padSeconds: 0.05
 --- !u!1 &7401751637502646406
 GameObject:
   m_ObjectHideFlags: 0
