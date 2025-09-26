@@ -488,7 +488,7 @@ MonoBehaviour:
   tipGlowEnabled: 1
   tipSprite: {fileID: 0}
   tipGlowSmoothTime: 0.12
-  tipGlowEmissionBoost: 1.4
+  tipGlowEmissionBoost: 6
   tipGlowAlpha: 0.9
 --- !u!114 &1589490137157167867
 MonoBehaviour:
