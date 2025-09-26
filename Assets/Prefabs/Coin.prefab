@@ -454,14 +454,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CoinPlacementProbe
   probeOffsetLocal: {x: 0, y: -3.75}
   arrowPrefab: {fileID: 6507791230212047339, guid: 05552090a6b5ca34e861e0fbe094bf54, type: 3}
-  arrowOffsetLocal: {x: 0, y: 0}
+  arrowOffsetLocal: {x: 0, y: -1}
   arrowLocalZ: -0.01
   arrowUseProbeDirection: 1
   arrowRotationLocal: 0
   alignSortingWithCoin: 1
   arrowSortingOrderDelta: -1
-  arrowLagSpeed: 10
-  arrowRotationLagSpeed: 10
+  tipRotationSmoothTime: 0.1
+  tipTrailAngleBoost: 45
+  velocityToDegrees: 15
+  tipGraphicPivotNudgeLocal: {x: 0, y: 0}
   uiCamera: {fileID: 0}
   gridMask: {fileID: 0}
   requireInsideGridToShow: 1

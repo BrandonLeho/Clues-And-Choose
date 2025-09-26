@@ -169,22 +169,24 @@ public class CoinPlacementProbe : MonoBehaviour
     {
         if (_tipGraphic == null) return;
 
-        float targetAngleDeg;
-        if (arrowUseProbeDirection)
-        {
-            Vector2 dir = (probeOffsetLocal.sqrMagnitude > 1e-6f) ? probeOffsetLocal : Vector2.down;
-            targetAngleDeg = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-        }
-        else
-        {
-            targetAngleDeg = arrowRotationLocal;
-        }
+        float targetAngleDeg = arrowUseProbeDirection
+            ? Mathf.Atan2(probeOffsetLocal.y, probeOffsetLocal.x) * Mathf.Rad2Deg
+            : arrowRotationLocal;
 
         Vector3 baseWorld = _arrowInst.position;
-        Vector3 v = (baseWorld - _prevBaseWorld) / Mathf.Max(Time.deltaTime, 1e-5f);
+        Vector3 v3 = (baseWorld - _prevBaseWorld) / Mathf.Max(Time.deltaTime, 1e-5f);
         _prevBaseWorld = baseWorld;
 
-        float extra = Mathf.Clamp(v.magnitude * velocityToDegrees, -tipTrailAngleBoost, tipTrailAngleBoost);
+        Vector2 aim = new Vector2(Mathf.Cos(targetAngleDeg * Mathf.Deg2Rad),
+                                Mathf.Sin(targetAngleDeg * Mathf.Deg2Rad));
+        Vector2 v = new Vector2(v3.x, v3.y);
+
+        float crossZ = aim.x * v.y - aim.y * v.x;
+        float speed = v.magnitude;
+
+        float signedExtra = -Mathf.Sign(crossZ) * speed * velocityToDegrees;
+        float extra = Mathf.Clamp(signedExtra, -tipTrailAngleBoost, tipTrailAngleBoost);
+
         float targetWithTrail = targetAngleDeg + extra;
 
         _tipAngleCurrent = Mathf.SmoothDampAngle(
@@ -196,6 +198,7 @@ public class CoinPlacementProbe : MonoBehaviour
 
         _tipGraphic.localRotation = Quaternion.Euler(0f, 0f, _tipAngleCurrent);
     }
+
 
     bool IsProbeInsideGrid()
     {
