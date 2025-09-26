@@ -241,6 +241,41 @@ MonoBehaviour:
     m_RotationOrder: 4
   sendNetworkDuringTween: 1
   lockCoinAfterPlacement: 1
+  useHop: 1
+  hopHeight: 0.25
+  hopPeakT: 0.55
+  fallStretchY: 1.45
+  fallSquashX: 0.75
+  fallStretchSensitivity: 12
+  landSquashX: 1.35
+  landSquashY: 0.75
+  landSquashTime: 0.15
+  landSquashEase:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  landingPulse: {fileID: 0}
+  tryFindPulseOnMainCamera: 1
 --- !u!114 &1232689880800201139
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -490,15 +525,6 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  tipGradientMaterialTemplate: {fileID: 2100000, guid: ef79035a9a5eae6478151b7f36cb6697, type: 2}
-  fallbackTipColor: {r: 1, g: 1, b: 1, a: 1}
-  topDesaturate: 0.35
-  bottomDarken: 0.1
-  tipColorLerpTime: 0.25
-  gradientStart: 0.1
-  gradientEnd: 0.75
-  gradientPower: 2
-  gradientAngle: -90
 --- !u!114 &1589490137157167867
 MonoBehaviour:
   m_ObjectHideFlags: 0
