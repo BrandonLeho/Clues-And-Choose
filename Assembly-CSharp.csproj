@@ -93,6 +93,7 @@
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceClickRelay.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardGenerator.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceGridCoord.cs" />
+    <Compile Include="Assets\Scripts\Board\Coins\CoinDragPermissionDuringAnim.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\Arrow\CoinPlacementProbe.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerNameColorBinder.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceHoverScale.cs" />

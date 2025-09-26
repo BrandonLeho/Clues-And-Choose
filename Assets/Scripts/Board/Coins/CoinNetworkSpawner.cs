@@ -20,7 +20,6 @@ public class CoinNetworkSpawner : NetworkBehaviour
     [Range(0.5f, 1f)] public float slotFillRatio = 0.85f;
 
     [Header("Slide-in Intro (Server-side animation)")]
-    [Tooltip("Grid columns used to compute row/col from slot index (4x5).")]
     [Min(1)][SerializeField] int gridColumns = 4;
     [Min(0f)][SerializeField] float globalStartDelay = 0.0f;
     [Min(0f)][SerializeField] float perCoinDelay = 0.06f;
@@ -145,6 +144,16 @@ public class CoinNetworkSpawner : NetworkBehaviour
                     intro.Configure(spawnPos, targetPos, startDelay,
                                     slideUnitsPerSecond, startRotZ, endRotZ,
                                     startAlpha, endAlpha, slideEase);
+
+                    var gate = go.GetComponent<CoinDragPermissionDuringAnim>();
+                    if (!gate) gate = go.AddComponent<CoinDragPermissionDuringAnim>();
+
+                    float slideDistance = Vector3.Distance(spawnPos, targetPos);
+                    float slideDuration = (slideUnitsPerSecond > 0f)
+                        ? (slideDistance / slideUnitsPerSecond)
+                        : 0f;
+
+                    gate.BeginTempBlock(startDelay + slideDuration);
                 }
 
                 NetworkServer.Spawn(go);
