@@ -49,3 +49,12 @@ MonoBehaviour:
   cursorTextureDraggable: {fileID: 2800000, guid: 724d11fa37ffcb44b9b731be80661058, type: 3}
   cursorTextureDragging: {fileID: 2800000, guid: a56b7dd0a7848df41a39a7c2fea1b284, type: 3}
   clickPosition: {x: 0, y: 0}
+  useNormalizedHotspots: 1
+  defaultPivot: {x: 0, y: 0}
+  clickablePivot: {x: 0, y: 0}
+  draggablePivot: {x: 0, y: 0}
+  draggingPivot: {x: 0, y: 0}
+  defaultNudgePx: {x: 7, y: 5}
+  clickableNudgePx: {x: 7, y: 5}
+  draggableNudgePx: {x: 7, y: 5}
+  draggingNudgePx: {x: 7, y: 5}

@@ -63,7 +63,7 @@ MonoBehaviour:
   worldCamera: {fileID: 0}
   followSpeed: 20
   dragZ: 0
-  preserveGrabOffset: 1
+  preserveGrabOffset: 0
   targetRenderer: {fileID: 2606012495560826973}
   sortingOrderBoost: 50
   disableColliderWhileDragging: 0
@@ -101,6 +101,9 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
   dropGuardSeconds: 0.06
+  useFixedCursorAnchor: 1
+  fixedCursorAnchor: {x: 0, y: -0.25}
+  anchorOverridesGrabOffset: 1
 --- !u!58 &92682915565311040
 CircleCollider2D:
   m_ObjectHideFlags: 0
