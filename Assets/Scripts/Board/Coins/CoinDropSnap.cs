@@ -73,13 +73,19 @@ public class CoinDropSnap : MonoBehaviour
         if (visualCell != null)
         {
             var forcedSpot = visualCell.GetComponent<ValidDropSpot>();
-            if (forcedSpot != null && forcedSpot.enabledForPlacement)
+            if (forcedSpot != null)
             {
-                TryClaimAndSnap(forcedSpot);
+                if (forcedSpot.enabledForPlacement)
+                {
+                    TryClaimAndSnap(forcedSpot);
+                }
+                else
+                {
+                    RejectToLastValid();
+                }
                 return;
             }
         }
-
         var hits = Physics2D.OverlapCircleAll(center2D, overlapRadius, validSpotLayers);
         var spots = hits?
             .Select(h => h.GetComponentInParent<ValidDropSpot>() ?? h.GetComponent<ValidDropSpot>())
@@ -238,6 +244,13 @@ public class CoinDropSnap : MonoBehaviour
         if (keepCurrentZ) targetOffline.z = transform.position.z;
         _occupiedSpot = spot;
         StartSnapTween(targetOffline, updateLastValid: true);
+    }
+
+    void RejectToLastValid()
+    {
+        Vector3 back = _lastValidWorldPos;
+        if (!keepCurrentZ) back.z = _spawnZ;
+        StartSnapTween(back, updateLastValid: false);
     }
 
 }
