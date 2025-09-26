@@ -113,8 +113,8 @@ public class CoinPlacementProbe : MonoBehaviour
         _arrowInst = Instantiate(arrowPrefab, transform);
         _arrowSR = _arrowInst.GetComponentInChildren<SpriteRenderer>();
 
-        var tipTransform = _arrowInst.Find("Tip");
-        _tipGraphic = tipTransform ? (Transform)tipTransform : (_arrowSR ? _arrowSR.transform : _arrowInst);
+        var tipTransform = _arrowInst.Find("Shaft");
+        _tipGraphic = tipTransform ? tipTransform : (_arrowSR ? _arrowSR.transform : _arrowInst);
         _tipSR = tipTransform ? tipTransform.GetComponent<SpriteRenderer>() : _arrowSR;
 
         if (alignSortingWithCoin && _coinSR && _arrowSR)
