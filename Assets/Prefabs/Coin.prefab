@@ -276,9 +276,7 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   landingPulse: {fileID: 2462779467675695623}
-  tryFindPulseOnMainCamera: 1
-  pulseWhenLand: 1
-  pulseOwnerOnly: 1
+  tryFindPulseOnMainCamera: 0
 --- !u!114 &1232689880800201139
 MonoBehaviour:
   m_ObjectHideFlags: 0
