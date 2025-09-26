@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 7955328306791421603}
   - component: {fileID: 4930192264046914011}
   - component: {fileID: 92682915565311040}
-  - component: {fileID: 6937249757147063920}
   - component: {fileID: 618872228319516248}
   - component: {fileID: -8049305124921635006}
   - component: {fileID: 4393721356630196991}
@@ -23,6 +22,7 @@ GameObject:
   - component: {fileID: 473077769761800147}
   - component: {fileID: 1064723657170599284}
   - component: {fileID: 5770278430232050148}
+  - component: {fileID: 1589490137157167867}
   m_Layer: 0
   m_Name: Coin
   m_TagString: Untagged
@@ -137,19 +137,6 @@ CircleCollider2D:
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
   m_Radius: 1.75
---- !u!114 &6937249757147063920
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5861153836025292340}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 94d882339d684444ea1d569f342444c9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ChangeCursor
-  modeOfCursor: 2
 --- !u!114 &618872228319516248
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -468,6 +455,18 @@ MonoBehaviour:
   gridMask: {fileID: 0}
   requireInsideGridToShow: 1
   startHiddenOnPickup: 1
+--- !u!114 &1589490137157167867
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5861153836025292340}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4f4f87abcc9ea041a0364e126bae149, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CoinCursorBridge
 --- !u!1 &7401751637502646406
 GameObject:
   m_ObjectHideFlags: 0
