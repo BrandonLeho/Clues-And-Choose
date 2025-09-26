@@ -359,6 +359,11 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0
   locked: 0
+  disableColliders: 1
+  disableCoinDragHandler: 1
+  disableCursorBridge: 1
+  disableChangeCursor: 1
+  disableRejectionFeedback: 1
 --- !u!114 &473077769761800147
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -516,7 +521,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CoinInteractionGate
   syncDirection: 0
   syncMode: 0
-  syncInterval: 0
+  syncInterval: 0.05
   disableColliders: 1
   disableCoinDragHandler: 1
   disableCursorBridge: 1
