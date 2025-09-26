@@ -776,9 +776,9 @@ MonoBehaviour:
   zoomAmount: 0.99
   doLensDistortion: 1
   baseDistortion: 0
-  peakDistortion: -0.07
+  peakDistortion: -0.03
   distortionScaleAtPeak: 1
   distortionCenter: {x: 0.5, y: 0.5}
   doChromatic: 1
   baseChromatic: 0
-  peakChromatic: 0.65
+  peakChromatic: 0.3
