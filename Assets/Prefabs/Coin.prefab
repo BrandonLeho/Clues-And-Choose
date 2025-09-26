@@ -492,12 +492,12 @@ MonoBehaviour:
     m_RotationOrder: 4
   tipGradientMaterialTemplate: {fileID: 2100000, guid: ef79035a9a5eae6478151b7f36cb6697, type: 2}
   fallbackTipColor: {r: 1, g: 1, b: 1, a: 1}
-  topDesaturate: 0.2
-  bottomDarken: 0.25
-  tipColorLerpTime: 0.15
-  gradientStart: 0
-  gradientEnd: 0.6
-  gradientPower: 1
+  topDesaturate: 0.35
+  bottomDarken: 0.1
+  tipColorLerpTime: 0.25
+  gradientStart: 0.1
+  gradientEnd: 0.75
+  gradientPower: 2
   gradientAngle: -90
 --- !u!114 &1589490137157167867
 MonoBehaviour:
