@@ -36,6 +36,11 @@ public class CoinDragHandler : MonoBehaviour
     [Range(0f, 0.2f)] public float dropGuardSeconds = 0.06f;
     float _noDropBefore;
 
+    [Header("Cursor Anchor")]
+    public bool useFixedCursorAnchor = false;
+    public Vector2 fixedCursorAnchor = new Vector2(-0.5f, -1f);
+    public bool anchorOverridesGrabOffset = true;
+
     Collider2D _col;
     int _activePointerId = -1;
     bool _isDragging;
@@ -86,7 +91,15 @@ public class CoinDragHandler : MonoBehaviour
         if (_isDragging && _allowLocalMove)
         {
             Vector3 targetPos = PointerOnDragPlane(_activePointerId);
+
             if (preserveGrabOffset) targetPos += _grabOffsetLocal;
+
+            if (useFixedCursorAnchor)
+            {
+                targetPos.x += fixedCursorAnchor.x;
+                targetPos.y += fixedCursorAnchor.y;
+            }
+
             targetPos.z = dragZ;
 
             transform.position = Vector3.Lerp(
@@ -284,5 +297,11 @@ public class CoinDragHandler : MonoBehaviour
             if (_permGuards[i] != null && !_permGuards[i].CanBeginDrag())
                 return false;
         return true;
+    }
+
+
+    void OnValidate()
+    {
+        if (useFixedCursorAnchor && anchorOverridesGrabOffset) preserveGrabOffset = false;
     }
 }
