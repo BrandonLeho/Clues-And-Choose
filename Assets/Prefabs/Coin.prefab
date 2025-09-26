@@ -62,7 +62,7 @@ MonoBehaviour:
   dragMode: 0
   worldCamera: {fileID: 0}
   followSpeed: 20
-  dragZ: 0
+  dragZ: 10
   preserveGrabOffset: 0
   targetRenderer: {fileID: 2606012495560826973}
   sortingOrderBoost: 50
@@ -458,6 +458,33 @@ MonoBehaviour:
   gridMask: {fileID: 0}
   requireInsideGridToShow: 1
   startHiddenOnPickup: 1
+  entryDuration: 0.15
+  exitDuration: 0.15
+  hiddenXAngle: 95
+  ease:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!114 &1589490137157167867
 MonoBehaviour:
   m_ObjectHideFlags: 0

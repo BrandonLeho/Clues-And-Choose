@@ -11,6 +11,8 @@ public class ArrowProbeHoverRouter : MonoBehaviour
     [SerializeField] bool debugLogs = false;
 
     GridCellHoverWithCoords _current;
+    public static GridCellHoverWithCoords Current { get; private set; }
+
 
     void Reset()
     {
@@ -54,6 +56,7 @@ public class ArrowProbeHoverRouter : MonoBehaviour
             if (debugLogs) Debug.Log($"[ArrowProbeHoverRouter] Hover -> {(target ? target.name : "none")}");
             if (_current) _current.ProbeExit();
             _current = target;
+            Current = _current;
             if (_current) _current.ProbeEnter();
         }
     }
@@ -64,6 +67,7 @@ public class ArrowProbeHoverRouter : MonoBehaviour
         {
             _current.ProbeExit();
             _current = null;
+            Current = null;
         }
     }
 }

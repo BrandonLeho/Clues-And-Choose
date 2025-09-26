@@ -69,6 +69,17 @@ public class CoinDropSnap : MonoBehaviour
         Vector3 probeWorld = (_probe != null) ? _probe.GetProbeWorld() : transform.position;
         Vector2 center2D = new Vector2(probeWorld.x, probeWorld.y);
 
+        var visualCell = ArrowProbeHoverRouter.Current;
+        if (visualCell != null)
+        {
+            var forcedSpot = visualCell.GetComponent<ValidDropSpot>();
+            if (forcedSpot != null && forcedSpot.enabledForPlacement)
+            {
+                TryClaimAndSnap(forcedSpot);
+                return;
+            }
+        }
+
         var hits = Physics2D.OverlapCircleAll(center2D, overlapRadius, validSpotLayers);
         var spots = hits?
             .Select(h => h.GetComponentInParent<ValidDropSpot>() ?? h.GetComponent<ValidDropSpot>())
@@ -186,4 +197,47 @@ public class CoinDropSnap : MonoBehaviour
         var lockGuard = GetComponent<CoinPlacedLock>();
         if (lockGuard != null) lockGuard.SetLocked(false);
     }
+
+    void TryClaimAndSnap(ValidDropSpot spot)
+    {
+        var netId = GetComponent<NetworkIdentity>();
+        var board = BoardSpotsNet.Instance;
+
+        if (netId != null && board != null)
+        {
+            if (_snapRoutine != null) { StopCoroutine(_snapRoutine); _snapRoutine = null; }
+
+            board.RequestClaim(spot.spotIndex, netId, (ok, center) =>
+            {
+                if (ok)
+                {
+                    Vector3 target = center;
+                    if (keepCurrentZ) target.z = transform.position.z;
+
+                    _occupiedSpot = spot;
+                    StartSnapTween(target, updateLastValid: true);
+
+                    if (lockCoinAfterPlacement)
+                    {
+                        var guard = GetComponent<CoinPlacedLock>();
+                        if (guard) guard.SetLocked(true);
+                    }
+                }
+                else
+                {
+                    Vector3 back = _lastValidWorldPos;
+                    if (!keepCurrentZ) back.z = _spawnZ;
+                    StartSnapTween(back, updateLastValid: false);
+                }
+            });
+            return;
+        }
+
+        spot.ForceOccupy(gameObject);
+        Vector3 targetOffline = spot.GetCenterWorld();
+        if (keepCurrentZ) targetOffline.z = transform.position.z;
+        _occupiedSpot = spot;
+        StartSnapTween(targetOffline, updateLastValid: true);
+    }
+
 }
