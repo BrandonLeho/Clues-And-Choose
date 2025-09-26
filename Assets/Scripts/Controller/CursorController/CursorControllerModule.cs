@@ -11,31 +11,51 @@ public class CursorControllerModule : MonoBehaviour
 
     [SerializeField] private Vector2 clickPosition = Vector2.zero;
 
-    private void Awake()
+    public enum ModeOfCursor { Default, Clickable, Draggable, Dragging }
+
+    ModeOfCursor _currentMode = ModeOfCursor.Default;
+
+    bool _isLocked;
+    ModeOfCursor _lockedMode;
+    Object _lockOwner;
+
+    public bool IsLocked => _isLocked;
+
+    void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        if (Instance == null) { Instance = this; DontDestroyOnLoad(gameObject); }
+        else { Destroy(gameObject); return; }
+        Apply(_currentMode);
     }
 
-    void Start()
+    public void SetToMode(ModeOfCursor mode)
     {
-        Cursor.SetCursor(cursorTextureDefault, clickPosition, CursorMode.Auto);
+        _currentMode = mode;
+        if (_isLocked) return;
+        Apply(mode);
     }
 
-    public void SetToMode(ModeOfCursor modeOfCursor)
+    public void LockMode(ModeOfCursor mode, Object owner = null)
     {
-        switch (modeOfCursor)
+        _isLocked = true;
+        _lockedMode = mode;
+        _lockOwner = owner;
+        Apply(mode);
+    }
+
+    public void UnlockMode(Object owner = null)
+    {
+        if (!_isLocked) return;
+        if (owner != null && owner != _lockOwner) return;
+        _isLocked = false;
+        _lockOwner = null;
+        Apply(_currentMode);
+    }
+
+    void Apply(ModeOfCursor mode)
+    {
+        switch (mode)
         {
-            case ModeOfCursor.Default:
-                Cursor.SetCursor(cursorTextureDefault, clickPosition, CursorMode.Auto);
-                break;
             case ModeOfCursor.Clickable:
                 Cursor.SetCursor(cursorTextureClickable, clickPosition, CursorMode.Auto);
                 break;
@@ -49,13 +69,5 @@ public class CursorControllerModule : MonoBehaviour
                 Cursor.SetCursor(cursorTextureDefault, clickPosition, CursorMode.Auto);
                 break;
         }
-    }
-
-    public enum ModeOfCursor
-    {
-        Default,
-        Clickable,
-        Draggable,
-        Dragging
     }
 }

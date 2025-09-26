@@ -33,8 +33,9 @@ public class CoinCursorBridge : MonoBehaviour, IPointerEnterHandler, IPointerExi
     public void OnPointerEnter(PointerEventData eventData)
     {
         _isPointerOver = true;
+        Debug.Log(_isDragging);
         if (_isDragging) return;
-
+        Debug.Log(CanBeginDragLikeHandler());
         if (CanBeginDragLikeHandler())
             CursorControllerModule.Instance.SetToMode(CursorControllerModule.ModeOfCursor.Draggable);
         else
@@ -52,12 +53,13 @@ public class CoinCursorBridge : MonoBehaviour, IPointerEnterHandler, IPointerExi
     void OnPickedUp()
     {
         _isDragging = true;
-        CursorControllerModule.Instance.SetToMode(CursorControllerModule.ModeOfCursor.Dragging);
+        CursorControllerModule.Instance.LockMode(CursorControllerModule.ModeOfCursor.Dragging, this);
     }
 
     void OnDropped()
     {
         _isDragging = false;
+        CursorControllerModule.Instance.UnlockMode(this);
 
         if (_isPointerOver && CanBeginDragLikeHandler())
             CursorControllerModule.Instance.SetToMode(CursorControllerModule.ModeOfCursor.Draggable);
@@ -82,6 +84,10 @@ public class CoinCursorBridge : MonoBehaviour, IPointerEnterHandler, IPointerExi
     void OnDisable()
     {
         if (CursorControllerModule.Instance != null)
-            CursorControllerModule.Instance.SetToMode(CursorControllerModule.ModeOfCursor.Default);
+        {
+            CursorControllerModule.Instance.UnlockMode(this);
+            if (!_isDragging)
+                CursorControllerModule.Instance.SetToMode(CursorControllerModule.ModeOfCursor.Default);
+        }
     }
 }

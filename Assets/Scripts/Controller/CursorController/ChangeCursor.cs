@@ -7,22 +7,25 @@ public class ChangeCursor : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
 
     public void OnPointerEnter(PointerEventData eventData)
     {
-        CursorControllerModule.Instance.SetToMode(modeOfCursor);
+        if (!CursorControllerModule.Instance.IsLocked)
+            CursorControllerModule.Instance.SetToMode(modeOfCursor);
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        CursorControllerModule.Instance.SetToMode(CursorControllerModule.ModeOfCursor.Default);
+        if (!CursorControllerModule.Instance.IsLocked)
+            CursorControllerModule.Instance.SetToMode(CursorControllerModule.ModeOfCursor.Default);
     }
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        CursorControllerModule.Instance.SetToMode(CursorControllerModule.ModeOfCursor.Default);
+        if (!CursorControllerModule.Instance.IsLocked)
+            CursorControllerModule.Instance.SetToMode(CursorControllerModule.ModeOfCursor.Default);
     }
 
-    private void OnDisable()
+    void OnDisable()
     {
-        if (CursorControllerModule.Instance != null)
+        if (CursorControllerModule.Instance != null && !CursorControllerModule.Instance.IsLocked)
             CursorControllerModule.Instance.SetToMode(CursorControllerModule.ModeOfCursor.Default);
     }
 }
