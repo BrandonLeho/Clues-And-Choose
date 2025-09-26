@@ -47,6 +47,12 @@ public class CoinPlacementProbe : MonoBehaviour
     [Range(0f, 1f)] public float bottomDarken = 0.25f;
     public float tipColorLerpTime = 0.15f;
 
+    [Header("Arrow Gradient Controls")]
+    [Range(0f, 1f)] public float gradientStart = 0f;
+    [Range(0f, 1f)] public float gradientEnd = 0.6f;
+    [Range(0.1f, 4f)] public float gradientPower = 1f;
+
+
     bool _suppressUntilInside;
     CoinDragHandler _drag;
     Transform _arrowInst;
@@ -329,13 +335,17 @@ public class CoinPlacementProbe : MonoBehaviour
         if (_tipMPB == null) _tipMPB = new MaterialPropertyBlock();
 
         Color baseC = _tipCurrent;
-        Color top = Color.Lerp(baseC, Color.white, topDesaturate);
+
         Color bottom = Color.Lerp(baseC, Color.black, bottomDarken);
 
-        _tipMPB.SetColor("_ColorTop", top);
         _tipMPB.SetColor("_ColorBottom", bottom);
+        _tipMPB.SetFloat("_GradStart", Mathf.Clamp01(gradientStart));
+        _tipMPB.SetFloat("_GradEnd", Mathf.Clamp01(Mathf.Max(gradientEnd, gradientStart + 0.001f)));
+        _tipMPB.SetFloat("_GradPower", gradientPower);
+
         _tipSR.SetPropertyBlock(_tipMPB);
     }
+
 
     void ApplyTipGradientImmediate()
     {
