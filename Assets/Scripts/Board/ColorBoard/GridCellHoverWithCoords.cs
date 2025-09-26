@@ -78,6 +78,9 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     Transform _homeParent;
     int _fixedGridIndex = -1;
 
+    public Color CurrentDisplayColor => _img ? _img.color : Color.white;
+
+
     void Awake()
     {
         _rt = (RectTransform)transform;

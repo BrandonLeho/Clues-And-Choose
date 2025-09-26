@@ -7,26 +7,50 @@ public class CoinPlacementProbe : MonoBehaviour
     public static CoinPlacementProbe Active { get; private set; }
     public static bool ProbeMode => Active != null;
 
+    [Header("Probe Settings")]
     public Vector2 probeOffsetLocal = new Vector2(0f, -0.6f);
+
+    [Header("Arrow References & Positioning")]
     public Transform arrowPrefab;
     public Vector2 arrowOffsetLocal = new Vector2(0f, -0.6f);
     public float arrowLocalZ = 0f;
     public bool arrowUseProbeDirection = false;
     public float arrowRotationLocal = 0f;
+
+    [Header("Arrow Rendering")]
     public bool alignSortingWithCoin = true;
     public int arrowSortingOrderDelta = -1;
+
+    [Header("Arrow Tip Animation")]
     public float tipRotationSmoothTime = 0.08f;
     public float tipTrailAngleBoost = 8f;
     public float velocityToDegrees = 2.0f;
     public Vector2 tipGraphicPivotNudgeLocal = Vector2.zero;
+
+    [Header("UI & Grid Settings")]
     public Camera uiCamera;
     public RectTransform gridMask;
     public bool requireInsideGridToShow = true;
     public bool startHiddenOnPickup = true;
+
+    [Header("Arrow Show/Hide Animation")]
     public float entryDuration = 0.15f;
     public float exitDuration = 0.15f;
     public float hiddenXAngle = 95f;
     public AnimationCurve ease = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
+    [Header("Tip Glow")]
+    public bool tipGlowEnabled = true;
+    public SpriteRenderer tipSprite;
+    public float tipGlowSmoothTime = 0.12f;
+    public float tipGlowEmissionBoost = 1.4f;
+    [Range(0f, 1f)] public float tipGlowAlpha = 0.9f;
+
+    Color _tipGlowCurrent = Color.clear;
+    Color _tipGlowTarget = Color.clear;
+    MaterialPropertyBlock _tipMPB;
+    static readonly int _ColorID = Shader.PropertyToID("_Color");
+    static readonly int _EmissionColorID = Shader.PropertyToID("_EmissionColor");
 
     bool _suppressUntilInside;
     CoinDragHandler _drag;
@@ -88,6 +112,19 @@ public class CoinPlacementProbe : MonoBehaviour
             _arrowSR = _arrowInst.GetComponentInChildren<SpriteRenderer>();
             _tipGraphic = _arrowSR ? _arrowSR.transform : _arrowInst;
 
+            if (!tipSprite)
+            {
+                var srs = _arrowInst.GetComponentsInChildren<SpriteRenderer>(true);
+                for (int i = 0; i < srs.Length; i++)
+                {
+                    if (srs[i].name.ToLower().Contains("tip")) { tipSprite = srs[i]; break; }
+                }
+                if (!tipSprite) tipSprite = _arrowSR;
+            }
+
+            if (_tipMPB == null) _tipMPB = new MaterialPropertyBlock();
+            _tipGlowCurrent = _tipGlowTarget = Color.clear;
+
             if (alignSortingWithCoin && _coinSR && _arrowSR)
             {
                 _arrowSR.sortingLayerID = _coinSR.sortingLayerID;
@@ -147,6 +184,9 @@ public class CoinPlacementProbe : MonoBehaviour
         }
 
         UpdateTipLagRotation();
+
+        UpdateTipGlowColorTarget();
+        ApplyTipGlowVisual();
 
         bool inside = IsProbeInsideGrid();
         if (_suppressUntilInside)
@@ -252,4 +292,42 @@ public class CoinPlacementProbe : MonoBehaviour
         float x = Mathf.LerpUnclamped(hiddenXAngle, 0f, e);
         _arrowInst.localRotation = Quaternion.Euler(x, 0f, 0f);
     }
+
+    float SmoothFactor01(float dt, float tau) => 1f - Mathf.Exp(-Mathf.Max(0.0001f, dt) / Mathf.Max(0.0001f, tau));
+
+    void UpdateTipGlowColorTarget()
+    {
+        if (!tipGlowEnabled || tipSprite == null) { _tipGlowTarget = Color.clear; return; }
+
+        var hover = ArrowProbeHoverRouter.Current;
+        if (hover != null)
+        {
+            Color c = hover.CurrentDisplayColor;
+            c.a = tipGlowAlpha;
+            _tipGlowTarget = c;
+        }
+        else
+        {
+            _tipGlowTarget = Color.clear;
+        }
+    }
+
+    void ApplyTipGlowVisual()
+    {
+        if (tipSprite == null) return;
+
+        float k = SmoothFactor01(Time.deltaTime, tipGlowSmoothTime);
+        _tipGlowCurrent = Color.Lerp(_tipGlowCurrent, _tipGlowTarget, k);
+
+        tipSprite.GetPropertyBlock(_tipMPB);
+
+        if (tipSprite.sharedMaterial && tipSprite.sharedMaterial.HasProperty(_ColorID))
+            _tipMPB.SetColor(_ColorID, _tipGlowCurrent);
+
+        if (tipSprite.sharedMaterial && tipSprite.sharedMaterial.HasProperty(_EmissionColorID))
+            _tipMPB.SetColor(_EmissionColorID, _tipGlowCurrent * tipGlowEmissionBoost);
+
+        tipSprite.SetPropertyBlock(_tipMPB);
+    }
+
 }
