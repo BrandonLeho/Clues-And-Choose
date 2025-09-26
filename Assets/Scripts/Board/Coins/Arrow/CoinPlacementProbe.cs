@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 [RequireComponent(typeof(CoinDragHandler))]
 [DisallowMultipleComponent]
@@ -7,64 +8,66 @@ public class CoinPlacementProbe : MonoBehaviour
     public static CoinPlacementProbe Active { get; private set; }
     public static bool ProbeMode => Active != null;
 
-    [Header("Probe Settings")]
+    [Header("Probe & Arrow Placement")]
     public Vector2 probeOffsetLocal = new Vector2(0f, -0.6f);
-
-    [Header("Arrow References & Positioning")]
     public Transform arrowPrefab;
     public Vector2 arrowOffsetLocal = new Vector2(0f, -0.6f);
     public float arrowLocalZ = 0f;
+
+    [Header("Arrow Orientation")]
     public bool arrowUseProbeDirection = false;
     public float arrowRotationLocal = 0f;
 
-    [Header("Arrow Rendering")]
+    [Header("Sorting")]
     public bool alignSortingWithCoin = true;
     public int arrowSortingOrderDelta = -1;
 
-    [Header("Arrow Tip Animation")]
+    [Header("Tip Lag")]
     public float tipRotationSmoothTime = 0.08f;
     public float tipTrailAngleBoost = 8f;
     public float velocityToDegrees = 2.0f;
     public Vector2 tipGraphicPivotNudgeLocal = Vector2.zero;
 
-    [Header("UI & Grid Settings")]
+    [Header("Visibility / Mask")]
     public Camera uiCamera;
     public RectTransform gridMask;
     public bool requireInsideGridToShow = true;
     public bool startHiddenOnPickup = true;
 
-    [Header("Arrow Show/Hide Animation")]
+    [Header("Entry/Exit Animation")]
     public float entryDuration = 0.15f;
     public float exitDuration = 0.15f;
     public float hiddenXAngle = 95f;
     public AnimationCurve ease = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
-    [Header("Tip Glow")]
-    public bool tipGlowEnabled = true;
-    public SpriteRenderer tipSprite;
-    public float tipGlowSmoothTime = 0.12f;
-    public float tipGlowEmissionBoost = 1.4f;
-    [Range(0f, 1f)] public float tipGlowAlpha = 0.9f;
-
-    Color _tipGlowCurrent = Color.clear;
-    Color _tipGlowTarget = Color.clear;
-    MaterialPropertyBlock _tipMPB;
-    static readonly int _ColorID = Shader.PropertyToID("_Color");
-    static readonly int _EmissionColorID = Shader.PropertyToID("_EmissionColor");
+    [Header("Tip Gradient")]
+    public Material tipGradientMaterialTemplate;
+    public Color fallbackTipColor = Color.white;
+    [Range(0f, 1f)] public float topDesaturate = 0.2f;
+    [Range(0f, 1f)] public float bottomDarken = 0.25f;
+    public float tipColorLerpTime = 0.15f;
 
     bool _suppressUntilInside;
     CoinDragHandler _drag;
     Transform _arrowInst;
     SpriteRenderer _arrowSR;
     Transform _tipGraphic;
+    SpriteRenderer _tipSR;
     SpriteRenderer _coinSR;
     bool _isDragging;
+
     float _tipAngleVel;
     float _tipAngleCurrent;
     Vector3 _prevBaseWorld;
+
     bool _targetShown;
     float _animT;
     bool _animating;
+
+    MaterialPropertyBlock _tipMPB;
+    Material _tipMatInst;
+    Color _tipCurrent;
+    Color _tipTarget;
 
     public Vector3 GetProbeWorld() =>
         transform.TransformPoint(new Vector3(probeOffsetLocal.x, probeOffsetLocal.y, 0f));
@@ -105,54 +108,54 @@ public class CoinPlacementProbe : MonoBehaviour
     {
         Active = this;
         _isDragging = true;
+        if (!arrowPrefab) return;
 
-        if (arrowPrefab)
+        _arrowInst = Instantiate(arrowPrefab, transform);
+        _arrowSR = _arrowInst.GetComponentInChildren<SpriteRenderer>();
+
+        var tipTransform = _arrowInst.Find("Tip");
+        _tipGraphic = tipTransform ? (Transform)tipTransform : (_arrowSR ? _arrowSR.transform : _arrowInst);
+        _tipSR = tipTransform ? tipTransform.GetComponent<SpriteRenderer>() : _arrowSR;
+
+        if (alignSortingWithCoin && _coinSR && _arrowSR)
         {
-            _arrowInst = Instantiate(arrowPrefab, transform);
-            _arrowSR = _arrowInst.GetComponentInChildren<SpriteRenderer>();
-            _tipGraphic = _arrowSR ? _arrowSR.transform : _arrowInst;
-
-            if (!tipSprite)
+            _arrowSR.sortingLayerID = _coinSR.sortingLayerID;
+            _arrowSR.sortingOrder = _coinSR.sortingOrder + Mathf.Max(1, arrowSortingOrderDelta);
+            if (_tipSR && _tipSR != _arrowSR)
             {
-                var srs = _arrowInst.GetComponentsInChildren<SpriteRenderer>(true);
-                for (int i = 0; i < srs.Length; i++)
-                {
-                    if (srs[i].name.ToLower().Contains("tip")) { tipSprite = srs[i]; break; }
-                }
-                if (!tipSprite) tipSprite = _arrowSR;
+                _tipSR.sortingLayerID = _arrowSR.sortingLayerID;
+                _tipSR.sortingOrder = _arrowSR.sortingOrder + 1;
             }
-
-            if (_tipMPB == null) _tipMPB = new MaterialPropertyBlock();
-            _tipGlowCurrent = _tipGlowTarget = Color.clear;
-
-            if (alignSortingWithCoin && _coinSR && _arrowSR)
-            {
-                _arrowSR.sortingLayerID = _coinSR.sortingLayerID;
-                _arrowSR.sortingOrder = _coinSR.sortingOrder + Mathf.Max(1, arrowSortingOrderDelta);
-            }
-
-            _arrowInst.localPosition = new Vector3(arrowOffsetLocal.x, arrowOffsetLocal.y, arrowLocalZ);
-
-            float startAngleZ = arrowUseProbeDirection
-                ? Mathf.Atan2(probeOffsetLocal.y, probeOffsetLocal.x) * Mathf.Rad2Deg
-                : arrowRotationLocal;
-
-            if (_tipGraphic != null)
-            {
-                _tipGraphic.localPosition = new Vector3(tipGraphicPivotNudgeLocal.x, tipGraphicPivotNudgeLocal.y, 0f);
-                _tipGraphic.localRotation = Quaternion.Euler(0f, 0f, startAngleZ);
-            }
-            _tipAngleCurrent = startAngleZ;
-            _tipAngleVel = 0f;
-            _prevBaseWorld = _arrowInst.position;
-
-            _suppressUntilInside = startHiddenOnPickup;
-            _animT = 0f;
-            _targetShown = false;
-            _animating = false;
-            _arrowInst.gameObject.SetActive(true);
-            ApplyArrowPose();
         }
+
+        _arrowInst.localPosition = new Vector3(arrowOffsetLocal.x, arrowOffsetLocal.y, arrowLocalZ);
+
+        float startAngleZ = arrowUseProbeDirection
+            ? Mathf.Atan2(probeOffsetLocal.y, probeOffsetLocal.x) * Mathf.Rad2Deg
+            : arrowRotationLocal;
+
+        if (_tipGraphic != null)
+        {
+            _tipGraphic.localPosition = new Vector3(tipGraphicPivotNudgeLocal.x, tipGraphicPivotNudgeLocal.y, 0f);
+            _tipGraphic.localRotation = Quaternion.Euler(0f, 0f, startAngleZ);
+        }
+
+        _tipAngleCurrent = startAngleZ;
+        _tipAngleVel = 0f;
+        _prevBaseWorld = _arrowInst.position;
+
+        _suppressUntilInside = startHiddenOnPickup;
+        _animT = 0f;
+        _targetShown = false;
+        _animating = false;
+
+        _arrowInst.gameObject.SetActive(true);
+        ApplyArrowPose();
+
+        _tipCurrent = fallbackTipColor;
+        _tipTarget = fallbackTipColor;
+        EnsureTipGradientMaterialBound();
+        ApplyTipGradientImmediate();
     }
 
     void OnDrop()
@@ -164,11 +167,14 @@ public class CoinPlacementProbe : MonoBehaviour
         _arrowInst = null;
         _arrowSR = null;
         _tipGraphic = null;
+        _tipSR = null;
 
         _suppressUntilInside = false;
         _animT = 0f;
         _animating = false;
         _targetShown = false;
+        _tipMPB = null;
+        _tipMatInst = null;
     }
 
     void Update()
@@ -181,12 +187,17 @@ public class CoinPlacementProbe : MonoBehaviour
         {
             _arrowSR.sortingLayerID = _coinSR.sortingLayerID;
             _arrowSR.sortingOrder = _coinSR.sortingOrder + Mathf.Max(1, arrowSortingOrderDelta);
+            if (_tipSR && _tipSR != _arrowSR)
+            {
+                _tipSR.sortingLayerID = _arrowSR.sortingLayerID;
+                _tipSR.sortingOrder = _arrowSR.sortingOrder + 1;
+            }
         }
 
         UpdateTipLagRotation();
-
-        UpdateTipGlowColorTarget();
-        ApplyTipGlowVisual();
+        UpdateTipGradientColorTarget();
+        EaseTipGradientColor();
+        CommitTipGradient();
 
         bool inside = IsProbeInsideGrid();
         if (_suppressUntilInside)
@@ -215,8 +226,7 @@ public class CoinPlacementProbe : MonoBehaviour
         Vector3 v3 = (baseWorld - _prevBaseWorld) / Mathf.Max(Time.deltaTime, 1e-5f);
         _prevBaseWorld = baseWorld;
 
-        Vector2 aim = new Vector2(Mathf.Cos(targetAngleDeg * Mathf.Deg2Rad),
-                                  Mathf.Sin(targetAngleDeg * Mathf.Deg2Rad));
+        Vector2 aim = new Vector2(Mathf.Cos(targetAngleDeg * Mathf.Deg2Rad), Mathf.Sin(targetAngleDeg * Mathf.Deg2Rad));
         Vector2 v = new Vector2(v3.x, v3.y);
 
         float crossZ = aim.x * v.y - aim.y * v.x;
@@ -225,13 +235,7 @@ public class CoinPlacementProbe : MonoBehaviour
         float extra = Mathf.Clamp(signedExtra, -tipTrailAngleBoost, tipTrailAngleBoost);
         float targetWithTrail = targetAngleDeg + extra;
 
-        _tipAngleCurrent = Mathf.SmoothDampAngle(
-            _tipAngleCurrent,
-            targetWithTrail,
-            ref _tipAngleVel,
-            Mathf.Max(0.0001f, tipRotationSmoothTime)
-        );
-
+        _tipAngleCurrent = Mathf.SmoothDampAngle(_tipAngleCurrent, targetWithTrail, ref _tipAngleVel, Mathf.Max(0.0001f, tipRotationSmoothTime));
         _tipGraphic.localRotation = Quaternion.Euler(0f, 0f, _tipAngleCurrent);
     }
 
@@ -293,41 +297,51 @@ public class CoinPlacementProbe : MonoBehaviour
         _arrowInst.localRotation = Quaternion.Euler(x, 0f, 0f);
     }
 
-    float SmoothFactor01(float dt, float tau) => 1f - Mathf.Exp(-Mathf.Max(0.0001f, dt) / Mathf.Max(0.0001f, tau));
-
-    void UpdateTipGlowColorTarget()
+    void EnsureTipGradientMaterialBound()
     {
-        if (!tipGlowEnabled || tipSprite == null) { _tipGlowTarget = Color.clear; return; }
+        if (!_tipSR) return;
+        if (tipGradientMaterialTemplate)
+        {
+            _tipMatInst = new Material(tipGradientMaterialTemplate);
+            _tipSR.sharedMaterial = _tipMatInst;
+        }
 
-        var hover = ArrowProbeHoverRouter.Current;
-        if (hover != null)
-        {
-            Color c = hover.CurrentDisplayColor;
-            c.a = tipGlowAlpha;
-            _tipGlowTarget = c;
-        }
-        else
-        {
-            _tipGlowTarget = Color.clear;
-        }
+        if (_tipMPB == null) _tipMPB = new MaterialPropertyBlock();
+        _tipSR.GetPropertyBlock(_tipMPB);
     }
 
-    void ApplyTipGlowVisual()
+    void UpdateTipGradientColorTarget()
     {
-        if (tipSprite == null) return;
-
-        float k = SmoothFactor01(Time.deltaTime, tipGlowSmoothTime);
-        _tipGlowCurrent = Color.Lerp(_tipGlowCurrent, _tipGlowTarget, k);
-
-        tipSprite.GetPropertyBlock(_tipMPB);
-
-        if (tipSprite.sharedMaterial && tipSprite.sharedMaterial.HasProperty(_ColorID))
-            _tipMPB.SetColor(_ColorID, _tipGlowCurrent);
-
-        if (tipSprite.sharedMaterial && tipSprite.sharedMaterial.HasProperty(_EmissionColorID))
-            _tipMPB.SetColor(_EmissionColorID, _tipGlowCurrent * tipGlowEmissionBoost);
-
-        tipSprite.SetPropertyBlock(_tipMPB);
+        var currentCell = ArrowProbeHoverRouter.Current;
+        _tipTarget = currentCell ? (currentCell.GetComponent<Image>()?.color ?? fallbackTipColor) : fallbackTipColor;
     }
 
+    void EaseTipGradientColor()
+    {
+        if (_tipColorLerpTimeSafe <= 0f) { _tipCurrent = _tipTarget; return; }
+        float k = 1f - Mathf.Exp(-Time.deltaTime / _tipColorLerpTimeSafe);
+        _tipCurrent = Color.Lerp(_tipCurrent, _tipTarget, k);
+    }
+
+    void CommitTipGradient()
+    {
+        if (!_tipSR) return;
+        if (_tipMPB == null) _tipMPB = new MaterialPropertyBlock();
+
+        Color baseC = _tipCurrent;
+        Color top = Color.Lerp(baseC, Color.white, topDesaturate);
+        Color bottom = Color.Lerp(baseC, Color.black, bottomDarken);
+
+        _tipMPB.SetColor("_ColorTop", top);
+        _tipMPB.SetColor("_ColorBottom", bottom);
+        _tipSR.SetPropertyBlock(_tipMPB);
+    }
+
+    void ApplyTipGradientImmediate()
+    {
+        _tipCurrent = _tipTarget;
+        CommitTipGradient();
+    }
+
+    float _tipColorLerpTimeSafe => Mathf.Max(0.0001f, tipColorLerpTime);
 }

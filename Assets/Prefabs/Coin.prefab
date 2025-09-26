@@ -490,11 +490,11 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  tipGlowEnabled: 1
-  tipSprite: {fileID: 0}
-  tipGlowSmoothTime: 0.12
-  tipGlowEmissionBoost: 6
-  tipGlowAlpha: 0.9
+  tipGradientMaterialTemplate: {fileID: 2100000, guid: ef79035a9a5eae6478151b7f36cb6697, type: 2}
+  fallbackTipColor: {r: 1, g: 1, b: 1, a: 1}
+  topDesaturate: 0.2
+  bottomDarken: 0.25
+  tipColorLerpTime: 0.15
 --- !u!114 &1589490137157167867
 MonoBehaviour:
   m_ObjectHideFlags: 0
