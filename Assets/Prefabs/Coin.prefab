@@ -243,7 +243,7 @@ MonoBehaviour:
   lockCoinAfterPlacement: 1
   useHop: 1
   hopHeight: 0.25
-  hopPeakT: 0.55
+  hopPeakT: 0.69
   fallStretchY: 1.45
   fallSquashX: 0.75
   fallStretchSensitivity: 12
