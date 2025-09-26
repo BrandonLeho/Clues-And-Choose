@@ -277,6 +277,8 @@ MonoBehaviour:
     m_RotationOrder: 4
   landingPulse: {fileID: 2462779467675695623}
   tryFindPulseOnMainCamera: 1
+  pulseWhenLand: 1
+  pulseOwnerOnly: 1
 --- !u!114 &1232689880800201139
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -771,9 +773,9 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  doFovKick: 1
-  baseFovOverride: 0
-  fovKickAmount: 8
+  doZoom: 1
+  baseZoomOverride: 0
+  zoomAmount: 0.99
   doLensDistortion: 1
   baseDistortion: 0
   peakDistortion: -0.07

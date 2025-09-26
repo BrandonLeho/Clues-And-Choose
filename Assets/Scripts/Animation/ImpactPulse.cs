@@ -13,40 +13,36 @@ public class ImpactPulse : MonoBehaviour
 
     [Header("Timing")]
     public bool useUnscaledTime = true;
-    [Tooltip("Ease-in time to peak distortion/aberration/FOV")]
     public float riseTime = 0.08f;
-    [Tooltip("Hold time at peak (optional)")]
     public float holdTime = 0.02f;
-    [Tooltip("Ease-back time to baseline")]
     public float settleTime = 0.18f;
     public AnimationCurve ease = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
-    [Header("FOV Kick")]
-    public bool doFovKick = true;
-    [Tooltip("If <= 0, uses camera's current FOV as baseline each time you Play().")]
-    public float baseFovOverride = 0f;
-    public float fovKickAmount = 8f;
+    [Header("Zoom Effect")]
+    public bool doZoom = true;
+    public float baseZoomOverride = 0f;
+    public float zoomAmount = 0.8f;
 
-    [Header("Lens Distortion (URP)")]
+    [Header("Lens Distortion")]
     public bool doLensDistortion = true;
-    [Tooltip("Negative = pincushion, Positive = barrel")]
     public float baseDistortion = 0f;
     public float peakDistortion = -0.55f;
     [Range(0.01f, 1.0f)] public float distortionScaleAtPeak = 1.0f;
     public Vector2 distortionCenter = new Vector2(0.5f, 0.5f);
 
-    [Header("Chromatic Aberration (URP)")]
+    [Header("Chromatic Aberration")]
     public bool doChromatic = true;
     [Range(0f, 1f)] public float baseChromatic = 0f;
     [Range(0f, 1f)] public float peakChromatic = 0.65f;
 
-    // Internals
     Volume _volume;
     VolumeProfile _profile;
     LensDistortion _lens;
     ChromaticAberration _ca;
     Coroutine _pulse;
-    float _cachedBaseFov;
+
+    float _cachedBaseOrthoSize;
+    Vector3 _cachedBaseScale;
 
     void Awake()
     {
@@ -70,17 +66,25 @@ public class ImpactPulse : MonoBehaviour
     {
         EnsureVolumeAndOverrides();
 
-        float baseFov = (baseFovOverride > 0f ? baseFovOverride : (targetCamera ? targetCamera.fieldOfView : 60f));
-        _cachedBaseFov = baseFov;
+        if (targetCamera)
+        {
+            if (targetCamera.orthographic)
+                _cachedBaseOrthoSize = (baseZoomOverride > 0f ? baseZoomOverride : targetCamera.orthographicSize);
+            else
+                _cachedBaseScale = targetCamera.transform.localScale;
+        }
 
-        float startFov = baseFov;
-        float endFov = baseFov + (doFovKick ? fovKickAmount : 0f);
+        float startSize = targetCamera && targetCamera.orthographic ? _cachedBaseOrthoSize : 1f;
+        float endSize = targetCamera && targetCamera.orthographic ? startSize * zoomAmount : 1f;
+
+        Vector3 startScale = _cachedBaseScale == Vector3.zero ? Vector3.one : _cachedBaseScale;
+        Vector3 endScale = startScale * zoomAmount;
 
         float startDist = baseDistortion;
         float endDist = doLensDistortion ? peakDistortion : baseDistortion;
 
-        float startScale = 1f;
-        float endScale = doLensDistortion ? distortionScaleAtPeak : 1f;
+        float startScaleLD = 1f;
+        float endScaleLD = doLensDistortion ? distortionScaleAtPeak : 1f;
 
         float startCA = baseChromatic;
         float endCA = doChromatic ? peakChromatic : baseChromatic;
@@ -90,15 +94,15 @@ public class ImpactPulse : MonoBehaviour
         {
             float e = ease.Evaluate(t / rt);
             ApplyState(
-                Mathf.Lerp(startFov, endFov, e),
+                Mathf.Lerp(startSize, endSize, e),
+                Vector3.Lerp(startScale, endScale, e),
                 Mathf.Lerp(startDist, endDist, e),
-                Vector2.LerpUnclamped(Vector2.one * startScale, Vector2.one * endScale, e).x,
-                Vector2.LerpUnclamped(distortionCenter, distortionCenter, e), // keep center (but could animate)
+                Mathf.Lerp(startScaleLD, endScaleLD, e),
                 Mathf.Lerp(startCA, endCA, e)
             );
             yield return null;
         }
-        ApplyState(endFov, endDist, endScale, distortionCenter, endCA);
+        ApplyState(endSize, endScale, endDist, endScaleLD, endCA);
 
         if (holdTime > 1e-6f) yield return Wait(holdTime);
 
@@ -107,30 +111,35 @@ public class ImpactPulse : MonoBehaviour
         {
             float e = ease.Evaluate(t / st);
             ApplyState(
-                Mathf.Lerp(endFov, startFov, e),
+                Mathf.Lerp(endSize, startSize, e),
+                Vector3.Lerp(endScale, startScale, e),
                 Mathf.Lerp(endDist, startDist, e),
-                Mathf.Lerp(endScale, startScale, e),
-                Vector2.LerpUnclamped(distortionCenter, distortionCenter, e),
+                Mathf.Lerp(endScaleLD, startScaleLD, e),
                 Mathf.Lerp(endCA, startCA, e)
             );
             yield return null;
         }
-        ApplyState(startFov, startDist, startScale, distortionCenter, startCA);
+        ApplyState(startSize, startScale, startDist, startScaleLD, startCA);
 
         _pulse = null;
     }
 
-    void ApplyState(float fov, float distortion, float scale, Vector2 center, float ca)
+    void ApplyState(float orthoSize, Vector3 scale, float distortion, float scaleLD, float ca)
     {
-        if (targetCamera && doFovKick)
-            targetCamera.fieldOfView = fov;
+        if (targetCamera && doZoom)
+        {
+            if (targetCamera.orthographic)
+                targetCamera.orthographicSize = orthoSize;
+            else
+                targetCamera.transform.localScale = scale;
+        }
 
         if (_lens && doLensDistortion)
         {
             _lens.active = true;
             _lens.intensity.Override(distortion);
-            _lens.scale.Override(Mathf.Max(0.01f, scale));
-            _lens.center.Override(center);
+            _lens.scale.Override(Mathf.Max(0.01f, scaleLD));
+            _lens.center.Override(distortionCenter);
         }
 
         if (_ca && doChromatic)
@@ -142,8 +151,13 @@ public class ImpactPulse : MonoBehaviour
 
     void RestoreBaselinesImmediate()
     {
-        if (targetCamera && doFovKick)
-            targetCamera.fieldOfView = (_cachedBaseFov > 0f ? _cachedBaseFov : targetCamera.fieldOfView);
+        if (targetCamera && doZoom)
+        {
+            if (targetCamera.orthographic)
+                targetCamera.orthographicSize = _cachedBaseOrthoSize > 0f ? _cachedBaseOrthoSize : targetCamera.orthographicSize;
+            else if (_cachedBaseScale != Vector3.zero)
+                targetCamera.transform.localScale = _cachedBaseScale;
+        }
 
         if (_lens)
         {

@@ -36,6 +36,8 @@ public class CoinDropSnap : MonoBehaviour
     [Header("landing pulse")]
     public ImpactPulse landingPulse;
     public bool tryFindPulseOnMainCamera = true;
+    public bool pulseWhenLand = true;
+    public bool pulseOwnerOnly = true;
 
 
     Vector3 _lastValidWorldPos;
@@ -46,6 +48,8 @@ public class CoinDropSnap : MonoBehaviour
     ValidDropSpot _occupiedSpot;
 
     CoinPlacementProbe _probe;
+
+    bool _pulseFiredAtLand;
 
     void Awake()
     {
@@ -175,15 +179,17 @@ public class CoinDropSnap : MonoBehaviour
             transform.position = target;
             if (_sync) _sync.OwnerSnapTo(target);
             if (updateLastValid) _lastValidWorldPos = target;
+
+            _pulseFiredAtLand = false;
+            FireLandingPulse(updateLastValid);
+
             yield break;
         }
 
-        if (!landingPulse && tryFindPulseOnMainCamera && Camera.main)
-            landingPulse = Camera.main.GetComponentInChildren<ImpactPulse>();
+        _pulseFiredAtLand = false;
 
         float t = 0f;
         float lastY = start.y;
-
         while (t < snapDuration)
         {
             float p = t / snapDuration;
@@ -191,39 +197,7 @@ public class CoinDropSnap : MonoBehaviour
 
             Vector3 pos = Vector3.LerpUnclamped(start, target, eased);
 
-            if (useHop && hopHeight > 0f)
-            {
-                float peak = Mathf.Clamp01(hopPeakT <= 0f ? 0.001f : (hopPeakT >= 1f ? 0.999f : hopPeakT));
-                float h;
-                if (p <= peak)
-                {
-                    float n = p / peak;
-                    h = -((n - 1f) * (n - 1f)) + 1f;
-                }
-                else
-                {
-                    float n = (p - peak) / (1f - peak);
-                    h = -(n * n) + 1f;
-                }
-                pos.y += hopHeight * Mathf.Max(0f, h);
-            }
-
             transform.position = pos;
-
-            float vy = (pos.y - lastY) / Mathf.Max(Time.deltaTime, 1e-5f);
-            lastY = pos.y;
-
-            if (useHop && vy < -0.001f)
-            {
-                float fallSpeed01 = 1f - Mathf.Exp(vy * fallStretchSensitivity * Time.deltaTime); // vy is negative
-                float sx = Mathf.Lerp(1f, Mathf.Max(0.01f, fallSquashX), Mathf.Clamp01(fallSpeed01));
-                float sy = Mathf.Lerp(1f, Mathf.Max(1f, fallStretchY), Mathf.Clamp01(fallSpeed01));
-                transform.localScale = new Vector3(originalScale.x * sx, originalScale.y * sy, originalScale.z);
-            }
-            else
-            {
-                transform.localScale = Vector3.Lerp(transform.localScale, originalScale, 12f * Time.deltaTime);
-            }
 
             if (sendNetworkDuringTween && _sync != null)
                 _sync.OwnerSendPositionThrottled(pos);
@@ -238,10 +212,11 @@ public class CoinDropSnap : MonoBehaviour
         if (updateLastValid) _lastValidWorldPos = target;
         _snapRoutine = null;
 
-        yield return StartCoroutine(Co_LandingSquash(originalScale));
+        FireLandingPulse(updateLastValid);
 
-        if (landingPulse) landingPulse.Play();
+        yield return StartCoroutine(Co_LandingSquash(originalScale));
     }
+
 
     IEnumerator Co_LandingSquash(Vector3 originalScale)
     {
@@ -342,6 +317,25 @@ public class CoinDropSnap : MonoBehaviour
         Vector3 back = _lastValidWorldPos;
         if (!keepCurrentZ) back.z = _spawnZ;
         StartSnapTween(back, updateLastValid: false);
+    }
+
+    void FireLandingPulse(bool successfulPlacement)
+    {
+        if (!pulseWhenLand || _pulseFiredAtLand) return;
+        if (!successfulPlacement) return;
+
+        if (pulseOwnerOnly)
+        {
+            var id = GetComponent<Mirror.NetworkIdentity>();
+            if (id && !id.isLocalPlayer) return;
+        }
+
+        if (!landingPulse && tryFindPulseOnMainCamera && Camera.main)
+            landingPulse = Camera.main.GetComponentInChildren<ImpactPulse>();
+
+        if (landingPulse) landingPulse.Play();
+
+        _pulseFiredAtLand = true;
     }
 
 }
