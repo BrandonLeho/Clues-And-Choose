@@ -144,19 +144,22 @@ public class CoinNetworkSpawner : NetworkBehaviour
                     intro.Configure(spawnPos, targetPos, startDelay,
                                     slideUnitsPerSecond, startRotZ, endRotZ,
                                     startAlpha, endAlpha, slideEase);
-
-                    var gate = go.GetComponent<CoinDragPermissionDuringAnim>();
-                    if (!gate) gate = go.AddComponent<CoinDragPermissionDuringAnim>();
-
-                    float slideDistance = Vector3.Distance(spawnPos, targetPos);
-                    float slideDuration = (slideUnitsPerSecond > 0f)
-                        ? (slideDistance / slideUnitsPerSecond)
-                        : 0f;
-
-                    gate.BeginTempBlock(startDelay + slideDuration);
                 }
 
                 NetworkServer.Spawn(go);
+
+                if (useSlideIn)
+                {
+                    var gate = go.GetComponent<CoinInteractionGate>();
+                    if (!gate) gate = go.AddComponent<CoinInteractionGate>();
+
+                    float distance = Vector3.Distance(spawnPos, targetPos);
+                    float speed = Mathf.Max(0.01f, slideUnitsPerSecond);
+                    float travelSeconds = distance / speed;
+                    float totalBlock = globalStartDelay + travelSeconds + 0.05f;
+
+                    gate.ArmForSeconds(totalBlock);
+                }
             }
         }
     }

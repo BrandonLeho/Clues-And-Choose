@@ -255,7 +255,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36b46f21238220e43a6be32de58928a3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GridCellHover
-  hoverScale: 3
+  hoverScale: 1.45
   animSeconds: 0.18
   ease:
     serializedVersion: 2

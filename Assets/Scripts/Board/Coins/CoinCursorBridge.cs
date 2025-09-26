@@ -33,9 +33,9 @@ public class CoinCursorBridge : MonoBehaviour, IPointerEnterHandler, IPointerExi
     public void OnPointerEnter(PointerEventData eventData)
     {
         _isPointerOver = true;
-        Debug.Log(_isDragging);
+
         if (_isDragging) return;
-        Debug.Log(CanBeginDragLikeHandler());
+
         if (CanBeginDragLikeHandler())
             CursorControllerModule.Instance.SetToMode(CursorControllerModule.ModeOfCursor.Draggable);
         else
