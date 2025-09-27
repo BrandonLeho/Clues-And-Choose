@@ -52,17 +52,6 @@ public class CoinPlacementProbe : MonoBehaviour
     public bool maskAlignToArrow = true;
     public float maskAutoLengthPerUnit = 0.6f;
 
-    [Header("Feathered Edge Overlay")]
-    public bool enableFeatherOverlay = true;
-    public Sprite featherSprite;
-    public Color featherTint = Color.black;
-
-    [Range(0f, 1f)]
-    public float featherOpacity = 0.35f;
-    public Vector2 featherExpand = new Vector2(0.15f, 0.15f);
-    public float featherZOffset = -0.005f;
-    public int featherSortingOrderBias = -1;
-
     bool _suppressUntilInside;
     CoinDragHandler _drag;
     Transform _arrowInst;
@@ -82,8 +71,6 @@ public class CoinPlacementProbe : MonoBehaviour
 
     SpriteMask _spotlightMask;
     readonly List<(SpriteRenderer sr, SpriteMaskInteraction prev)> _touched = new();
-
-    SpriteRenderer _featherSR;
 
     public Vector3 GetProbeWorld() =>
         transform.TransformPoint(new Vector3(probeOffsetLocal.x, probeOffsetLocal.y, 0f));
@@ -130,7 +117,6 @@ public class CoinPlacementProbe : MonoBehaviour
             _netDrag.DragStateChanged -= OnNetDragStateChanged;
         }
         TeardownSpotlight();
-        TeardownFeather();
     }
 
     void OnPickUp()
@@ -200,10 +186,6 @@ public class CoinPlacementProbe : MonoBehaviour
             SetupSpotlight();
             ApplyMaskToOtherCoins(enable: true);
         }
-        if (showAsLocal && enableFeatherOverlay)
-        {
-            SetupFeather();
-        }
     }
 
     void StopArrow(bool isLocalCall)
@@ -225,7 +207,6 @@ public class CoinPlacementProbe : MonoBehaviour
 
         TeardownSpotlight();
         ApplyMaskToOtherCoins(enable: false);
-        TeardownFeather();
     }
 
     void Update()
@@ -247,11 +228,7 @@ public class CoinPlacementProbe : MonoBehaviour
 
         TickArrowAnimator();
 
-        if (Active == this)
-        {
-            if (_spotlightMask) UpdateSpotlightPose();
-            if (_featherSR) UpdateFeatherPoseAndStyle();
-        }
+        if (_spotlightMask && Active == this) UpdateSpotlightPose();
     }
 
     void TickArrowAnimatorOnlyHide()
@@ -319,8 +296,8 @@ public class CoinPlacementProbe : MonoBehaviour
         _targetShown = shown;
         _animating = true;
 
-        if (_spotlightMask) _spotlightMask.gameObject.SetActive(shown);
-        if (_featherSR) _featherSR.enabled = shown;
+        if (_spotlightMask)
+            _spotlightMask.gameObject.SetActive(shown);
     }
 
     void TickArrowAnimator()
@@ -393,6 +370,7 @@ public class CoinPlacementProbe : MonoBehaviour
 
         Vector2 localA = Vector2.zero;
         Vector2 localB = arrowOffsetLocal;
+
         Vector2 mid = (localA + localB) * 0.5f + maskOffsetLocal;
 
         float dist = (localB - localA).magnitude;
@@ -420,76 +398,6 @@ public class CoinPlacementProbe : MonoBehaviour
         {
             Destroy(_spotlightMask.gameObject);
             _spotlightMask = null;
-        }
-    }
-
-    void SetupFeather()
-    {
-        if (!featherSprite || _coinSR == null) return;
-
-        if (_featherSR == null)
-        {
-            var go = new GameObject("CoinSpotlightFeather");
-            go.transform.SetParent(transform, worldPositionStays: false);
-            go.transform.localPosition = new Vector3(0f, 0f, featherZOffset);
-            go.transform.localRotation = Quaternion.identity;
-            go.transform.localScale = Vector3.one;
-
-            _featherSR = go.AddComponent<SpriteRenderer>();
-            _featherSR.sprite = featherSprite;
-
-            _featherSR.sortingLayerID = _coinSR.sortingLayerID;
-            _featherSR.sortingOrder = _coinSR.sortingOrder + featherSortingOrderBias;
-            _featherSR.maskInteraction = SpriteMaskInteraction.None;
-        }
-
-        _featherSR.enabled = true;
-        UpdateFeatherPoseAndStyle();
-    }
-
-    void UpdateFeatherPoseAndStyle()
-    {
-        if (_featherSR == null) return;
-
-        Vector2 localA = Vector2.zero;
-        Vector2 localB = arrowOffsetLocal;
-        Vector2 mid = (localA + localB) * 0.5f + maskOffsetLocal;
-
-        float dist = (localB - localA).magnitude;
-        float sx = Mathf.Max(0.01f, maskScale.x + dist * Mathf.Max(0f, maskAutoLengthPerUnit)) + featherExpand.x;
-        float sy = Mathf.Max(0.01f, maskScale.y) + featherExpand.y;
-
-        _featherSR.transform.localPosition = new Vector3(mid.x, mid.y, featherZOffset);
-
-        if (maskAlignToArrow)
-        {
-            float ang = Mathf.Atan2(localB.y - localA.y, localB.x - localA.x) * Mathf.Rad2Deg;
-            _featherSR.transform.localRotation = Quaternion.Euler(0f, 0f, ang);
-        }
-        else
-        {
-            _featherSR.transform.localRotation = Quaternion.identity;
-        }
-
-        _featherSR.transform.localScale = new Vector3(sx, sy, 1f);
-
-        Color c = featherTint;
-        c.a *= Mathf.Clamp01(featherOpacity);
-        _featherSR.color = c;
-
-        if (_coinSR)
-        {
-            _featherSR.sortingLayerID = _coinSR.sortingLayerID;
-            _featherSR.sortingOrder = _coinSR.sortingOrder + featherSortingOrderBias;
-        }
-    }
-
-    void TeardownFeather()
-    {
-        if (_featherSR)
-        {
-            Destroy(_featherSR.gameObject);
-            _featherSR = null;
         }
     }
 
