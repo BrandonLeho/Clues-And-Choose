@@ -1,5 +1,6 @@
 using Mirror;
 using UnityEngine;
+using System;
 
 [RequireComponent(typeof(NetworkCoin))]
 public class CoinDragSync : NetworkBehaviour
@@ -14,6 +15,9 @@ public class CoinDragSync : NetworkBehaviour
     [SerializeField] float snapIfFar = 0.5f;
     [SerializeField] float minSendInterval = 0.05f;
 
+    [Header("Observer Streaming Detect")]
+    [SerializeField] float remoteIdleTimeout = 0.20f;
+
     float _lastSendTime = -999f;
     NetworkCoin _coin;
     float _lastAutoSend;
@@ -26,6 +30,14 @@ public class CoinDragSync : NetworkBehaviour
     Vector3 _lastSentPos;
     Vector3 _lastSentScale;
 
+    float _lastRemoteRxTime;
+    bool _remoteStreaming;
+
+    public bool IsOwnerStreaming => _streaming && _coin != null && _coin.IsLocalOwner();
+    public bool IsRemotelyStreaming => !(_coin != null && _coin.IsLocalOwner()) && _remoteStreaming;
+
+    public event Action<bool> OnStreamStateChanged;
+
     void Awake()
     {
         _coin = GetComponent<NetworkCoin>();
@@ -37,10 +49,20 @@ public class CoinDragSync : NetworkBehaviour
 
     public void BeginLocalDrag()
     {
-        if (_coin.IsLocalOwner()) _streaming = true;
+        if (_coin.IsLocalOwner())
+        {
+            SetOwnerStreaming(true);
+        }
     }
 
-    public void EndLocalDrag() => _streaming = false;
+    public void EndLocalDrag() => SetOwnerStreaming(false);
+
+    void SetOwnerStreaming(bool v)
+    {
+        if (_streaming == v) return;
+        _streaming = v;
+        OnStreamStateChanged?.Invoke(IsOwnerStreaming || IsRemotelyStreaming);
+    }
 
     void LateUpdate()
     {
@@ -63,7 +85,6 @@ public class CoinDragSync : NetworkBehaviour
                     CmdMove(p, _lastSentScale);
                 }
             }
-
             return;
         }
 
@@ -79,6 +100,12 @@ public class CoinDragSync : NetworkBehaviour
                 transform.position = Vector3.Lerp(transform.position, _targetPos, Time.unscaledDeltaTime * lerpSpeed);
                 transform.localScale = Vector3.Lerp(transform.localScale, _targetScale, Time.unscaledDeltaTime * lerpSpeed);
             }
+        }
+
+        if (_remoteStreaming && (Time.unscaledTime - _lastRemoteRxTime) > remoteIdleTimeout)
+        {
+            _remoteStreaming = false;
+            OnStreamStateChanged?.Invoke(false);
         }
     }
 
@@ -106,6 +133,13 @@ public class CoinDragSync : NetworkBehaviour
 
         transform.position = Vector3.Lerp(transform.position, _targetPos, 0.25f);
         transform.localScale = Vector3.Lerp(transform.localScale, _targetScale, 0.25f);
+
+        _lastRemoteRxTime = Time.unscaledTime;
+        if (!_remoteStreaming)
+        {
+            _remoteStreaming = true;
+            OnStreamStateChanged?.Invoke(true);
+        }
     }
 
     public void OwnerSnapTo(Vector3 worldPos, Vector3 scale)
