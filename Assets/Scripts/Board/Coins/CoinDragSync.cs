@@ -20,12 +20,18 @@ public class CoinDragSync : NetworkBehaviour
     bool _streaming;
 
     Vector3 _targetPos;
+    Vector3 _targetScale;
     bool _hasTarget;
+
+    Vector3 _lastSent;
+    Vector3 _lastSentScale;
 
     void Awake()
     {
         _coin = GetComponent<NetworkCoin>();
         _targetPos = transform.position;
+        _targetScale = transform.localScale;
+        _lastSentScale = transform.localScale;
     }
 
     public void BeginLocalDrag()
@@ -43,12 +49,16 @@ public class CoinDragSync : NetworkBehaviour
             {
                 _lastSend = Time.unscaledTime;
 
-                var p = transform.position; p.z = dragZ;
+                var p = transform.position;
+                p.z = dragZ;
 
-                if ((_lastSent - p).sqrMagnitude > minSendDelta)
+                var s = transform.localScale;
+
+                if ((_lastSent - p).sqrMagnitude > minSendDelta || (_lastSentScale - s).sqrMagnitude > 0.0001f)
                 {
                     _lastSent = p;
-                    CmdMove(p);
+                    _lastSentScale = s;
+                    CmdMove(p, s);
                 }
             }
             return;
@@ -64,13 +74,13 @@ public class CoinDragSync : NetworkBehaviour
             {
                 transform.position = Vector3.Lerp(transform.position, _targetPos, Time.unscaledDeltaTime * lerpSpeed);
             }
+
+            transform.localScale = Vector3.Lerp(transform.localScale, _targetScale, Time.unscaledDeltaTime * lerpSpeed);
         }
     }
 
-    Vector3 _lastSent;
-
     [Command(requiresAuthority = false)]
-    void CmdMove(Vector3 pos, NetworkConnectionToClient sender = null)
+    void CmdMove(Vector3 pos, Vector3 scale, NetworkConnectionToClient sender = null)
     {
         if (_coin == null || sender?.identity == null) return;
         if (_coin.ownerNetId != sender.identity.netId) return;
@@ -78,18 +88,21 @@ public class CoinDragSync : NetworkBehaviour
         pos.z = dragZ;
 
         transform.position = pos;
+        transform.localScale = scale;
 
-        RpcMoved(pos);
+        RpcMoved(pos, scale);
     }
 
     [ClientRpc(includeOwner = false)]
-    void RpcMoved(Vector3 pos)
+    void RpcMoved(Vector3 pos, Vector3 scale)
     {
         pos.z = dragZ;
         _targetPos = pos;
+        _targetScale = scale;
         _hasTarget = true;
 
         transform.position = Vector3.Lerp(transform.position, _targetPos, 0.25f);
+        transform.localScale = Vector3.Lerp(transform.localScale, _targetScale, 0.25f);
     }
 
     public void OwnerSnapTo(Vector3 worldPos)
@@ -97,7 +110,7 @@ public class CoinDragSync : NetworkBehaviour
         if (!isClient) return;
         if (_coin != null && _coin.IsLocalOwner())
         {
-            CmdMove(worldPos);
+            CmdMove(worldPos, transform.localScale);
         }
     }
 
@@ -108,7 +121,6 @@ public class CoinDragSync : NetworkBehaviour
 
         if (Time.time - _lastSendTime < minSendInterval) return;
         _lastSendTime = Time.time;
-        CmdMove(worldPos);
+        CmdMove(worldPos, transform.localScale);
     }
-
 }
