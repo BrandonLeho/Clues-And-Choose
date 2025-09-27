@@ -14,11 +14,16 @@ public class CoinDragHandler : MonoBehaviour
     public float dragZ = 0f;
     public bool preserveGrabOffset = true;
 
-    [Header("Visual Layering")]
+    [Header("Visual Layering (Local Top)")]
     public SpriteRenderer targetRenderer;
     public int sortingOrderBoost = 50;
     public bool useAbsoluteTopOrder = true;
     public int localDragTopOrder = 50000;
+
+    [Header("Networked Layering (Synced)")]
+    public bool syncDraggingLayer = true;
+    public int networkDragBaseOrder = 20000;
+    public int remoteClientSubtractiveBias = 10;
 
     [Header("Collisions")]
     public bool disableColliderWhileDragging = false;
@@ -57,7 +62,6 @@ public class CoinDragHandler : MonoBehaviour
     CoinDragSync _sync;
 
     ICoinDragPermission[] _permGuards;
-
     CoinRejectionFeedback _rejectFx;
 
     void Awake()
@@ -68,18 +72,13 @@ public class CoinDragHandler : MonoBehaviour
         _netCoin = GetComponent<NetworkCoin>();
         _sync = GetComponent<CoinDragSync>();
 
-        if (!worldCamera)
-        {
-            worldCamera = Camera.main;
-            if (debugInteract && !worldCamera) Debug.LogWarning($"[{name}] No worldCamera; set one at runtime.");
-        }
+        if (!worldCamera) worldCamera = Camera.main;
 
         if (!targetRenderer) targetRenderer = GetComponent<SpriteRenderer>();
         _hadRenderer = targetRenderer != null;
         if (_hadRenderer) _baseSortingOrder = targetRenderer.sortingOrder;
 
         if (Mathf.Approximately(dragZ, 0f)) dragZ = transform.position.z;
-
         _origZ = transform.position.z;
         _baseScale = transform.localScale;
         _targetScale = _baseScale;
@@ -93,17 +92,9 @@ public class CoinDragHandler : MonoBehaviour
         if (_isDragging && _allowLocalMove)
         {
             Vector3 targetPos = PointerOnDragPlane(_activePointerId);
-
             if (preserveGrabOffset) targetPos += _grabOffsetLocal;
-
-            if (useFixedCursorAnchor)
-            {
-                targetPos.x += fixedCursorAnchor.x;
-                targetPos.y += fixedCursorAnchor.y;
-            }
-
+            if (useFixedCursorAnchor) { targetPos.x += fixedCursorAnchor.x; targetPos.y += fixedCursorAnchor.y; }
             targetPos.z = dragZ;
-
             transform.position = Vector3.Lerp(
                 transform.position, targetPos,
                 1f - Mathf.Exp(-followSpeed * Time.deltaTime));
@@ -112,9 +103,44 @@ public class CoinDragHandler : MonoBehaviour
         transform.localScale = Vector3.Lerp(
             transform.localScale, _targetScale,
             1f - Mathf.Exp(-scaleLerpSpeed * Time.deltaTime));
+
+        UpdateLayeringPerClient();
     }
 
-    #region Mouse
+    void UpdateLayeringPerClient()
+    {
+        if (!_hadRenderer) return;
+
+        bool hasSync = _sync != null;
+        bool netDragging = hasSync && _sync.IsDragging && _sync.DragToken > 0;
+        bool isLocalOwner = _netCoin != null && _netCoin.IsLocalOwner();
+
+        if (isLocalOwner && _isDragging)
+        {
+            targetRenderer.sortingOrder = useAbsoluteTopOrder
+                ? localDragTopOrder
+                : _baseSortingOrder + sortingOrderBoost;
+            return;
+        }
+
+        if (syncDraggingLayer && netDragging)
+        {
+            int synced = networkDragBaseOrder + _sync.DragToken;
+
+            if (!isLocalOwner)
+                synced -= Mathf.Max(0, remoteClientSubtractiveBias);
+
+            targetRenderer.sortingOrder = synced;
+            return;
+        }
+
+        if (!_isDragging)
+        {
+            targetRenderer.sortingOrder = _baseSortingOrder;
+        }
+    }
+
+    #region Mouse/Touch
     void HandleMouse()
     {
         const int mouseId = -999;
@@ -127,20 +153,11 @@ public class CoinDragHandler : MonoBehaviour
 
         if (dragMode == DragMode.Hold)
         {
-            if (!_isDragging && mouseDown && overMe)
-            {
-                BeginDrag(mouseId, p2);
-                return;
-            }
-
+            if (!_isDragging && mouseDown && overMe) { BeginDrag(mouseId, p2); return; }
             if (_isDragging)
             {
                 bool canDrop = Time.unscaledTime >= _noDropBefore;
-                if (canDrop && (!mouseHeld || mouseUp))
-                {
-                    EndDrag();
-                    return;
-                }
+                if (canDrop && (!mouseHeld || mouseUp)) { EndDrag(); return; }
             }
         }
         else
@@ -152,9 +169,7 @@ public class CoinDragHandler : MonoBehaviour
             }
         }
     }
-    #endregion
 
-    #region Touch
     void HandleTouch()
     {
         if (!_isDragging)
@@ -165,7 +180,6 @@ public class CoinDragHandler : MonoBehaviour
                 if (t.phase != TouchPhase.Began) continue;
                 Vector2 p2 = (Vector2)PointerOnDragPlane(i);
                 bool overMe = _col && _col.OverlapPoint(p2);
-                if (debugInteract) Debug.Log($"[{name}] touch began overMe={overMe} id={i}");
                 if (overMe) { BeginDrag(i, p2); break; }
             }
         }
@@ -196,46 +210,20 @@ public class CoinDragHandler : MonoBehaviour
 
     void BeginDrag(int pointerId, Vector2 worldPoint)
     {
-        if (_rejectFx != null && _rejectFx.IsPlaying)
-        {
-            return;
-        }
-
-        if (debugInteract) Debug.Log($"[Drag] {name} BeginDrag called");
-
-        if (_netCoin != null && !_netCoin.IsLocalOwner())
-        {
-            if (debugInteract) Debug.Log($"[Drag] {name} blocked: not local owner (owner={_netCoin.ownerNetId})");
-            _rejectFx?.Play();
-            return;
-        }
-
-        if (!GuardsAllowBeginDrag())
-        {
-            _rejectFx?.Play();
-            return;
-        }
+        if (_rejectFx != null && _rejectFx.IsPlaying) return;
+        if (_netCoin != null && !_netCoin.IsLocalOwner()) { _rejectFx?.Play(); return; }
+        if (!GuardsAllowBeginDrag()) { _rejectFx?.Play(); return; }
 
         _activePointerId = pointerId;
         _isDragging = true;
         _allowLocalMove = true;
-
         _noDropBefore = Time.unscaledTime + dropGuardSeconds;
-
-        if (debugInteract) Debug.Log($"[Drag] {name} STARTED: dragging=true allowLocalMove={_allowLocalMove}");
 
         var coinPos = transform.position;
         Vector3 pointer3 = new Vector3(worldPoint.x, worldPoint.y, dragZ);
         _grabOffsetLocal = preserveGrabOffset ? (coinPos - pointer3) : Vector3.zero;
 
-        if (_hadRenderer)
-        {
-            _baseSortingOrder = targetRenderer.sortingOrder;
-            targetRenderer.sortingOrder = useAbsoluteTopOrder
-                ? localDragTopOrder
-                : _baseSortingOrder + sortingOrderBoost;
-        }
-
+        if (_hadRenderer) _baseSortingOrder = targetRenderer.sortingOrder;
         if (disableColliderWhileDragging) _col.enabled = false;
 
         _origZ = coinPos.z;
@@ -249,17 +237,13 @@ public class CoinDragHandler : MonoBehaviour
 
     void EndDrag()
     {
-        if (debugInteract) Debug.Log($"[Drag] {name} EndDrag()");
-
         _isDragging = false;
         _activePointerId = -1;
         _allowLocalMove = false;
 
-        if (_hadRenderer) targetRenderer.sortingOrder = _baseSortingOrder;
         if (disableColliderWhileDragging) _col.enabled = true;
 
         var pos = transform.position; pos.z = _origZ; transform.position = pos;
-
         _targetScale = _baseScale;
 
         _sync?.EndLocalDrag();

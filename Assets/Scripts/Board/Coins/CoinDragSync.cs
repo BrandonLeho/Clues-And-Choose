@@ -18,9 +18,15 @@ public class CoinDragSync : NetworkBehaviour
     [SyncVar(hook = nameof(OnDraggingSyncChanged))]
     bool isDragging;
 
-    public event Action<bool> DragStateChanged;
+    [SyncVar(hook = nameof(OnDragTokenChanged))]
+    int dragToken;
 
     public bool IsDragging => isDragging;
+    public int DragToken => dragToken;
+
+    public event Action<bool> DragStateChanged;
+    public event Action<int> DragTokenChanged;
+
     public bool IsLocalOwner => _coin != null && _coin.IsLocalOwner();
 
     float _lastSendTime = -999f;
@@ -34,6 +40,8 @@ public class CoinDragSync : NetworkBehaviour
 
     Vector3 _lastSentPos;
     Vector3 _lastSentScale;
+
+    static int s_serverDragSerial = 0;
 
     void Awake()
     {
@@ -126,17 +134,12 @@ public class CoinDragSync : NetworkBehaviour
     public void OwnerSnapTo(Vector3 worldPos, Vector3 scale)
     {
         if (!isClient) return;
-        if (_coin != null && _coin.IsLocalOwner())
-        {
-            CmdMove(worldPos, scale);
-        }
+        if (_coin != null && _coin.IsLocalOwner()) CmdMove(worldPos, scale);
     }
 
     public void OwnerSendPositionThrottled(Vector3 worldPos, Vector3 scale)
     {
-        if (!isClient) return;
-        if (_coin == null || !_coin.IsLocalOwner()) return;
-
+        if (!isClient || _coin == null || !_coin.IsLocalOwner()) return;
         if (Time.time - _lastSendTime < minSendInterval) return;
         _lastSendTime = Time.time;
         CmdMove(worldPos, scale);
@@ -147,11 +150,33 @@ public class CoinDragSync : NetworkBehaviour
     {
         if (_coin == null || sender?.identity == null) return;
         if (_coin.ownerNetId != sender.identity.netId) return;
-        isDragging = dragging;
+
+        if (dragging)
+        {
+            isDragging = true;
+            if (dragToken == 0) dragToken = NextServerDragToken();
+        }
+        else
+        {
+            isDragging = false;
+            dragToken = 0;
+        }
+    }
+
+    static int NextServerDragToken()
+    {
+        s_serverDragSerial++;
+        if (s_serverDragSerial > 1_000_000) s_serverDragSerial = 1;
+        return s_serverDragSerial;
     }
 
     void OnDraggingSyncChanged(bool oldVal, bool newVal)
     {
         DragStateChanged?.Invoke(newVal);
+    }
+
+    void OnDragTokenChanged(int oldToken, int newToken)
+    {
+        DragTokenChanged?.Invoke(newToken);
     }
 }
