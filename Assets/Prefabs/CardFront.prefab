@@ -681,7 +681,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dd789d524183ba14fac1d770fb1dd9a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ChoiceClickRelay
-  controller: {fileID: 0}
+  controller: {fileID: 7665591576090681039}
   coord: {fileID: 0}
   img: {fileID: 0}
   cg: {fileID: 0}
@@ -711,6 +711,64 @@ MonoBehaviour:
   disableFurtherInputOnSelect: 1
   usePlaceholderOnSelect: 1
   removePlaceholderAfterSelect: 0
+  useAnticipation: 1
+  anticipationScale: 0.7
+  anticipationTime: 0.2
+  anticipationEase:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  losersExitWithCharacter: 1
+  losersExitStagger: 0.03
+  losersExitTime: 0.22
+  losersExitDrift: 22
+  losersExitScale: 0.9
+  losersExitRotate: 6
+  losersExitEase:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  losersExitFade: 1
   onChoiceSelected:
     m_PersistentCalls:
       m_Calls: []

@@ -27,6 +27,24 @@ public class CardChoiceSelectController : MonoBehaviour
     public bool usePlaceholderOnSelect = true;
     public bool removePlaceholderAfterSelect = false;
 
+    [Header("Anticipation Dip")]
+    public bool useAnticipation = true;
+    [Range(0.7f, 1f)] public float anticipationScale = 0.92f;
+    public float anticipationTime = 0.085f;
+    public AnimationCurve anticipationEase = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
+
+    [Header("Losers Exit")]
+    public bool losersExitWithCharacter = true;
+    public float losersExitStagger = 0.03f;
+    public float losersExitTime = 0.22f;
+    public float losersExitDrift = 22f;
+    public float losersExitScale = 0.9f;
+    public float losersExitRotate = 6f;
+    public AnimationCurve losersExitEase = AnimationCurve.EaseInOut(0, 0, 1, 1);
+    public bool losersExitFade = true;
+
+
     [Serializable]
     public struct ChoicePayload
     {
@@ -100,12 +118,25 @@ public class CardChoiceSelectController : MonoBehaviour
 
     IEnumerator CoAnimateSelection(ChoiceClickRelay selected, int col, int row, Color color)
     {
+        int loserIdx = 0;
         foreach (var ch in choices)
         {
             if (!ch || ch == selected) continue;
-            StartCoroutine(CoFade(ch.cg, ch.cg.alpha, 0f, fadeDuration));
-            if (ch.cg) ch.cg.blocksRaycasts = false;
-            if (ch.img) ch.img.raycastTarget = false;
+
+            if (losersExitWithCharacter)
+            {
+                if (ch.cg) ch.cg.blocksRaycasts = false;
+                if (ch.img) ch.img.raycastTarget = false;
+
+                StartCoroutine(CoLoserExit(ch, loserIdx * Mathf.Max(0f, losersExitStagger)));
+                loserIdx++;
+            }
+            else
+            {
+                StartCoroutine(CoFade(ch.cg, ch.cg ? ch.cg.alpha : 1f, 0f, fadeDuration));
+                if (ch.cg) ch.cg.blocksRaycasts = false;
+                if (ch.img) ch.img.raycastTarget = false;
+            }
         }
 
         var scaleT = GetScaleTarget(selected);
@@ -115,6 +146,21 @@ public class CardChoiceSelectController : MonoBehaviour
         Vector2 startPos = selRT.anchoredPosition;
         Vector3 startScale = scaleT.localScale;
         Vector3 endScale = startScale * selectedScale;
+
+        if (useAnticipation && anticipationTime > 0f)
+        {
+            Vector3 dipScale = startScale * anticipationScale;
+            float at = 0f, ad = Mathf.Max(0.0001f, anticipationTime);
+            while (at < ad)
+            {
+                at += Time.unscaledDeltaTime;
+                float p = Mathf.Clamp01(at / ad);
+                float e = anticipationEase.Evaluate(p);
+                scaleT.localScale = Vector3.LerpUnclamped(startScale, dipScale, e);
+                yield return null;
+            }
+            scaleT.localScale = dipScale;
+        }
 
         float t = 0f;
         float d = Mathf.Max(0.0001f, moveDuration);
@@ -126,12 +172,16 @@ public class CardChoiceSelectController : MonoBehaviour
             float eased = 1f - Mathf.Pow(1f - p, k + 1f);
 
             selRT.anchoredPosition = Vector2.LerpUnclamped(startPos, endPos, eased);
-            scaleT.localScale = Vector3.LerpUnclamped(startScale, endScale, eased);
+            scaleT.localScale = Vector3.LerpUnclamped(
+                useAnticipation ? startScale * anticipationScale : startScale,
+                endScale, eased);
+
             yield return null;
         }
 
         selRT.anchoredPosition = endPos;
         scaleT.localScale = endScale;
+
         FreezeHoverScale(selected, scaleT, endScale);
         AllowHoverOnSelected(selected);
 
@@ -153,6 +203,49 @@ public class CardChoiceSelectController : MonoBehaviour
             ClearPlaceholder();
         }
     }
+
+    IEnumerator CoLoserExit(ChoiceClickRelay ch, float delay)
+    {
+        if (!ch) yield break;
+        if (delay > 0f) { float t0 = 0f; while (t0 < delay) { t0 += Time.unscaledDeltaTime; yield return null; } }
+
+        var rt = (RectTransform)ch.transform;
+        var cg = ch.cg;
+        var scaleT = GetScaleTarget(ch);
+
+        Vector2 center = Vector2.zero;
+        Vector2 from = rt.anchoredPosition;
+        Vector2 dir = (from - center).sqrMagnitude > 1e-6f ? (from - center).normalized : new Vector2(0.6f, 0.6f);
+        Vector2 to = from + dir * losersExitDrift;
+
+        float rotSign = UnityEngine.Random.value < 0.5f ? -1f : 1f;
+        float startRot = rt.localEulerAngles.z;
+        float endRot = startRot + rotSign * losersExitRotate;
+
+        Vector3 startScale = scaleT.localScale;
+        Vector3 endScale = startScale * Mathf.Max(0.01f, losersExitScale);
+
+        float t = 0f, d = Mathf.Max(0.0001f, losersExitTime);
+        while (t < d)
+        {
+            t += Time.unscaledDeltaTime;
+            float p = Mathf.Clamp01(t / d);
+            float e = losersExitEase.Evaluate(p);
+
+            rt.anchoredPosition = Vector2.LerpUnclamped(from, to, e);
+            scaleT.localScale = Vector3.LerpUnclamped(startScale, endScale, e);
+            rt.localRotation = Quaternion.Euler(0f, 0f, Mathf.LerpUnclamped(startRot, endRot, e));
+
+            if (losersExitFade && cg) cg.alpha = Mathf.Lerp(1f, 0f, p);
+            yield return null;
+        }
+
+        rt.anchoredPosition = to;
+        scaleT.localScale = endScale;
+        if (losersExitFade && cg) cg.alpha = 0f;
+    }
+
+
 
     IEnumerator CoFade(CanvasGroup cg, float from, float to, float duration)
     {
