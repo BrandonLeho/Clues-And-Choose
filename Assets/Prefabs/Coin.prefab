@@ -60,7 +60,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c9be690603025d4498f1b0ee7ce12aa4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CoinDragHandler
-  dragMode: 0
+  dragMode: 1
   worldCamera: {fileID: 0}
   followSpeed: 20
   dragZ: 10
@@ -69,6 +69,9 @@ MonoBehaviour:
   sortingOrderBoost: 50
   useAbsoluteTopOrder: 1
   localDragTopOrder: 1000
+  syncDraggingLayer: 1
+  networkDragBaseOrder: 20000
+  remoteClientSubtractiveBias: 10
   disableColliderWhileDragging: 0
   pickupScaleMultiplier: 1.25
   scaleLerpSpeed: 10
