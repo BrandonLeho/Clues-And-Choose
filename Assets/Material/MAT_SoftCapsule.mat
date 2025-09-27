@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: MAT_SoftCapsule
-  m_Shader: {fileID: 4800000, guid: 87fc684cbab3e054185da4bac069c5a4, type: 3}
+  m_Shader: {fileID: 4800000, guid: 733db98650aef814e9c07089601d430f, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []

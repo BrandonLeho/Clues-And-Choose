@@ -574,18 +574,22 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  maskScale: {x: 5, y: 3}
-  maskOffsetLocal: {x: 0, y: 0}
-  maskZOffset: -0.01
-  useFeatheredSoftMask: 1
-  softMaskMaterial: {fileID: 2100000, guid: 17cbf8ae82e854748895b0f838c728d8, type: 2}
-  softFeather: 0.2
   enableSpotlightMask: 1
   capsuleMaskSprite: {fileID: 21300000, guid: e44964a2bd96c5b48b90775ce2c2a6d4, type: 3}
+  maskScale: {x: 5, y: 3}
+  maskOffsetLocal: {x: 0, y: -1.5}
+  maskZOffset: -0.01
   maskBackSortingOrderBias: -10000
   maskFrontSortingOrderBias: 10000
   maskAlignToArrow: 1
   maskAutoLengthPerUnit: 0.6
+  enableFeatherOverlay: 1
+  featherSprite: {fileID: 21300000, guid: a134658295339a440bb95c24a161fb87, type: 3}
+  featherTint: {r: 0, g: 0, b: 0, a: 1}
+  featherOpacity: 0.35
+  featherExpand: {x: 0.15, y: 0.15}
+  featherZOffset: -0.005
+  featherSortingOrderBias: -1
 --- !u!114 &1589490137157167867
 MonoBehaviour:
   m_ObjectHideFlags: 0

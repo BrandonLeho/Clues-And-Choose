@@ -42,22 +42,26 @@ public class CoinPlacementProbe : MonoBehaviour
     public AnimationCurve ease = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
     [Header("Local Spotlight Mask")]
+    public bool enableSpotlightMask = true;
+    public Sprite capsuleMaskSprite;
     public Vector2 maskScale = new Vector2(2.0f, 1.2f);
     public Vector2 maskOffsetLocal = Vector2.zero;
     public float maskZOffset = -0.01f;
-
-    [Header("Feathered Soft Mask")]
-    public bool useFeatheredSoftMask = true;
-    public Material softMaskMaterial;
-    [Min(0f)] public float softFeather = 0.2f;
-
-    [Header("Hard SpriteMask")]
-    public bool enableSpotlightMask = false;
-    public Sprite capsuleMaskSprite;
     public int maskBackSortingOrderBias = -10000;
     public int maskFrontSortingOrderBias = 10000;
     public bool maskAlignToArrow = true;
     public float maskAutoLengthPerUnit = 0.6f;
+
+    [Header("Feathered Edge Overlay")]
+    public bool enableFeatherOverlay = true;
+    public Sprite featherSprite;
+    public Color featherTint = Color.black;
+
+    [Range(0f, 1f)]
+    public float featherOpacity = 0.35f;
+    public Vector2 featherExpand = new Vector2(0.15f, 0.15f);
+    public float featherZOffset = -0.005f;
+    public int featherSortingOrderBias = -1;
 
     bool _suppressUntilInside;
     CoinDragHandler _drag;
@@ -77,24 +81,9 @@ public class CoinPlacementProbe : MonoBehaviour
     bool _remoteMode;
 
     SpriteMask _spotlightMask;
+    readonly List<(SpriteRenderer sr, SpriteMaskInteraction prev)> _touched = new();
 
-    struct Touched
-    {
-        public SpriteRenderer sr;
-        public SpriteMaskInteraction prevMask;
-        public Material prevMat;
-    }
-    readonly List<Touched> _touched = new();
-
-    Vector3 _capA_World, _capB_World;
-    float _capRadiusWorld, _capFeatherWorld;
-
-    static readonly int PID_A = Shader.PropertyToID("_SoftCapA");
-    static readonly int PID_B = Shader.PropertyToID("_SoftCapB");
-    static readonly int PID_R = Shader.PropertyToID("_SoftCapRadius");
-    static readonly int PID_F = Shader.PropertyToID("_SoftCapFeather");
-    static readonly int PID_Enable = Shader.PropertyToID("_SoftCapEnable");
-    static MaterialPropertyBlock _mpb;
+    SpriteRenderer _featherSR;
 
     public Vector3 GetProbeWorld() =>
         transform.TransformPoint(new Vector3(probeOffsetLocal.x, probeOffsetLocal.y, 0f));
@@ -116,15 +105,17 @@ public class CoinPlacementProbe : MonoBehaviour
             _drag.onPickUp.AddListener(OnPickUp);
             _drag.onDrop.AddListener(OnDrop);
         }
-        if (_netDrag) _netDrag.DragStateChanged += OnNetDragStateChanged;
+
+        if (_netDrag)
+        {
+            _netDrag.DragStateChanged += OnNetDragStateChanged;
+        }
 
         if (!gridMask)
         {
             var found = GameObject.Find("ColorGrid");
             if (found) gridMask = found.GetComponent<RectTransform>();
         }
-
-        if (_mpb == null) _mpb = new MaterialPropertyBlock();
     }
 
     void OnDestroy()
@@ -134,10 +125,12 @@ public class CoinPlacementProbe : MonoBehaviour
             _drag.onPickUp.RemoveListener(OnPickUp);
             _drag.onDrop.RemoveListener(OnDrop);
         }
-        if (_netDrag) _netDrag.DragStateChanged -= OnNetDragStateChanged;
-
+        if (_netDrag)
+        {
+            _netDrag.DragStateChanged -= OnNetDragStateChanged;
+        }
         TeardownSpotlight();
-        ApplyMaskToOtherCoins(enable: false);
+        TeardownFeather();
     }
 
     void OnPickUp()
@@ -179,7 +172,6 @@ public class CoinPlacementProbe : MonoBehaviour
             _tipGraphic = _arrowSR ? _arrowSR.transform : _arrowInst;
 
             SyncArrowSortingLayerAndOrder();
-
             _arrowInst.localPosition = new Vector3(arrowOffsetLocal.x, arrowOffsetLocal.y, arrowLocalZ);
 
             float startAngleZ = arrowUseProbeDirection
@@ -203,17 +195,14 @@ public class CoinPlacementProbe : MonoBehaviour
             ApplyArrowPose();
         }
 
-        if (showAsLocal)
+        if (showAsLocal && enableSpotlightMask)
         {
-            if (useFeatheredSoftMask)
-            {
-                ApplyMaskToOtherCoins(enable: true);
-            }
-            else if (enableSpotlightMask)
-            {
-                SetupSpotlight();
-                ApplyMaskToOtherCoins(enable: true);
-            }
+            SetupSpotlight();
+            ApplyMaskToOtherCoins(enable: true);
+        }
+        if (showAsLocal && enableFeatherOverlay)
+        {
+            SetupFeather();
         }
     }
 
@@ -236,6 +225,7 @@ public class CoinPlacementProbe : MonoBehaviour
 
         TeardownSpotlight();
         ApplyMaskToOtherCoins(enable: false);
+        TeardownFeather();
     }
 
     void Update()
@@ -259,9 +249,8 @@ public class CoinPlacementProbe : MonoBehaviour
 
         if (Active == this)
         {
-            UpdateSoftCapsuleWorldParams();
             if (_spotlightMask) UpdateSpotlightPose();
-            if (useFeatheredSoftMask) PushSoftParamsToTouched();
+            if (_featherSR) UpdateFeatherPoseAndStyle();
         }
     }
 
@@ -331,6 +320,7 @@ public class CoinPlacementProbe : MonoBehaviour
         _animating = true;
 
         if (_spotlightMask) _spotlightMask.gameObject.SetActive(shown);
+        if (_featherSR) _featherSR.enabled = shown;
     }
 
     void TickArrowAnimator()
@@ -370,40 +360,9 @@ public class CoinPlacementProbe : MonoBehaviour
         _arrowInst.localRotation = Quaternion.Euler(x, 0f, 0f);
     }
 
-    void UpdateSoftCapsuleWorldParams()
-    {
-        Vector2 localA = Vector2.zero;
-        Vector2 localB = arrowOffsetLocal;
-
-        Vector2 mid = (localA + localB) * 0.5f + maskOffsetLocal;
-
-        Vector2 dir = localB - localA;
-        float len = dir.magnitude;
-        Vector2 ndir = len > 1e-5f ? dir / len : new Vector2(1f, 0f);
-
-        float radiusLocal = Mathf.Max(0.0001f, maskScale.y * 0.5f);
-        float halfLenLocal = Mathf.Max(0f, (maskScale.x - maskScale.y) * 0.5f);
-
-        Vector2 capALocal = mid - ndir * halfLenLocal;
-        Vector2 capBLocal = mid + ndir * halfLenLocal;
-
-        Vector3 A = transform.TransformPoint(capALocal.x, capALocal.y, 0f);
-        Vector3 B = transform.TransformPoint(capBLocal.x, capBLocal.y, 0f);
-
-        var ls = transform.lossyScale;
-        float planarScale = Mathf.Max(Mathf.Abs(ls.x), Mathf.Abs(ls.y));
-        float R = radiusLocal * planarScale;
-
-        _capA_World = A;
-        _capB_World = B;
-        _capRadiusWorld = R;
-        _capFeatherWorld = Mathf.Max(0f, softFeather);
-    }
-
     void SetupSpotlight()
     {
-        if (!enableSpotlightMask || !capsuleMaskSprite) return;
-
+        if (!capsuleMaskSprite) return;
         if (_spotlightMask == null)
         {
             var go = new GameObject("CoinSpotlightMask");
@@ -424,7 +383,6 @@ public class CoinPlacementProbe : MonoBehaviour
                 _spotlightMask.backSortingOrder = _coinSR.sortingOrder + maskBackSortingOrderBias;
             }
         }
-
         _spotlightMask.gameObject.SetActive(true);
         UpdateSpotlightPose();
     }
@@ -465,27 +423,90 @@ public class CoinPlacementProbe : MonoBehaviour
         }
     }
 
+    void SetupFeather()
+    {
+        if (!featherSprite || _coinSR == null) return;
+
+        if (_featherSR == null)
+        {
+            var go = new GameObject("CoinSpotlightFeather");
+            go.transform.SetParent(transform, worldPositionStays: false);
+            go.transform.localPosition = new Vector3(0f, 0f, featherZOffset);
+            go.transform.localRotation = Quaternion.identity;
+            go.transform.localScale = Vector3.one;
+
+            _featherSR = go.AddComponent<SpriteRenderer>();
+            _featherSR.sprite = featherSprite;
+
+            _featherSR.sortingLayerID = _coinSR.sortingLayerID;
+            _featherSR.sortingOrder = _coinSR.sortingOrder + featherSortingOrderBias;
+            _featherSR.maskInteraction = SpriteMaskInteraction.None;
+        }
+
+        _featherSR.enabled = true;
+        UpdateFeatherPoseAndStyle();
+    }
+
+    void UpdateFeatherPoseAndStyle()
+    {
+        if (_featherSR == null) return;
+
+        Vector2 localA = Vector2.zero;
+        Vector2 localB = arrowOffsetLocal;
+        Vector2 mid = (localA + localB) * 0.5f + maskOffsetLocal;
+
+        float dist = (localB - localA).magnitude;
+        float sx = Mathf.Max(0.01f, maskScale.x + dist * Mathf.Max(0f, maskAutoLengthPerUnit)) + featherExpand.x;
+        float sy = Mathf.Max(0.01f, maskScale.y) + featherExpand.y;
+
+        _featherSR.transform.localPosition = new Vector3(mid.x, mid.y, featherZOffset);
+
+        if (maskAlignToArrow)
+        {
+            float ang = Mathf.Atan2(localB.y - localA.y, localB.x - localA.x) * Mathf.Rad2Deg;
+            _featherSR.transform.localRotation = Quaternion.Euler(0f, 0f, ang);
+        }
+        else
+        {
+            _featherSR.transform.localRotation = Quaternion.identity;
+        }
+
+        _featherSR.transform.localScale = new Vector3(sx, sy, 1f);
+
+        Color c = featherTint;
+        c.a *= Mathf.Clamp01(featherOpacity);
+        _featherSR.color = c;
+
+        if (_coinSR)
+        {
+            _featherSR.sortingLayerID = _coinSR.sortingLayerID;
+            _featherSR.sortingOrder = _coinSR.sortingOrder + featherSortingOrderBias;
+        }
+    }
+
+    void TeardownFeather()
+    {
+        if (_featherSR)
+        {
+            Destroy(_featherSR.gameObject);
+            _featherSR = null;
+        }
+    }
+
     void ApplyMaskToOtherCoins(bool enable)
     {
         if (!enable)
         {
             for (int i = 0; i < _touched.Count; i++)
             {
-                var t = _touched[i];
-                if (t.sr)
-                {
-                    t.sr.maskInteraction = t.prevMask;
-
-                    if (t.prevMat) t.sr.material = t.prevMat;
-
-                    _mpb.Clear();
-                    _mpb.SetFloat(PID_Enable, 0f);
-                    t.sr.SetPropertyBlock(_mpb);
-                }
+                var entry = _touched[i];
+                if (entry.sr) entry.sr.maskInteraction = entry.prev;
             }
             _touched.Clear();
             return;
         }
+
+        if (_spotlightMask == null) return;
 
         var allCoins = FindObjectsByType<CoinDragHandler>(FindObjectsSortMode.None);
         for (int i = 0; i < allCoins.Length; i++)
@@ -494,7 +515,7 @@ public class CoinPlacementProbe : MonoBehaviour
             if (!coin) continue;
             if (coin.gameObject == this.gameObject) continue;
 
-            var srs = coin.GetComponentsInChildren<SpriteRenderer>(true);
+            var srs = coin.GetComponentsInChildren<SpriteRenderer>(includeInactive: true);
             for (int j = 0; j < srs.Length; j++)
             {
                 var sr = srs[j];
@@ -503,48 +524,12 @@ public class CoinPlacementProbe : MonoBehaviour
                 bool already = false;
                 for (int k = 0; k < _touched.Count; k++)
                     if (_touched[k].sr == sr) { already = true; break; }
+
                 if (already) continue;
 
-                var t = new Touched
-                {
-                    sr = sr,
-                    prevMask = sr.maskInteraction,
-                    prevMat = sr.sharedMaterial
-                };
-
-                if (useFeatheredSoftMask)
-                {
-                    if (softMaskMaterial)
-                    {
-                        sr.material = softMaskMaterial;
-                    }
-                }
-                else
-                {
-                    sr.maskInteraction = SpriteMaskInteraction.VisibleOutsideMask;
-                }
-
-                _touched.Add(t);
+                _touched.Add((sr, sr.maskInteraction));
+                sr.maskInteraction = SpriteMaskInteraction.VisibleOutsideMask;
             }
-        }
-    }
-
-    void PushSoftParamsToTouched()
-    {
-        if (!useFeatheredSoftMask || _touched.Count == 0) return;
-
-        for (int i = 0; i < _touched.Count; i++)
-        {
-            var sr = _touched[i].sr;
-            if (!sr) continue;
-
-            _mpb.Clear();
-            _mpb.SetVector(PID_A, _capA_World);
-            _mpb.SetVector(PID_B, _capB_World);
-            _mpb.SetFloat(PID_R, _capRadiusWorld);
-            _mpb.SetFloat(PID_F, _capFeatherWorld);
-            _mpb.SetFloat(PID_Enable, 1f);
-            sr.SetPropertyBlock(_mpb);
         }
     }
 }
