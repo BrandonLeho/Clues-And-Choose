@@ -576,7 +576,8 @@ MonoBehaviour:
     m_RotationOrder: 4
   enableSpotlightMask: 1
   capsuleMaskSprite: {fileID: 21300000, guid: e44964a2bd96c5b48b90775ce2c2a6d4, type: 3}
-  maskScale: {x: 2, y: 1.2}
+  maskScale: {x: 5, y: 3}
+  maskOffsetLocal: {x: 0, y: 0}
   maskZOffset: -0.01
   maskBackSortingOrderBias: -10000
   maskFrontSortingOrderBias: 10000
