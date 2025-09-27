@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(CoinDragHandler))]
@@ -40,6 +41,31 @@ public class CoinPlacementProbe : MonoBehaviour
     public float hiddenXAngle = 95f;
     public AnimationCurve ease = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
+    // ---- Spotlight Mask (new) ----
+    [Header("Local Spotlight Mask")]
+    public bool enableSpotlightMask = true;
+
+    [Tooltip("Capsule/rounded-rect sprite used by the SpriteMask.")]
+    public Sprite capsuleMaskSprite;
+
+    [Tooltip("Local scale for the mask: X = along the coin→arrow direction, Y = across.")]
+    public Vector2 maskScale = new Vector2(2.0f, 1.2f);
+
+    [Tooltip("Small Z offset so the mask child stays with the coin without affecting hit tests.")]
+    public float maskZOffset = -0.01f;
+
+    [Tooltip("Sorting order range the mask should affect relative to this coin. Make it wide.")]
+    public int maskBackSortingOrderBias = -50000;
+    public int maskFrontSortingOrderBias = 50000;
+
+    [Tooltip("If true, rotate the capsule to align with the vector from coin to arrow.")]
+    public bool maskAlignToArrow = true;
+
+    [Tooltip("Extra length added to X scale per unit of coin→arrow distance (0 = manual only).")]
+    public float maskAutoLengthPerUnit = 0.6f;
+
+    // --------------------------------
+
     bool _suppressUntilInside;
     CoinDragHandler _drag;
     Transform _arrowInst;
@@ -56,6 +82,10 @@ public class CoinPlacementProbe : MonoBehaviour
 
     CoinDragSync _netDrag;
     bool _remoteMode;
+
+    // spotlight internals
+    SpriteMask _spotlightMask;
+    readonly List<(SpriteRenderer sr, SpriteMaskInteraction prev)> _touched = new();
 
     public Vector3 GetProbeWorld() =>
         transform.TransformPoint(new Vector3(probeOffsetLocal.x, probeOffsetLocal.y, 0f));
@@ -101,6 +131,7 @@ public class CoinPlacementProbe : MonoBehaviour
         {
             _netDrag.DragStateChanged -= OnNetDragStateChanged;
         }
+        TeardownSpotlight(); // safety
     }
 
     void OnPickUp()
@@ -133,10 +164,7 @@ public class CoinPlacementProbe : MonoBehaviour
     {
         _isDragging = true;
 
-        if (showAsLocal)
-        {
-            Active = this;
-        }
+        if (showAsLocal) Active = this;
 
         if (arrowPrefab && !_arrowInst)
         {
@@ -168,6 +196,13 @@ public class CoinPlacementProbe : MonoBehaviour
             _arrowInst.gameObject.SetActive(true);
             ApplyArrowPose();
         }
+
+        // Spotlight only for local owner
+        if (showAsLocal && enableSpotlightMask)
+        {
+            SetupSpotlight();
+            ApplyMaskToOtherCoins(enable: true);
+        }
     }
 
     void StopArrow(bool isLocalCall)
@@ -189,16 +224,19 @@ public class CoinPlacementProbe : MonoBehaviour
         _animating = false;
         _targetShown = false;
         _remoteMode = false;
+
+        // remove spotlight & restore others
+        TeardownSpotlight();
+        ApplyMaskToOtherCoins(enable: false);
     }
 
     void Update()
     {
-        if (!_isDragging || !_arrowInst) return;
+        if (!_isDragging || !_arrowInst) { TickArrowAnimatorOnlyHide(); return; }
 
         _arrowInst.localPosition = new Vector3(arrowOffsetLocal.x, arrowOffsetLocal.y, arrowLocalZ);
 
         SyncArrowSortingLayerAndOrder();
-
         UpdateTipLagRotation();
 
         bool inside = IsProbeInsideGrid();
@@ -213,6 +251,18 @@ public class CoinPlacementProbe : MonoBehaviour
         }
         else SetArrowShown(inside);
 
+        TickArrowAnimator();
+
+        // keep spotlight positioned/scaled while active
+        if (_spotlightMask && Active == this)
+        {
+            UpdateSpotlightPose();
+        }
+    }
+
+    void TickArrowAnimatorOnlyHide()
+    {
+        if (_arrowInst == null) return;
         TickArrowAnimator();
     }
 
@@ -282,6 +332,12 @@ public class CoinPlacementProbe : MonoBehaviour
 
         _targetShown = shown;
         _animating = true;
+
+        // Couple the spotlight visibility with arrow visibility (local only)
+        if (_spotlightMask)
+        {
+            _spotlightMask.gameObject.SetActive(shown);
+        }
     }
 
     void TickArrowAnimator()
@@ -321,5 +377,126 @@ public class CoinPlacementProbe : MonoBehaviour
         float e = ease != null ? ease.Evaluate(t) : t;
         float x = Mathf.LerpUnclamped(hiddenXAngle, 0f, e);
         _arrowInst.localRotation = Quaternion.Euler(x, 0f, 0f);
+    }
+
+    // ---------------- Spotlight mask helpers ----------------
+
+    void SetupSpotlight()
+    {
+        if (!capsuleMaskSprite) return;
+
+        if (_spotlightMask == null)
+        {
+            var go = new GameObject("CoinSpotlightMask");
+            go.transform.SetParent(transform, worldPositionStays: false);
+            go.transform.localPosition = new Vector3(0f, 0f, maskZOffset);
+            go.transform.localRotation = Quaternion.identity;
+            go.transform.localScale = Vector3.one;
+
+            _spotlightMask = go.AddComponent<SpriteMask>();
+            _spotlightMask.sprite = capsuleMaskSprite;
+            _spotlightMask.isCustomRangeActive = true;
+
+            // Affect a wide band around this coin's layer
+            if (_coinSR != null)
+            {
+                _spotlightMask.frontSortingLayerID = _coinSR.sortingLayerID;
+                _spotlightMask.backSortingLayerID = _coinSR.sortingLayerID;
+                _spotlightMask.frontSortingOrder = _coinSR.sortingOrder + maskFrontSortingOrderBias;
+                _spotlightMask.backSortingOrder = _coinSR.sortingOrder + maskBackSortingOrderBias;
+            }
+        }
+
+        _spotlightMask.gameObject.SetActive(true);
+        UpdateSpotlightPose();
+    }
+
+    void UpdateSpotlightPose()
+    {
+        if (_spotlightMask == null) return;
+
+        // Where is the arrow base relative to the coin?
+        Vector2 localA = Vector2.zero;
+        Vector2 localB = arrowOffsetLocal;
+
+        // Midpoint between coin and arrow base
+        Vector2 mid = (localA + localB) * 0.5f;
+
+        // Length factor along x: base scale + distance-based extension (optional)
+        float dist = (localB - localA).magnitude;
+        float sx = Mathf.Max(0.01f, maskScale.x + dist * Mathf.Max(0f, maskAutoLengthPerUnit));
+        float sy = Mathf.Max(0.01f, maskScale.y);
+
+        _spotlightMask.transform.localPosition = new Vector3(mid.x, mid.y, maskZOffset);
+
+        if (maskAlignToArrow)
+        {
+            float ang = Mathf.Atan2(localB.y - localA.y, localB.x - localA.x) * Mathf.Rad2Deg;
+            _spotlightMask.transform.localRotation = Quaternion.Euler(0f, 0f, ang);
+        }
+        else
+        {
+            _spotlightMask.transform.localRotation = Quaternion.identity;
+        }
+
+        _spotlightMask.transform.localScale = new Vector3(sx, sy, 1f);
+    }
+
+    void TeardownSpotlight()
+    {
+        if (_spotlightMask)
+        {
+            Destroy(_spotlightMask.gameObject);
+            _spotlightMask = null;
+        }
+    }
+
+    void ApplyMaskToOtherCoins(bool enable)
+    {
+        // Safely restore any we changed previously
+        if (!enable)
+        {
+            for (int i = 0; i < _touched.Count; i++)
+            {
+                var entry = _touched[i];
+                if (entry.sr) entry.sr.maskInteraction = entry.prev;
+            }
+            _touched.Clear();
+            return;
+        }
+
+        // No mask? Nothing to apply.
+        if (_spotlightMask == null) return;
+
+        // Find all coins (and their child renderers, which include arrows)
+        var allCoins = FindObjectsByType<CoinDragHandler>(FindObjectsSortMode.None);
+        for (int i = 0; i < allCoins.Length; i++)
+        {
+            var coin = allCoins[i];
+            if (!coin) continue;
+
+            // Skip this local coin entirely
+            if (coin.gameObject == this.gameObject) continue;
+
+            // Affect their sprite renderers (coin + child arrow sprites)
+            var srs = coin.GetComponentsInChildren<SpriteRenderer>(includeInactive: true);
+            for (int j = 0; j < srs.Length; j++)
+            {
+                var sr = srs[j];
+                if (!sr) continue;
+
+                // If we already touched it, skip
+                bool already = false;
+                for (int k = 0; k < _touched.Count; k++)
+                {
+                    if (_touched[k].sr == sr) { already = true; break; }
+                }
+                if (already) continue;
+
+                _touched.Add((sr, sr.maskInteraction));
+                // Hide them INSIDE the mask so our coin/arrow read cleanly
+                sr.maskInteraction = SpriteMaskInteraction.VisibleOutsideMask;
+            }
+        }
     }
 }
