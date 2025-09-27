@@ -614,17 +614,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 990dcbb980d565a478abd8d754407668, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ArrowOcclusionMask
-  capsuleSprite: {fileID: 21300000, guid: a134658295339a440bb95c24a161fb87, type: 3}
-  radius: 0.6
-  lengthPadding: 0.25
-  spriteIsVertical: 1
   zOffset: 0
   worldNudge: {x: 0, y: 0, z: 0}
+  baseRadius: 0.45
+  lengthPadding: 0.25
+  stretchX: 1
+  stretchY: 1
+  capsuleSprite: {fileID: 21300000, guid: a134658295339a440bb95c24a161fb87, type: 3}
+  spriteIsVertical: 1
+  reapplyInterval: 0.25
+  feather: 2
+  featherWidth: 0.2
   coinRootLayers:
     serializedVersion: 2
     m_Bits: 512
   coinRootTag: 
-  reapplyInterval: 0.25
+  softFeatherMat: {fileID: 2100000, guid: 09091453f83868c47b5abce3b14495b3, type: 2}
 --- !u!1 &7401751637502646406
 GameObject:
   m_ObjectHideFlags: 0
