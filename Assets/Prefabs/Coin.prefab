@@ -67,6 +67,8 @@ MonoBehaviour:
   preserveGrabOffset: 0
   targetRenderer: {fileID: 2606012495560826973}
   sortingOrderBoost: 50
+  useAbsoluteTopOrder: 1
+  localDragTopOrder: 1000
   disableColliderWhileDragging: 0
   pickupScaleMultiplier: 1.25
   scaleLerpSpeed: 10
@@ -528,7 +530,8 @@ MonoBehaviour:
   arrowUseProbeDirection: 1
   arrowRotationLocal: 0
   alignSortingWithCoin: 1
-  arrowSortingOrderDelta: 2
+  forceArrowBelow: 1
+  arrowBelowOffset: 1
   tipRotationSmoothTime: 0.1
   tipTrailAngleBoost: 45
   velocityToDegrees: 15
