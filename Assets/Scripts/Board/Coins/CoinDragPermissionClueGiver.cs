@@ -14,7 +14,7 @@ public class CoinDragPermissionClueGiver : MonoBehaviour, ICoinDragPermission
     public bool CanBeginDrag()
     {
         if (ClueGiverState.IsLocalPlayerClueGiver())
-            return false;
+            return true; //originally false
 
         return true;
     }
