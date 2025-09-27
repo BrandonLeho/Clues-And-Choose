@@ -173,7 +173,7 @@ public class ArrowOcclusionMask : MonoBehaviour
 
         ClearAllOverrides();
 
-        var allProbes = FindObjectsOfType<CoinPlacementProbe>(includeInactive: true);
+        var allProbes = FindObjectsByType<CoinPlacementProbe>(FindObjectsSortMode.None);
         foreach (var p in allProbes)
         {
             if (!p) continue;
@@ -184,29 +184,26 @@ public class ArrowOcclusionMask : MonoBehaviour
             foreach (var sr in srs)
             {
                 if (!sr) continue;
+                if (sr.sprite == null) continue;
 
                 if (p == _activeProbe)
                 {
                     _prevMask[sr] = sr.maskInteraction;
                     sr.maskInteraction = SpriteMaskInteraction.None;
-
                     continue;
                 }
 
                 if (feather == FeatherMode.ShaderFeather && softFeatherMat)
                 {
-                    if (!_prevMat.ContainsKey(sr))
-                        _prevMat[sr] = sr.sharedMaterial;
+                    if (!_prevMat.ContainsKey(sr)) _prevMat[sr] = sr.sharedMaterial;
                     sr.sharedMaterial = softFeatherMat;
 
-                    _prevMask[sr] = sr.maskInteraction;
+                    if (!_prevMask.ContainsKey(sr)) _prevMask[sr] = sr.maskInteraction;
                     sr.maskInteraction = SpriteMaskInteraction.None;
                 }
                 else
                 {
-                    if (!_prevMask.ContainsKey(sr))
-                        _prevMask[sr] = sr.maskInteraction;
-
+                    if (!_prevMask.ContainsKey(sr)) _prevMask[sr] = sr.maskInteraction;
                     sr.maskInteraction = SpriteMaskInteraction.VisibleOutsideMask;
                 }
             }

@@ -623,7 +623,7 @@ MonoBehaviour:
   capsuleSprite: {fileID: 21300000, guid: a134658295339a440bb95c24a161fb87, type: 3}
   spriteIsVertical: 1
   reapplyInterval: 0.25
-  feather: 2
+  feather: 1
   featherWidth: 0.2
   coinRootLayers:
     serializedVersion: 2

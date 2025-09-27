@@ -2,7 +2,8 @@ Shader "Sprites/SoftCapsuleCutout"
 {
     Properties
     {
-        [PerRendererData] [NoScaleOffset] _MainTex ("Sprite Texture", 2D) = "white" {}
+        [PerRendererData][NoScaleOffset] _MainTex ("Sprite Texture", 2D) = "white" {}
+        [PerRendererData][NoScaleOffset] _AlphaTex ("Sprite Alpha (ETC1)", 2D) = "white" {}
         _Color ("Tint", Color) = (1,1,1,1)
 
         [HideInInspector]_StencilComp ("Stencil Comparison", Float) = 8
@@ -39,10 +40,12 @@ Shader "Sprites/SoftCapsuleCutout"
             #pragma vertex vert
             #pragma fragment frag
 
-            // URP core transforms
+            #pragma multi_compile_fragment _ _ETC1_EXTERNAL_ALPHA
+
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
+            TEXTURE2D(_MainTex);   SAMPLER(sampler_MainTex);
+            TEXTURE2D(_AlphaTex);  SAMPLER(sampler_AlphaTex);
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _Color;
@@ -73,10 +76,20 @@ Shader "Sprites/SoftCapsuleCutout"
                 Varyings OUT;
                 float3 posWS = TransformObjectToWorld(IN.positionOS);
                 OUT.positionHCS = TransformWorldToHClip(posWS);
-                OUT.uv = IN.uv;
+                OUT.uv = IN.uv;    
                 OUT.color = IN.color * _Color; 
                 OUT.worldPos = posWS.xy;
                 return OUT;
+            }
+
+            float4 SampleSprite(float2 uv)
+            {
+                float4 c = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv);
+                #if defined(_ETC1_EXTERNAL_ALPHA)
+                    float a = SAMPLE_TEXTURE2D(_AlphaTex, sampler_AlphaTex, uv).r;
+                    c.a = a;
+                #endif
+                return c;
             }
 
             float CapsuleSDF(float2 p, float2 a, float2 b, float r)
@@ -90,18 +103,17 @@ Shader "Sprites/SoftCapsuleCutout"
 
             float4 frag (Varyings IN) : SV_Target
             {
-                float4 tex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv);
+                float4 tex = SampleSprite(IN.uv);
                 float4 col = tex * IN.color;
 
-                if (_CapsuleRadius <= 0.0) return col;
-
-                float d  = CapsuleSDF(IN.worldPos, _CapsuleP0.xy, _CapsuleP1.xy, _CapsuleRadius);
-                float fw = max(1e-4, _CapsuleFeather);
-
-                float t = smoothstep(0.0, -fw, d);
-                float visibility = 1.0 - t;
-
-                col.a *= visibility;
+                if (_CapsuleRadius > 0.0)
+                {
+                    float d  = CapsuleSDF(IN.worldPos, _CapsuleP0.xy, _CapsuleP1.xy, _CapsuleRadius);
+                    float fw = max(1e-4, _CapsuleFeather);
+                    float t = smoothstep(0.0, -fw, d);
+                    float visibility = 1.0 - t;
+                    col.a *= visibility;
+                }
                 return col;
             }
             ENDHLSL
