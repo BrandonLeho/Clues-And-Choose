@@ -206,7 +206,7 @@ public class CoinDropSnap : MonoBehaviour
         if (snapDuration <= 0.0001f)
         {
             transform.position = target;
-            if (_sync) _sync.OwnerSnapTo(target);
+            if (_sync) _sync.OwnerSnapTo(target, transform.localScale);
             if (updateLastValid) _lastValidWorldPos = target;
 
             if (updateLastValid)
@@ -256,7 +256,7 @@ public class CoinDropSnap : MonoBehaviour
             }
 
             if (sendNetworkDuringTween && _sync != null)
-                _sync.OwnerSendPositionThrottled(pos);
+                _sync.OwnerSendPositionThrottled(pos, transform.localScale);
 
             t += Time.deltaTime;
             yield return null;
@@ -264,7 +264,7 @@ public class CoinDropSnap : MonoBehaviour
 
         transform.position = target;
         transform.localScale = originalScale;
-        if (_sync != null) _sync.OwnerSnapTo(target);
+        if (_sync != null) _sync.OwnerSnapTo(target, transform.localScale);
         if (updateLastValid) _lastValidWorldPos = target;
 
         if (updateLastValid && !_firedContactFX)
@@ -290,6 +290,8 @@ public class CoinDropSnap : MonoBehaviour
         if (landSquashTime <= 0f)
         {
             transform.localScale = originalScale * finalShrink;
+            if (sendNetworkDuringTween && _sync != null)
+                _sync.OwnerSendPositionThrottled(transform.position, transform.localScale);
             yield break;
         }
 
@@ -304,6 +306,10 @@ public class CoinDropSnap : MonoBehaviour
         {
             float e = landSquashEase.Evaluate(t / Mathf.Max(1e-6f, half));
             transform.localScale = Vector3.LerpUnclamped(originalScale, squash, e);
+
+            if (sendNetworkDuringTween && _sync != null)
+                _sync.OwnerSendPositionThrottled(transform.position, transform.localScale);
+
             t += Time.deltaTime;
             yield return null;
         }
@@ -313,11 +319,18 @@ public class CoinDropSnap : MonoBehaviour
         {
             float e = landSquashEase.Evaluate(t / Mathf.Max(1e-6f, back));
             transform.localScale = Vector3.LerpUnclamped(squash, finalScale, e);
+
+            if (sendNetworkDuringTween && _sync != null)
+                _sync.OwnerSendPositionThrottled(transform.position, transform.localScale);
+
             t += Time.deltaTime;
             yield return null;
         }
 
         transform.localScale = finalScale;
+
+        if (sendNetworkDuringTween && _sync != null)
+            _sync.OwnerSendPositionThrottled(transform.position, transform.localScale);
     }
 
     IEnumerator Co_RingBurst(Vector3 worldPos)

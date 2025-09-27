@@ -16,14 +16,14 @@ public class CoinDragSync : NetworkBehaviour
 
     float _lastSendTime = -999f;
     NetworkCoin _coin;
-    float _lastSend;
+    float _lastAutoSend;
     bool _streaming;
 
     Vector3 _targetPos;
     Vector3 _targetScale;
     bool _hasTarget;
 
-    Vector3 _lastSent;
+    Vector3 _lastSentPos;
     Vector3 _lastSentScale;
 
     void Awake()
@@ -31,7 +31,8 @@ public class CoinDragSync : NetworkBehaviour
         _coin = GetComponent<NetworkCoin>();
         _targetPos = transform.position;
         _targetScale = transform.localScale;
-        _lastSentScale = transform.localScale;
+        _lastSentPos = _targetPos;
+        _lastSentScale = _targetScale;
     }
 
     public void BeginLocalDrag()
@@ -43,39 +44,41 @@ public class CoinDragSync : NetworkBehaviour
 
     void LateUpdate()
     {
-        if (_streaming && _coin.IsLocalOwner())
+        if (_coin.IsLocalOwner())
         {
-            if (Time.unscaledTime - _lastSend >= sendInterval)
+            if (Time.unscaledTime - _lastAutoSend >= sendInterval)
             {
-                _lastSend = Time.unscaledTime;
+                _lastAutoSend = Time.unscaledTime;
 
                 var p = transform.position;
                 p.z = dragZ;
 
-                var s = transform.localScale;
+                bool posChanged = (_lastSentPos - p).sqrMagnitude > minSendDelta;
+                bool scaleChanged = (_lastSentScale - transform.localScale).sqrMagnitude > minSendDelta;
 
-                if ((_lastSent - p).sqrMagnitude > minSendDelta || (_lastSentScale - s).sqrMagnitude > 0.0001f)
+                if (posChanged || scaleChanged)
                 {
-                    _lastSent = p;
-                    _lastSentScale = s;
-                    CmdMove(p, s);
+                    _lastSentPos = p;
+                    _lastSentScale = transform.localScale;
+                    CmdMove(p, _lastSentScale);
                 }
             }
+
             return;
         }
 
-        if (!_coin.IsLocalOwner() && _hasTarget)
+        if (_hasTarget)
         {
             if ((transform.position - _targetPos).sqrMagnitude > snapIfFar * snapIfFar)
             {
                 transform.position = _targetPos;
+                transform.localScale = _targetScale;
             }
             else
             {
                 transform.position = Vector3.Lerp(transform.position, _targetPos, Time.unscaledDeltaTime * lerpSpeed);
+                transform.localScale = Vector3.Lerp(transform.localScale, _targetScale, Time.unscaledDeltaTime * lerpSpeed);
             }
-
-            transform.localScale = Vector3.Lerp(transform.localScale, _targetScale, Time.unscaledDeltaTime * lerpSpeed);
         }
     }
 
@@ -105,22 +108,22 @@ public class CoinDragSync : NetworkBehaviour
         transform.localScale = Vector3.Lerp(transform.localScale, _targetScale, 0.25f);
     }
 
-    public void OwnerSnapTo(Vector3 worldPos)
+    public void OwnerSnapTo(Vector3 worldPos, Vector3 scale)
     {
         if (!isClient) return;
         if (_coin != null && _coin.IsLocalOwner())
         {
-            CmdMove(worldPos, transform.localScale);
+            CmdMove(worldPos, scale);
         }
     }
 
-    public void OwnerSendPositionThrottled(Vector3 worldPos)
+    public void OwnerSendPositionThrottled(Vector3 worldPos, Vector3 scale)
     {
         if (!isClient) return;
         if (_coin == null || !_coin.IsLocalOwner()) return;
 
         if (Time.time - _lastSendTime < minSendInterval) return;
         _lastSendTime = Time.time;
-        CmdMove(worldPos, transform.localScale);
+        CmdMove(worldPos, scale);
     }
 }
