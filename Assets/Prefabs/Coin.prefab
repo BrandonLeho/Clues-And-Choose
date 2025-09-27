@@ -70,7 +70,7 @@ MonoBehaviour:
   useAbsoluteTopOrder: 1
   localDragTopOrder: 1000
   syncDraggingLayer: 1
-  networkDragBaseOrder: 20000
+  networkDragBaseOrder: 990
   remoteClientSubtractiveBias: 10
   disableColliderWhileDragging: 0
   pickupScaleMultiplier: 1.25
