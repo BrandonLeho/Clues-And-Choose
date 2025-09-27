@@ -255,8 +255,10 @@ public class CoinDropSnap : MonoBehaviour
                 transform.localScale = Vector3.Lerp(transform.localScale, originalScale, 12f * Time.deltaTime);
             }
 
-            if (sendNetworkDuringTween && _sync != null)
+            bool nearEnd = (snapDuration - t) <= 0.03f;
+            if (sendNetworkDuringTween && _sync != null && !nearEnd)
                 _sync.OwnerSendPositionThrottled(pos, transform.localScale);
+
 
             t += Time.deltaTime;
             yield return null;
