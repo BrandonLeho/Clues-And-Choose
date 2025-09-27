@@ -156,7 +156,7 @@ public class CoinDropSnap : MonoBehaviour
                 {
                     if (ok)
                     {
-                        Vector3 target = best != null ? best.GetCenterWorld() : center;
+                        Vector3 target = center;
                         if (keepCurrentZ) target.z = transform.position.z;
 
                         _occupiedSpot = best;
@@ -420,7 +420,7 @@ public class CoinDropSnap : MonoBehaviour
             {
                 if (ok)
                 {
-                    Vector3 target = spot != null ? spot.GetCenterWorld() : center;
+                    Vector3 target = center;
                     if (keepCurrentZ) target.z = transform.position.z;
 
                     _occupiedSpot = spot;
