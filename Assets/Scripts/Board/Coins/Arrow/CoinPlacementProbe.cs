@@ -40,6 +40,14 @@ public class CoinPlacementProbe : MonoBehaviour
     public float hiddenXAngle = 95f;
     public AnimationCurve ease = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
+    [Header("Focus Mask (Hide Others)")]
+    public bool enableFocusMask = true;
+    public Vector2 maskStretchXY = new Vector2(3.0f, 2.0f);
+    [Min(0.01f)] public float maskFeather = 0.35f;
+    [Range(0f, 1f)] public float maskOpacity = 0.85f;
+    public int maskBelowLocalBy = 10000;
+    public string maskSortingLayerOverride = "";
+
     bool _suppressUntilInside;
     CoinDragHandler _drag;
     Transform _arrowInst;
@@ -56,6 +64,10 @@ public class CoinPlacementProbe : MonoBehaviour
 
     CoinDragSync _netDrag;
     bool _remoteMode;
+
+    GameObject _maskGO;
+    SpriteRenderer _maskSR;
+    static Sprite _cachedMaskSprite;
 
     public Vector3 GetProbeWorld() =>
         transform.TransformPoint(new Vector3(probeOffsetLocal.x, probeOffsetLocal.y, 0f));
@@ -88,6 +100,9 @@ public class CoinPlacementProbe : MonoBehaviour
             var found = GameObject.Find("ColorGrid");
             if (found) gridMask = found.GetComponent<RectTransform>();
         }
+
+        if (_cachedMaskSprite == null)
+            _cachedMaskSprite = GenerateFeatheredRectSprite(256, 256);
     }
 
     void OnDestroy()
@@ -168,6 +183,10 @@ public class CoinPlacementProbe : MonoBehaviour
             _arrowInst.gameObject.SetActive(true);
             ApplyArrowPose();
         }
+
+        if (enableFocusMask && !_remoteMode)
+            EnsureFocusMaskCreated();
+        UpdateFocusMaskPose(active: showAsLocal);
     }
 
     void StopArrow(bool isLocalCall)
@@ -189,6 +208,8 @@ public class CoinPlacementProbe : MonoBehaviour
         _animating = false;
         _targetShown = false;
         _remoteMode = false;
+
+        if (_maskGO) { Destroy(_maskGO); _maskGO = null; _maskSR = null; }
     }
 
     void Update()
@@ -198,7 +219,6 @@ public class CoinPlacementProbe : MonoBehaviour
         _arrowInst.localPosition = new Vector3(arrowOffsetLocal.x, arrowOffsetLocal.y, arrowLocalZ);
 
         SyncArrowSortingLayerAndOrder();
-
         UpdateTipLagRotation();
 
         bool inside = IsProbeInsideGrid();
@@ -214,6 +234,13 @@ public class CoinPlacementProbe : MonoBehaviour
         else SetArrowShown(inside);
 
         TickArrowAnimator();
+
+        if (enableFocusMask && !_remoteMode && _maskGO)
+        {
+            bool maskActive = _targetShown && _isDragging;
+            _maskGO.SetActive(maskActive);
+            if (maskActive) UpdateFocusMaskPose(active: true);
+        }
     }
 
     void SyncArrowSortingLayerAndOrder()
@@ -321,5 +348,87 @@ public class CoinPlacementProbe : MonoBehaviour
         float e = ease != null ? ease.Evaluate(t) : t;
         float x = Mathf.LerpUnclamped(hiddenXAngle, 0f, e);
         _arrowInst.localRotation = Quaternion.Euler(x, 0f, 0f);
+    }
+
+    void EnsureFocusMaskCreated()
+    {
+        if (_maskGO != null || !enableFocusMask) return;
+
+        _maskGO = new GameObject("ArrowFocusMask");
+        _maskGO.transform.SetParent(transform, worldPositionStays: false);
+
+        _maskSR = _maskGO.AddComponent<SpriteRenderer>();
+        _maskSR.sprite = _cachedMaskSprite;
+        _maskSR.drawMode = SpriteDrawMode.Simple;
+        _maskSR.color = new Color(0f, 0f, 0f, Mathf.Clamp01(maskOpacity));
+
+        if (_coinSR)
+        {
+            if (!string.IsNullOrEmpty(maskSortingLayerOverride))
+                _maskSR.sortingLayerID = SortingLayer.NameToID(maskSortingLayerOverride);
+            else
+                _maskSR.sortingLayerID = _coinSR.sortingLayerID;
+
+            int coinOrder = _coinSR.sortingOrder;
+            _maskSR.sortingOrder = coinOrder - Mathf.Abs(maskBelowLocalBy);
+        }
+
+        _maskGO.transform.localPosition = new Vector3(arrowOffsetLocal.x, arrowOffsetLocal.y, arrowLocalZ + 0.001f);
+        _maskGO.SetActive(false);
+    }
+
+    void UpdateFocusMaskPose(bool active)
+    {
+        if (_maskGO == null) return;
+
+        _maskGO.transform.localPosition = new Vector3(arrowOffsetLocal.x, arrowOffsetLocal.y, arrowLocalZ + 0.001f);
+
+        _maskGO.transform.localScale = new Vector3(
+            Mathf.Max(0.01f, maskStretchXY.x),
+            Mathf.Max(0.01f, maskStretchXY.y),
+            1f
+        );
+
+        if (_coinSR)
+        {
+            if (string.IsNullOrEmpty(maskSortingLayerOverride))
+                _maskSR.sortingLayerID = _coinSR.sortingLayerID;
+
+            int coinOrder = _coinSR.sortingOrder;
+            _maskSR.sortingOrder = coinOrder - Mathf.Abs(maskBelowLocalBy);
+        }
+
+        _maskGO.SetActive(active);
+    }
+
+    static Sprite GenerateFeatheredRectSprite(int w, int h)
+    {
+        var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
+        tex.wrapMode = TextureWrapMode.Clamp;
+        Color[] pixels = new Color[w * h];
+
+        for (int y = 0; y < h; y++)
+        {
+            float v = (y + 0.5f) / h * 2f - 1f;
+            for (int x = 0; x < w; x++)
+            {
+                float u = (x + 0.5f) / w * 2f - 1f;
+
+                float inner = 0.6f;
+                float feather = 0.2f;
+
+                float dx = Mathf.Abs(u) - inner;
+                float dy = Mathf.Abs(v) - inner;
+                float outside = Mathf.Max(dx, dy);
+
+                float a = Mathf.SmoothStep(0f, 1f, outside / Mathf.Max(1e-5f, feather));
+                pixels[y * w + x] = new Color(0f, 0f, 0f, a);
+            }
+        }
+
+        tex.SetPixels(pixels);
+        tex.Apply(false, true);
+
+        return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 100f);
     }
 }
