@@ -275,7 +275,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  finalShrink: 0.8
+  finalShrink: 0.65
   landingPulse: {fileID: 2462779467675695623}
   tryFindPulseOnMainCamera: 0
   ringPrefab: {fileID: 4839776055513542125, guid: 96ca7eadad8382649b7374a923216061, type: 3}
