@@ -19,7 +19,8 @@ public class CoinPlacementProbe : MonoBehaviour
 
     [Header("Arrow Rendering")]
     public bool alignSortingWithCoin = true;
-    public int arrowSortingOrderDelta = -1;
+    public bool forceArrowBelow = true;
+    [Min(1)] public int arrowBelowOffset = 1;
 
     [Header("Arrow Tip Animation")]
     public float tipRotationSmoothTime = 0.08f;
@@ -143,11 +144,7 @@ public class CoinPlacementProbe : MonoBehaviour
             _arrowSR = _arrowInst.GetComponentInChildren<SpriteRenderer>();
             _tipGraphic = _arrowSR ? _arrowSR.transform : _arrowInst;
 
-            if (alignSortingWithCoin && _coinSR && _arrowSR)
-            {
-                _arrowSR.sortingLayerID = _coinSR.sortingLayerID;
-                _arrowSR.sortingOrder = _coinSR.sortingOrder + Mathf.Max(1, arrowSortingOrderDelta);
-            }
+            SyncArrowSortingLayerAndOrder();
 
             _arrowInst.localPosition = new Vector3(arrowOffsetLocal.x, arrowOffsetLocal.y, arrowLocalZ);
 
@@ -200,11 +197,7 @@ public class CoinPlacementProbe : MonoBehaviour
 
         _arrowInst.localPosition = new Vector3(arrowOffsetLocal.x, arrowOffsetLocal.y, arrowLocalZ);
 
-        if (alignSortingWithCoin && _coinSR && _arrowSR)
-        {
-            _arrowSR.sortingLayerID = _coinSR.sortingLayerID;
-            _arrowSR.sortingOrder = _coinSR.sortingOrder + Mathf.Max(1, arrowSortingOrderDelta);
-        }
+        SyncArrowSortingLayerAndOrder();
 
         UpdateTipLagRotation();
 
@@ -221,6 +214,23 @@ public class CoinPlacementProbe : MonoBehaviour
         else SetArrowShown(inside);
 
         TickArrowAnimator();
+    }
+
+    void SyncArrowSortingLayerAndOrder()
+    {
+        if (!alignSortingWithCoin || _coinSR == null || _arrowSR == null) return;
+
+        _arrowSR.sortingLayerID = _coinSR.sortingLayerID;
+
+        if (forceArrowBelow)
+        {
+            int coinOrder = _coinSR.sortingOrder;
+            _arrowSR.sortingOrder = coinOrder - Mathf.Max(1, arrowBelowOffset);
+        }
+        else
+        {
+            _arrowSR.sortingOrder = _coinSR.sortingOrder;
+        }
     }
 
     void UpdateTipLagRotation()

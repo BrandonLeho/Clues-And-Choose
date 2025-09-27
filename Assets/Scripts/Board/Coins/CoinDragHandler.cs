@@ -17,6 +17,8 @@ public class CoinDragHandler : MonoBehaviour
     [Header("Visual Layering")]
     public SpriteRenderer targetRenderer;
     public int sortingOrderBoost = 50;
+    public bool useAbsoluteTopOrder = true;
+    public int localDragTopOrder = 50000;
 
     [Header("Collisions")]
     public bool disableColliderWhileDragging = false;
@@ -204,13 +206,13 @@ public class CoinDragHandler : MonoBehaviour
         if (_netCoin != null && !_netCoin.IsLocalOwner())
         {
             if (debugInteract) Debug.Log($"[Drag] {name} blocked: not local owner (owner={_netCoin.ownerNetId})");
-            _rejectFx.Play();
+            _rejectFx?.Play();
             return;
         }
 
         if (!GuardsAllowBeginDrag())
         {
-            _rejectFx.Play();
+            _rejectFx?.Play();
             return;
         }
 
@@ -229,7 +231,9 @@ public class CoinDragHandler : MonoBehaviour
         if (_hadRenderer)
         {
             _baseSortingOrder = targetRenderer.sortingOrder;
-            targetRenderer.sortingOrder = _baseSortingOrder + sortingOrderBoost;
+            targetRenderer.sortingOrder = useAbsoluteTopOrder
+                ? localDragTopOrder
+                : _baseSortingOrder + sortingOrderBoost;
         }
 
         if (disableColliderWhileDragging) _col.enabled = false;
@@ -298,7 +302,6 @@ public class CoinDragHandler : MonoBehaviour
                 return false;
         return true;
     }
-
 
     void OnValidate()
     {
