@@ -40,13 +40,15 @@ public class CoinPlacementProbe : MonoBehaviour
     public float hiddenXAngle = 95f;
     public AnimationCurve ease = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
-    [Header("Focus Mask (Hide Others)")]
-    public bool enableFocusMask = true;
-    public Vector2 maskStretchXY = new Vector2(3.0f, 2.0f);
-    [Min(0.01f)] public float maskFeather = 0.35f;
-    [Range(0f, 1f)] public float maskOpacity = 0.85f;
-    public int maskBelowLocalBy = 10000;
-    public string maskSortingLayerOverride = "";
+    [Header("Isolation Mask")]
+    public bool useIsolationMask = true;
+    public Vector2 maskStretch = new Vector2(0.18f, 0.12f);
+    [Range(0.0001f, 0.5f)]
+    public float maskFeather = 0.15f;
+    [Range(0f, 1f)]
+    public float maskOpacity = 1f;
+    public Color maskColor = Color.black;
+    public bool maskFollowsArrowVisibility = true;
 
     bool _suppressUntilInside;
     CoinDragHandler _drag;
@@ -67,7 +69,10 @@ public class CoinPlacementProbe : MonoBehaviour
 
     GameObject _maskGO;
     SpriteRenderer _maskSR;
-    static Sprite _cachedMaskSprite;
+    Material _maskMat;
+    Texture2D _maskTex;
+    Camera _worldCam;
+    int _propCenter, _propRadius, _propFeather, _propColor;
 
     public Vector3 GetProbeWorld() =>
         transform.TransformPoint(new Vector3(probeOffsetLocal.x, probeOffsetLocal.y, 0f));
@@ -83,13 +88,13 @@ public class CoinPlacementProbe : MonoBehaviour
         _drag = GetComponent<CoinDragHandler>();
         _coinSR = GetComponent<SpriteRenderer>();
         _netDrag = GetComponent<CoinDragSync>();
+        _worldCam = Camera.main;
 
         if (_drag)
         {
             _drag.onPickUp.AddListener(OnPickUp);
             _drag.onDrop.AddListener(OnDrop);
         }
-
         if (_netDrag)
         {
             _netDrag.DragStateChanged += OnNetDragStateChanged;
@@ -101,8 +106,10 @@ public class CoinPlacementProbe : MonoBehaviour
             if (found) gridMask = found.GetComponent<RectTransform>();
         }
 
-        if (_cachedMaskSprite == null)
-            _cachedMaskSprite = GenerateFeatheredRectSprite(256, 256);
+        _propCenter = Shader.PropertyToID("_Center");
+        _propRadius = Shader.PropertyToID("_Radius");
+        _propFeather = Shader.PropertyToID("_Feather");
+        _propColor = Shader.PropertyToID("_OverlayColor");
     }
 
     void OnDestroy()
@@ -116,6 +123,7 @@ public class CoinPlacementProbe : MonoBehaviour
         {
             _netDrag.DragStateChanged -= OnNetDragStateChanged;
         }
+        DestroyIsolationMask();
     }
 
     void OnPickUp()
@@ -184,9 +192,11 @@ public class CoinPlacementProbe : MonoBehaviour
             ApplyArrowPose();
         }
 
-        if (enableFocusMask && !_remoteMode)
-            EnsureFocusMaskCreated();
-        UpdateFocusMaskPose(active: showAsLocal);
+        if (useIsolationMask && showAsLocal)
+        {
+            EnsureIsolationMask();
+            UpdateIsolationMaskVisibility(forceHidden: maskFollowsArrowVisibility && _suppressUntilInside);
+        }
     }
 
     void StopArrow(bool isLocalCall)
@@ -209,37 +219,47 @@ public class CoinPlacementProbe : MonoBehaviour
         _targetShown = false;
         _remoteMode = false;
 
-        if (_maskGO) { Destroy(_maskGO); _maskGO = null; _maskSR = null; }
+        if (isLocalCall) DestroyIsolationMask();
     }
 
     void Update()
     {
-        if (!_isDragging || !_arrowInst) return;
+        if (!_isDragging) return;
 
-        _arrowInst.localPosition = new Vector3(arrowOffsetLocal.x, arrowOffsetLocal.y, arrowLocalZ);
-
-        SyncArrowSortingLayerAndOrder();
-        UpdateTipLagRotation();
-
-        bool inside = IsProbeInsideGrid();
-        if (_suppressUntilInside)
+        if (_arrowInst)
         {
-            if (inside)
+            _arrowInst.localPosition = new Vector3(arrowOffsetLocal.x, arrowOffsetLocal.y, arrowLocalZ);
+            SyncArrowSortingLayerAndOrder();
+            UpdateTipLagRotation();
+
+            bool inside = IsProbeInsideGrid();
+            if (_suppressUntilInside)
             {
-                _suppressUntilInside = false;
-                SetArrowShown(true);
+                if (inside)
+                {
+                    _suppressUntilInside = false;
+                    SetArrowShown(true);
+                    UpdateIsolationMaskVisibility(forceHidden: false);
+                }
+                else
+                {
+                    SetArrowShown(false);
+                    UpdateIsolationMaskVisibility(forceHidden: true);
+                }
             }
-            else SetArrowShown(false);
+            else
+            {
+                SetArrowShown(inside);
+                if (maskFollowsArrowVisibility)
+                    UpdateIsolationMaskVisibility(forceHidden: !inside);
+            }
+
+            TickArrowAnimator();
         }
-        else SetArrowShown(inside);
 
-        TickArrowAnimator();
-
-        if (enableFocusMask && !_remoteMode && _maskGO)
+        if (_maskMat != null)
         {
-            bool maskActive = _targetShown && _isDragging;
-            _maskGO.SetActive(maskActive);
-            if (maskActive) UpdateFocusMaskPose(active: true);
+            UpdateIsolationMask();
         }
     }
 
@@ -350,85 +370,109 @@ public class CoinPlacementProbe : MonoBehaviour
         _arrowInst.localRotation = Quaternion.Euler(x, 0f, 0f);
     }
 
-    void EnsureFocusMaskCreated()
+    void EnsureIsolationMask()
     {
-        if (_maskGO != null || !enableFocusMask) return;
+        if (_maskGO != null) return;
 
-        _maskGO = new GameObject("ArrowFocusMask");
+        var shader = Shader.Find("Hidden/ScreenHoleFeather");
+        if (shader == null)
+        {
+            Debug.LogError("Missing shader Hidden/ScreenHoleFeather. Please add the shader file included below to your project.");
+            return;
+        }
+        _maskMat = new Material(shader);
+
+        _maskTex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+        _maskTex.SetPixels(new[] { Color.white, Color.white, Color.white, Color.white });
+        _maskTex.Apply();
+
+        var sprite = Sprite.Create(_maskTex, new Rect(0, 0, 2, 2), new Vector2(0.5f, 0.5f), 1f);
+
+        _maskGO = new GameObject("ArrowIsolationMask");
         _maskGO.transform.SetParent(transform, worldPositionStays: false);
 
         _maskSR = _maskGO.AddComponent<SpriteRenderer>();
-        _maskSR.sprite = _cachedMaskSprite;
-        _maskSR.drawMode = SpriteDrawMode.Simple;
-        _maskSR.color = new Color(0f, 0f, 0f, Mathf.Clamp01(maskOpacity));
+        _maskSR.sprite = sprite;
 
-        if (_coinSR)
+        int coinOrder = _coinSR ? _coinSR.sortingOrder : 50000;
+        int arrowOrder = (_arrowSR != null) ? _arrowSR.sortingOrder : coinOrder - 1;
+        int overlayOrder = Mathf.Min(coinOrder - 2, arrowOrder - 1);
+
+        _maskSR.sortingLayerID = _coinSR ? _coinSR.sortingLayerID : 0;
+        _maskSR.sortingOrder = overlayOrder;
+        _maskSR.material = _maskMat;
+
+        var cam = _worldCam ? _worldCam : Camera.main;
+        if (cam && cam.orthographic)
         {
-            if (!string.IsNullOrEmpty(maskSortingLayerOverride))
-                _maskSR.sortingLayerID = SortingLayer.NameToID(maskSortingLayerOverride);
-            else
-                _maskSR.sortingLayerID = _coinSR.sortingLayerID;
-
-            int coinOrder = _coinSR.sortingOrder;
-            _maskSR.sortingOrder = coinOrder - Mathf.Abs(maskBelowLocalBy);
+            float h = cam.orthographicSize * 2f;
+            float w = h * cam.aspect;
+            _maskGO.transform.localPosition = new Vector3(0f, 0f, 0f);
+            _maskGO.transform.localScale = new Vector3(w, h, 1f);
+        }
+        else
+        {
+            _maskGO.transform.localScale = new Vector3(100f, 100f, 1f);
         }
 
-        _maskGO.transform.localPosition = new Vector3(arrowOffsetLocal.x, arrowOffsetLocal.y, arrowLocalZ + 0.001f);
-        _maskGO.SetActive(false);
+        _maskMat.SetColor(_propColor, new Color(maskColor.r, maskColor.g, maskColor.b, maskOpacity));
+        _maskMat.SetVector(_propRadius, maskStretch);
+        _maskMat.SetFloat(_propFeather, Mathf.Clamp01(maskFeather));
+
+        _maskGO.SetActive(true);
     }
 
-    void UpdateFocusMaskPose(bool active)
+    void UpdateIsolationMaskVisibility(bool forceHidden)
     {
         if (_maskGO == null) return;
-
-        _maskGO.transform.localPosition = new Vector3(arrowOffsetLocal.x, arrowOffsetLocal.y, arrowLocalZ + 0.001f);
-
-        _maskGO.transform.localScale = new Vector3(
-            Mathf.Max(0.01f, maskStretchXY.x),
-            Mathf.Max(0.01f, maskStretchXY.y),
-            1f
-        );
-
-        if (_coinSR)
-        {
-            if (string.IsNullOrEmpty(maskSortingLayerOverride))
-                _maskSR.sortingLayerID = _coinSR.sortingLayerID;
-
-            int coinOrder = _coinSR.sortingOrder;
-            _maskSR.sortingOrder = coinOrder - Mathf.Abs(maskBelowLocalBy);
-        }
-
-        _maskGO.SetActive(active);
+        _maskGO.SetActive(!forceHidden);
     }
 
-    static Sprite GenerateFeatheredRectSprite(int w, int h)
+    void UpdateIsolationMask()
     {
-        var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
-        tex.wrapMode = TextureWrapMode.Clamp;
-        Color[] pixels = new Color[w * h];
+        if (_maskMat == null) return;
 
-        for (int y = 0; y < h; y++)
+        if (_maskSR && _coinSR)
         {
-            float v = (y + 0.5f) / h * 2f - 1f;
-            for (int x = 0; x < w; x++)
-            {
-                float u = (x + 0.5f) / w * 2f - 1f;
-
-                float inner = 0.6f;
-                float feather = 0.2f;
-
-                float dx = Mathf.Abs(u) - inner;
-                float dy = Mathf.Abs(v) - inner;
-                float outside = Mathf.Max(dx, dy);
-
-                float a = Mathf.SmoothStep(0f, 1f, outside / Mathf.Max(1e-5f, feather));
-                pixels[y * w + x] = new Color(0f, 0f, 0f, a);
-            }
+            int coinOrder = _coinSR.sortingOrder;
+            int arrowOrder = (_arrowSR != null) ? _arrowSR.sortingOrder : coinOrder - 1;
+            int overlayOrder = Mathf.Min(coinOrder - 2, arrowOrder - 1);
+            _maskSR.sortingLayerID = _coinSR.sortingLayerID;
+            _maskSR.sortingOrder = overlayOrder;
         }
 
-        tex.SetPixels(pixels);
-        tex.Apply(false, true);
+        _maskMat.SetColor(_propColor, new Color(maskColor.r, maskColor.g, maskColor.b, maskOpacity));
+        _maskMat.SetVector(_propRadius, new Vector2(Mathf.Abs(maskStretch.x), Mathf.Abs(maskStretch.y)));
+        _maskMat.SetFloat(_propFeather, Mathf.Clamp01(maskFeather));
 
-        return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 100f);
+        var cam = _worldCam ? _worldCam : Camera.main;
+        Vector3 world = GetProbeWorld();
+        if (cam)
+        {
+            Vector3 vp = cam.WorldToViewportPoint(world);
+            _maskMat.SetVector(_propCenter, new Vector2(vp.x, vp.y));
+        }
+        else
+        {
+            _maskMat.SetVector(_propCenter, new Vector2(0.5f, 0.5f));
+        }
+
+        if (_maskGO && cam && cam.orthographic)
+        {
+            float h = cam.orthographicSize * 2f;
+            float w = h * cam.aspect;
+            _maskGO.transform.localScale = new Vector3(w, h, 1f);
+        }
+    }
+
+    void DestroyIsolationMask()
+    {
+        if (_maskGO) Destroy(_maskGO);
+        _maskGO = null;
+        _maskSR = null;
+        if (_maskMat) Destroy(_maskMat);
+        _maskMat = null;
+        if (_maskTex) Destroy(_maskTex);
+        _maskTex = null;
     }
 }

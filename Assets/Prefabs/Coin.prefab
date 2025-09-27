@@ -574,12 +574,12 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  enableFocusMask: 1
-  maskStretchXY: {x: 3, y: 2}
+  useIsolationMask: 1
+  maskStretch: {x: 0.18, y: 0.12}
   maskFeather: 0.35
   maskOpacity: 0.85
-  maskBelowLocalBy: 10000
-  maskSortingLayerOverride: 
+  maskColor: {r: 0, g: 0, b: 0, a: 1}
+  maskFollowsArrowVisibility: 1
 --- !u!114 &1589490137157167867
 MonoBehaviour:
   m_ObjectHideFlags: 0
