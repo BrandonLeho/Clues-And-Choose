@@ -162,6 +162,7 @@
     <None Include="Assets\com.rlabrecque.steamworks.net\Plugins\steam_api64.dll" />
     <None Include="Assets\TextMesh Pro\Shaders\SDFFunctions.hlsl" />
     <None Include="Assets\Mirror\Readme.txt" />
+    <None Include="Assets\Shaders\SoftCapsuleMaskURP.shader" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Surface.shader" />
     <None Include="Assets\ScriptTemplates\57-Mirror__Network Transform-NewNetworkTransform.cs.txt" />
     <None Include="Assets\TextMesh Pro\Sprites\EmojiOne Attribution.txt" />

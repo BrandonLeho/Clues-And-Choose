@@ -42,11 +42,18 @@ public class CoinPlacementProbe : MonoBehaviour
     public AnimationCurve ease = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
     [Header("Local Spotlight Mask")]
-    public bool enableSpotlightMask = true;
-    public Sprite capsuleMaskSprite;
     public Vector2 maskScale = new Vector2(2.0f, 1.2f);
     public Vector2 maskOffsetLocal = Vector2.zero;
     public float maskZOffset = -0.01f;
+
+    [Header("Feathered Soft Mask")]
+    public bool useFeatheredSoftMask = true;
+    public Material softMaskMaterial;
+    [Min(0f)] public float softFeather = 0.2f;
+
+    [Header("Hard SpriteMask")]
+    public bool enableSpotlightMask = false;
+    public Sprite capsuleMaskSprite;
     public int maskBackSortingOrderBias = -10000;
     public int maskFrontSortingOrderBias = 10000;
     public bool maskAlignToArrow = true;
@@ -70,7 +77,24 @@ public class CoinPlacementProbe : MonoBehaviour
     bool _remoteMode;
 
     SpriteMask _spotlightMask;
-    readonly List<(SpriteRenderer sr, SpriteMaskInteraction prev)> _touched = new();
+
+    struct Touched
+    {
+        public SpriteRenderer sr;
+        public SpriteMaskInteraction prevMask;
+        public Material prevMat;
+    }
+    readonly List<Touched> _touched = new();
+
+    Vector3 _capA_World, _capB_World;
+    float _capRadiusWorld, _capFeatherWorld;
+
+    static readonly int PID_A = Shader.PropertyToID("_SoftCapA");
+    static readonly int PID_B = Shader.PropertyToID("_SoftCapB");
+    static readonly int PID_R = Shader.PropertyToID("_SoftCapRadius");
+    static readonly int PID_F = Shader.PropertyToID("_SoftCapFeather");
+    static readonly int PID_Enable = Shader.PropertyToID("_SoftCapEnable");
+    static MaterialPropertyBlock _mpb;
 
     public Vector3 GetProbeWorld() =>
         transform.TransformPoint(new Vector3(probeOffsetLocal.x, probeOffsetLocal.y, 0f));
@@ -92,17 +116,15 @@ public class CoinPlacementProbe : MonoBehaviour
             _drag.onPickUp.AddListener(OnPickUp);
             _drag.onDrop.AddListener(OnDrop);
         }
-
-        if (_netDrag)
-        {
-            _netDrag.DragStateChanged += OnNetDragStateChanged;
-        }
+        if (_netDrag) _netDrag.DragStateChanged += OnNetDragStateChanged;
 
         if (!gridMask)
         {
             var found = GameObject.Find("ColorGrid");
             if (found) gridMask = found.GetComponent<RectTransform>();
         }
+
+        if (_mpb == null) _mpb = new MaterialPropertyBlock();
     }
 
     void OnDestroy()
@@ -112,11 +134,10 @@ public class CoinPlacementProbe : MonoBehaviour
             _drag.onPickUp.RemoveListener(OnPickUp);
             _drag.onDrop.RemoveListener(OnDrop);
         }
-        if (_netDrag)
-        {
-            _netDrag.DragStateChanged -= OnNetDragStateChanged;
-        }
+        if (_netDrag) _netDrag.DragStateChanged -= OnNetDragStateChanged;
+
         TeardownSpotlight();
+        ApplyMaskToOtherCoins(enable: false);
     }
 
     void OnPickUp()
@@ -158,6 +179,7 @@ public class CoinPlacementProbe : MonoBehaviour
             _tipGraphic = _arrowSR ? _arrowSR.transform : _arrowInst;
 
             SyncArrowSortingLayerAndOrder();
+
             _arrowInst.localPosition = new Vector3(arrowOffsetLocal.x, arrowOffsetLocal.y, arrowLocalZ);
 
             float startAngleZ = arrowUseProbeDirection
@@ -181,10 +203,17 @@ public class CoinPlacementProbe : MonoBehaviour
             ApplyArrowPose();
         }
 
-        if (showAsLocal && enableSpotlightMask)
+        if (showAsLocal)
         {
-            SetupSpotlight();
-            ApplyMaskToOtherCoins(enable: true);
+            if (useFeatheredSoftMask)
+            {
+                ApplyMaskToOtherCoins(enable: true);
+            }
+            else if (enableSpotlightMask)
+            {
+                SetupSpotlight();
+                ApplyMaskToOtherCoins(enable: true);
+            }
         }
     }
 
@@ -228,7 +257,12 @@ public class CoinPlacementProbe : MonoBehaviour
 
         TickArrowAnimator();
 
-        if (_spotlightMask && Active == this) UpdateSpotlightPose();
+        if (Active == this)
+        {
+            UpdateSoftCapsuleWorldParams();
+            if (_spotlightMask) UpdateSpotlightPose();
+            if (useFeatheredSoftMask) PushSoftParamsToTouched();
+        }
     }
 
     void TickArrowAnimatorOnlyHide()
@@ -296,8 +330,7 @@ public class CoinPlacementProbe : MonoBehaviour
         _targetShown = shown;
         _animating = true;
 
-        if (_spotlightMask)
-            _spotlightMask.gameObject.SetActive(shown);
+        if (_spotlightMask) _spotlightMask.gameObject.SetActive(shown);
     }
 
     void TickArrowAnimator()
@@ -337,9 +370,40 @@ public class CoinPlacementProbe : MonoBehaviour
         _arrowInst.localRotation = Quaternion.Euler(x, 0f, 0f);
     }
 
+    void UpdateSoftCapsuleWorldParams()
+    {
+        Vector2 localA = Vector2.zero;
+        Vector2 localB = arrowOffsetLocal;
+
+        Vector2 mid = (localA + localB) * 0.5f + maskOffsetLocal;
+
+        Vector2 dir = localB - localA;
+        float len = dir.magnitude;
+        Vector2 ndir = len > 1e-5f ? dir / len : new Vector2(1f, 0f);
+
+        float radiusLocal = Mathf.Max(0.0001f, maskScale.y * 0.5f);
+        float halfLenLocal = Mathf.Max(0f, (maskScale.x - maskScale.y) * 0.5f);
+
+        Vector2 capALocal = mid - ndir * halfLenLocal;
+        Vector2 capBLocal = mid + ndir * halfLenLocal;
+
+        Vector3 A = transform.TransformPoint(capALocal.x, capALocal.y, 0f);
+        Vector3 B = transform.TransformPoint(capBLocal.x, capBLocal.y, 0f);
+
+        var ls = transform.lossyScale;
+        float planarScale = Mathf.Max(Mathf.Abs(ls.x), Mathf.Abs(ls.y));
+        float R = radiusLocal * planarScale;
+
+        _capA_World = A;
+        _capB_World = B;
+        _capRadiusWorld = R;
+        _capFeatherWorld = Mathf.Max(0f, softFeather);
+    }
+
     void SetupSpotlight()
     {
-        if (!capsuleMaskSprite) return;
+        if (!enableSpotlightMask || !capsuleMaskSprite) return;
+
         if (_spotlightMask == null)
         {
             var go = new GameObject("CoinSpotlightMask");
@@ -360,6 +424,7 @@ public class CoinPlacementProbe : MonoBehaviour
                 _spotlightMask.backSortingOrder = _coinSR.sortingOrder + maskBackSortingOrderBias;
             }
         }
+
         _spotlightMask.gameObject.SetActive(true);
         UpdateSpotlightPose();
     }
@@ -370,7 +435,6 @@ public class CoinPlacementProbe : MonoBehaviour
 
         Vector2 localA = Vector2.zero;
         Vector2 localB = arrowOffsetLocal;
-
         Vector2 mid = (localA + localB) * 0.5f + maskOffsetLocal;
 
         float dist = (localB - localA).magnitude;
@@ -407,14 +471,21 @@ public class CoinPlacementProbe : MonoBehaviour
         {
             for (int i = 0; i < _touched.Count; i++)
             {
-                var entry = _touched[i];
-                if (entry.sr) entry.sr.maskInteraction = entry.prev;
+                var t = _touched[i];
+                if (t.sr)
+                {
+                    t.sr.maskInteraction = t.prevMask;
+
+                    if (t.prevMat) t.sr.material = t.prevMat;
+
+                    _mpb.Clear();
+                    _mpb.SetFloat(PID_Enable, 0f);
+                    t.sr.SetPropertyBlock(_mpb);
+                }
             }
             _touched.Clear();
             return;
         }
-
-        if (_spotlightMask == null) return;
 
         var allCoins = FindObjectsByType<CoinDragHandler>(FindObjectsSortMode.None);
         for (int i = 0; i < allCoins.Length; i++)
@@ -423,7 +494,7 @@ public class CoinPlacementProbe : MonoBehaviour
             if (!coin) continue;
             if (coin.gameObject == this.gameObject) continue;
 
-            var srs = coin.GetComponentsInChildren<SpriteRenderer>(includeInactive: true);
+            var srs = coin.GetComponentsInChildren<SpriteRenderer>(true);
             for (int j = 0; j < srs.Length; j++)
             {
                 var sr = srs[j];
@@ -432,12 +503,48 @@ public class CoinPlacementProbe : MonoBehaviour
                 bool already = false;
                 for (int k = 0; k < _touched.Count; k++)
                     if (_touched[k].sr == sr) { already = true; break; }
-
                 if (already) continue;
 
-                _touched.Add((sr, sr.maskInteraction));
-                sr.maskInteraction = SpriteMaskInteraction.VisibleOutsideMask;
+                var t = new Touched
+                {
+                    sr = sr,
+                    prevMask = sr.maskInteraction,
+                    prevMat = sr.sharedMaterial
+                };
+
+                if (useFeatheredSoftMask)
+                {
+                    if (softMaskMaterial)
+                    {
+                        sr.material = softMaskMaterial;
+                    }
+                }
+                else
+                {
+                    sr.maskInteraction = SpriteMaskInteraction.VisibleOutsideMask;
+                }
+
+                _touched.Add(t);
             }
+        }
+    }
+
+    void PushSoftParamsToTouched()
+    {
+        if (!useFeatheredSoftMask || _touched.Count == 0) return;
+
+        for (int i = 0; i < _touched.Count; i++)
+        {
+            var sr = _touched[i].sr;
+            if (!sr) continue;
+
+            _mpb.Clear();
+            _mpb.SetVector(PID_A, _capA_World);
+            _mpb.SetVector(PID_B, _capB_World);
+            _mpb.SetFloat(PID_R, _capRadiusWorld);
+            _mpb.SetFloat(PID_F, _capFeatherWorld);
+            _mpb.SetFloat(PID_Enable, 1f);
+            sr.SetPropertyBlock(_mpb);
         }
     }
 }
