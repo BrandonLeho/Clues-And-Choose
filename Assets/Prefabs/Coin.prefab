@@ -275,8 +275,43 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  finalShrink: 0.8
   landingPulse: {fileID: 2462779467675695623}
   tryFindPulseOnMainCamera: 0
+  ringPrefab: {fileID: 4839776055513542125, guid: 96ca7eadad8382649b7374a923216061, type: 3}
+  ringCount: 1
+  ringInterval: 0.05
+  ringDuration: 0.5
+  ringEase:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  ringStartScale: 0.6
+  ringEndScale: 40
+  ringStartAlpha: 0.01
+  colorGridName: ColorGridMask
+  autoAddRectMask2DIfMissing: 0
+  landingTriggerDistance: 1
 --- !u!114 &1232689880800201139
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -2,6 +2,7 @@ using System.Collections;
 using System.Linq;
 using Mirror;
 using UnityEngine;
+using UnityEngine.UI;
 
 [RequireComponent(typeof(CoinDragHandler))]
 public class CoinDropSnap : MonoBehaviour
@@ -28,15 +29,35 @@ public class CoinDropSnap : MonoBehaviour
     public float fallStretchY = 1.18f;
     public float fallSquashX = 0.92f;
     public float fallStretchSensitivity = 12f;
+
     public float landSquashX = 1.12f;
     public float landSquashY = 0.88f;
     public float landSquashTime = 0.10f;
     public AnimationCurve landSquashEase = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
-    [Header("landing pulse")]
+    [Header("Final Shrink")]
+    [Range(0f, 1.0f)] public float finalShrink = 0.96f;
+
+    [Header("Landing Pulse")]
     public ImpactPulse landingPulse;
     public bool tryFindPulseOnMainCamera = true;
 
+    [Header("Ring Ripple")]
+    public RectTransform ringPrefab;
+    [Min(0)] public int ringCount = 2;
+    public float ringInterval = 0.05f;
+    public float ringDuration = 0.18f;
+    public AnimationCurve ringEase = AnimationCurve.EaseInOut(0, 0, 1, 1);
+    public float ringStartScale = 0.6f;
+    public float ringEndScale = 1.4f;
+    public float ringStartAlpha = 1f;
+
+    [Header("Ring Mask Target (auto-assigned)")]
+    public string colorGridName = "ColorGrid";
+    public bool autoAddRectMask2DIfMissing = false;
+
+    [Header("Contact Detection")]
+    public float landingTriggerDistance = 0.01f;
 
     Vector3 _lastValidWorldPos;
     float _spawnZ;
@@ -44,8 +65,10 @@ public class CoinDropSnap : MonoBehaviour
     CoinDragSync _sync;
     Coroutine _snapRoutine;
     ValidDropSpot _occupiedSpot;
-
     CoinPlacementProbe _probe;
+
+    RectTransform _colorGridRT;
+    bool _firedContactFX;
 
     void Awake()
     {
@@ -55,6 +78,8 @@ public class CoinDropSnap : MonoBehaviour
 
         _drag.onPickUp.AddListener(OnPickUp);
         _drag.onDrop.AddListener(OnDrop);
+
+        EnsureColorGridRef();
     }
 
     void Start()
@@ -69,6 +94,18 @@ public class CoinDropSnap : MonoBehaviour
         {
             _drag.onPickUp.RemoveListener(OnPickUp);
             _drag.onDrop.RemoveListener(OnDrop);
+        }
+    }
+
+    void EnsureColorGridRef()
+    {
+        if (_colorGridRT) return;
+        var go = GameObject.Find(colorGridName);
+        if (go) _colorGridRT = go.transform as RectTransform;
+        if (_colorGridRT && autoAddRectMask2DIfMissing)
+        {
+            if (!_colorGridRT.GetComponent<RectMask2D>() && !_colorGridRT.GetComponent<Mask>())
+                _colorGridRT.gameObject.AddComponent<RectMask2D>();
         }
     }
 
@@ -92,17 +129,12 @@ public class CoinDropSnap : MonoBehaviour
             var forcedSpot = visualCell.GetComponent<ValidDropSpot>();
             if (forcedSpot != null)
             {
-                if (forcedSpot.enabledForPlacement)
-                {
-                    TryClaimAndSnap(forcedSpot);
-                }
-                else
-                {
-                    RejectToLastValid();
-                }
+                if (forcedSpot.enabledForPlacement) { TryClaimAndSnap(forcedSpot); }
+                else { RejectToLastValid(); }
                 return;
             }
         }
+
         var hits = Physics2D.OverlapCircleAll(center2D, overlapRadius, validSpotLayers);
         var spots = hits?
             .Select(h => h.GetComponentInParent<ValidDropSpot>() ?? h.GetComponent<ValidDropSpot>())
@@ -169,12 +201,18 @@ public class CoinDropSnap : MonoBehaviour
     {
         Vector3 start = transform.position;
         Vector3 originalScale = transform.localScale;
+        _firedContactFX = false;
 
         if (snapDuration <= 0.0001f)
         {
             transform.position = target;
             if (_sync) _sync.OwnerSnapTo(target);
             if (updateLastValid) _lastValidWorldPos = target;
+
+            if (updateLastValid)
+            {
+                yield return StartCoroutine(Co_LandingSquash(originalScale, true));
+            }
             yield break;
         }
 
@@ -195,16 +233,8 @@ public class CoinDropSnap : MonoBehaviour
             {
                 float peak = Mathf.Clamp01(hopPeakT <= 0f ? 0.001f : (hopPeakT >= 1f ? 0.999f : hopPeakT));
                 float h;
-                if (p <= peak)
-                {
-                    float n = p / peak;
-                    h = -((n - 1f) * (n - 1f)) + 1f;
-                }
-                else
-                {
-                    float n = (p - peak) / (1f - peak);
-                    h = -(n * n) + 1f;
-                }
+                if (p <= peak) { float n = p / peak; h = -((n - 1f) * (n - 1f)) + 1f; }
+                else { float n = (p - peak) / (1f - peak); h = -(n * n) + 1f; }
                 pos.y += hopHeight * Mathf.Max(0f, h);
             }
 
@@ -215,7 +245,7 @@ public class CoinDropSnap : MonoBehaviour
 
             if (useHop && vy < -0.001f)
             {
-                float fallSpeed01 = 1f - Mathf.Exp(vy * fallStretchSensitivity * Time.deltaTime); // vy is negative
+                float fallSpeed01 = 1f - Mathf.Exp(vy * fallStretchSensitivity * Time.deltaTime);
                 float sx = Mathf.Lerp(1f, Mathf.Max(0.01f, fallSquashX), Mathf.Clamp01(fallSpeed01));
                 float sy = Mathf.Lerp(1f, Mathf.Max(1f, fallStretchY), Mathf.Clamp01(fallSpeed01));
                 transform.localScale = new Vector3(originalScale.x * sx, originalScale.y * sy, originalScale.z);
@@ -236,17 +266,36 @@ public class CoinDropSnap : MonoBehaviour
         transform.localScale = originalScale;
         if (_sync != null) _sync.OwnerSnapTo(target);
         if (updateLastValid) _lastValidWorldPos = target;
-        if (landingPulse && updateLastValid) landingPulse.Play();
+
+        if (updateLastValid && !_firedContactFX)
+            FireContactFX(target);
+
         _snapRoutine = null;
 
-        yield return StartCoroutine(Co_LandingSquash(originalScale));
+        yield return StartCoroutine(Co_LandingSquash(originalScale, updateLastValid));
     }
 
-    IEnumerator Co_LandingSquash(Vector3 originalScale)
+    void FireContactFX(Vector3 worldPos)
     {
-        if (landSquashTime <= 0f) yield break;
+        _firedContactFX = true;
+        if (landingPulse) landingPulse.Play();
+        if (ringCount > 0 && ringPrefab && _colorGridRT)
+            StartCoroutine(Co_RingBurst(worldPos));
+    }
+
+    IEnumerator Co_LandingSquash(Vector3 originalScale, bool doFx)
+    {
+        if (doFx) FireContactFX(transform.position);
+
+        if (landSquashTime <= 0f)
+        {
+            transform.localScale = originalScale * finalShrink;
+            yield break;
+        }
 
         Vector3 squash = new Vector3(originalScale.x * landSquashX, originalScale.y * landSquashY, originalScale.z);
+        Vector3 finalScale = originalScale * finalShrink;
+
         float t = 0f;
         float half = landSquashTime * 0.45f;
         float back = landSquashTime - half;
@@ -263,15 +312,63 @@ public class CoinDropSnap : MonoBehaviour
         while (t < back)
         {
             float e = landSquashEase.Evaluate(t / Mathf.Max(1e-6f, back));
-            transform.localScale = Vector3.LerpUnclamped(squash, originalScale, e);
+            transform.localScale = Vector3.LerpUnclamped(squash, finalScale, e);
             t += Time.deltaTime;
             yield return null;
         }
 
-        transform.localScale = originalScale;
+        transform.localScale = finalScale;
     }
 
+    IEnumerator Co_RingBurst(Vector3 worldPos)
+    {
+        EnsureColorGridRef();
+        if (!_colorGridRT) yield break;
 
+        var canvas = _colorGridRT.GetComponentInParent<Canvas>();
+        Camera uiCam = (canvas && canvas.renderMode != RenderMode.ScreenSpaceOverlay) ? canvas.worldCamera : null;
+
+        Vector2 screen = RectTransformUtility.WorldToScreenPoint(Camera.main, worldPos);
+        Vector2 local;
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(_colorGridRT, screen, uiCam, out local))
+            yield break;
+
+        for (int i = 0; i < ringCount; i++)
+        {
+            var ring = Instantiate(ringPrefab, _colorGridRT);
+            var rt = ring as RectTransform;
+            rt.anchoredPosition = local;
+            rt.localRotation = Quaternion.identity;
+            rt.localScale = Vector3.one * ringStartScale;
+
+            var cg = ring.GetComponent<CanvasGroup>() ?? ring.gameObject.AddComponent<CanvasGroup>();
+            cg.alpha = ringStartAlpha;
+
+            StartCoroutine(Co_RingOne(rt, cg));
+
+            if (i < ringCount - 1 && ringInterval > 0f)
+                yield return new WaitForSeconds(ringInterval);
+        }
+    }
+
+    IEnumerator Co_RingOne(RectTransform rt, CanvasGroup cg)
+    {
+        float t = 0f;
+        float d = Mathf.Max(0.0001f, ringDuration);
+        while (t < d)
+        {
+            t += Time.deltaTime;
+            float p = Mathf.Clamp01(t / d);
+            float e = ringEase.Evaluate(p);
+
+            float s = Mathf.LerpUnclamped(ringStartScale, ringEndScale, e);
+            rt.localScale = new Vector3(s, s, 1f);
+            cg.alpha = 1f - p;
+
+            yield return null;
+        }
+        if (rt) Destroy(rt.gameObject);
+    }
 
     public void SetHome(Vector3 worldPos, bool alsoSetZ = true)
     {
@@ -290,6 +387,7 @@ public class CoinDropSnap : MonoBehaviour
             }
             _occupiedSpot = null;
         }
+
         var lockGuard = GetComponent<CoinPlacedLock>();
         if (lockGuard != null) lockGuard.SetLocked(false);
     }
@@ -342,5 +440,4 @@ public class CoinDropSnap : MonoBehaviour
         if (!keepCurrentZ) back.z = _spawnZ;
         StartSnapTween(back, updateLastValid: false);
     }
-
 }
