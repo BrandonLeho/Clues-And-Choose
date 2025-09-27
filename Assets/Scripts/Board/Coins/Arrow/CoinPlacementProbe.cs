@@ -40,16 +40,6 @@ public class CoinPlacementProbe : MonoBehaviour
     public float hiddenXAngle = 95f;
     public AnimationCurve ease = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
-    [Header("Isolation Mask")]
-    public bool useIsolationMask = true;
-    public Vector2 maskStretch = new Vector2(0.18f, 0.12f);
-    [Range(0.0001f, 0.5f)]
-    public float maskFeather = 0.15f;
-    [Range(0f, 1f)]
-    public float maskOpacity = 1f;
-    public Color maskColor = Color.black;
-    public bool maskFollowsArrowVisibility = true;
-
     bool _suppressUntilInside;
     CoinDragHandler _drag;
     Transform _arrowInst;
@@ -67,13 +57,6 @@ public class CoinPlacementProbe : MonoBehaviour
     CoinDragSync _netDrag;
     bool _remoteMode;
 
-    GameObject _maskGO;
-    SpriteRenderer _maskSR;
-    Material _maskMat;
-    Texture2D _maskTex;
-    Camera _worldCam;
-    int _propCenter, _propRadius, _propFeather, _propColor;
-
     public Vector3 GetProbeWorld() =>
         transform.TransformPoint(new Vector3(probeOffsetLocal.x, probeOffsetLocal.y, 0f));
 
@@ -88,13 +71,13 @@ public class CoinPlacementProbe : MonoBehaviour
         _drag = GetComponent<CoinDragHandler>();
         _coinSR = GetComponent<SpriteRenderer>();
         _netDrag = GetComponent<CoinDragSync>();
-        _worldCam = Camera.main;
 
         if (_drag)
         {
             _drag.onPickUp.AddListener(OnPickUp);
             _drag.onDrop.AddListener(OnDrop);
         }
+
         if (_netDrag)
         {
             _netDrag.DragStateChanged += OnNetDragStateChanged;
@@ -105,11 +88,6 @@ public class CoinPlacementProbe : MonoBehaviour
             var found = GameObject.Find("ColorGrid");
             if (found) gridMask = found.GetComponent<RectTransform>();
         }
-
-        _propCenter = Shader.PropertyToID("_Center");
-        _propRadius = Shader.PropertyToID("_Radius");
-        _propFeather = Shader.PropertyToID("_Feather");
-        _propColor = Shader.PropertyToID("_OverlayColor");
     }
 
     void OnDestroy()
@@ -123,7 +101,6 @@ public class CoinPlacementProbe : MonoBehaviour
         {
             _netDrag.DragStateChanged -= OnNetDragStateChanged;
         }
-        DestroyIsolationMask();
     }
 
     void OnPickUp()
@@ -191,12 +168,6 @@ public class CoinPlacementProbe : MonoBehaviour
             _arrowInst.gameObject.SetActive(true);
             ApplyArrowPose();
         }
-
-        if (useIsolationMask && showAsLocal)
-        {
-            EnsureIsolationMask();
-            UpdateIsolationMaskVisibility(forceHidden: maskFollowsArrowVisibility && _suppressUntilInside);
-        }
     }
 
     void StopArrow(bool isLocalCall)
@@ -218,49 +189,31 @@ public class CoinPlacementProbe : MonoBehaviour
         _animating = false;
         _targetShown = false;
         _remoteMode = false;
-
-        if (isLocalCall) DestroyIsolationMask();
     }
 
     void Update()
     {
-        if (!_isDragging) return;
+        if (!_isDragging || !_arrowInst) return;
 
-        if (_arrowInst)
+        _arrowInst.localPosition = new Vector3(arrowOffsetLocal.x, arrowOffsetLocal.y, arrowLocalZ);
+
+        SyncArrowSortingLayerAndOrder();
+
+        UpdateTipLagRotation();
+
+        bool inside = IsProbeInsideGrid();
+        if (_suppressUntilInside)
         {
-            _arrowInst.localPosition = new Vector3(arrowOffsetLocal.x, arrowOffsetLocal.y, arrowLocalZ);
-            SyncArrowSortingLayerAndOrder();
-            UpdateTipLagRotation();
-
-            bool inside = IsProbeInsideGrid();
-            if (_suppressUntilInside)
+            if (inside)
             {
-                if (inside)
-                {
-                    _suppressUntilInside = false;
-                    SetArrowShown(true);
-                    UpdateIsolationMaskVisibility(forceHidden: false);
-                }
-                else
-                {
-                    SetArrowShown(false);
-                    UpdateIsolationMaskVisibility(forceHidden: true);
-                }
+                _suppressUntilInside = false;
+                SetArrowShown(true);
             }
-            else
-            {
-                SetArrowShown(inside);
-                if (maskFollowsArrowVisibility)
-                    UpdateIsolationMaskVisibility(forceHidden: !inside);
-            }
-
-            TickArrowAnimator();
+            else SetArrowShown(false);
         }
+        else SetArrowShown(inside);
 
-        if (_maskMat != null)
-        {
-            UpdateIsolationMask();
-        }
+        TickArrowAnimator();
     }
 
     void SyncArrowSortingLayerAndOrder()
@@ -368,111 +321,5 @@ public class CoinPlacementProbe : MonoBehaviour
         float e = ease != null ? ease.Evaluate(t) : t;
         float x = Mathf.LerpUnclamped(hiddenXAngle, 0f, e);
         _arrowInst.localRotation = Quaternion.Euler(x, 0f, 0f);
-    }
-
-    void EnsureIsolationMask()
-    {
-        if (_maskGO != null) return;
-
-        var shader = Shader.Find("Hidden/ScreenHoleFeather");
-        if (shader == null)
-        {
-            Debug.LogError("Missing shader Hidden/ScreenHoleFeather. Please add the shader file included below to your project.");
-            return;
-        }
-        _maskMat = new Material(shader);
-
-        _maskTex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-        _maskTex.SetPixels(new[] { Color.white, Color.white, Color.white, Color.white });
-        _maskTex.Apply();
-
-        var sprite = Sprite.Create(_maskTex, new Rect(0, 0, 2, 2), new Vector2(0.5f, 0.5f), 1f);
-
-        _maskGO = new GameObject("ArrowIsolationMask");
-        _maskGO.transform.SetParent(transform, worldPositionStays: false);
-
-        _maskSR = _maskGO.AddComponent<SpriteRenderer>();
-        _maskSR.sprite = sprite;
-
-        int coinOrder = _coinSR ? _coinSR.sortingOrder : 50000;
-        int arrowOrder = (_arrowSR != null) ? _arrowSR.sortingOrder : coinOrder - 1;
-        int overlayOrder = Mathf.Min(coinOrder - 2, arrowOrder - 1);
-
-        _maskSR.sortingLayerID = _coinSR ? _coinSR.sortingLayerID : 0;
-        _maskSR.sortingOrder = overlayOrder;
-        _maskSR.material = _maskMat;
-
-        var cam = _worldCam ? _worldCam : Camera.main;
-        if (cam && cam.orthographic)
-        {
-            float h = cam.orthographicSize * 2f;
-            float w = h * cam.aspect;
-            _maskGO.transform.localPosition = new Vector3(0f, 0f, 0f);
-            _maskGO.transform.localScale = new Vector3(w, h, 1f);
-        }
-        else
-        {
-            _maskGO.transform.localScale = new Vector3(100f, 100f, 1f);
-        }
-
-        _maskMat.SetColor(_propColor, new Color(maskColor.r, maskColor.g, maskColor.b, maskOpacity));
-        _maskMat.SetVector(_propRadius, maskStretch);
-        _maskMat.SetFloat(_propFeather, Mathf.Clamp01(maskFeather));
-
-        _maskGO.SetActive(true);
-    }
-
-    void UpdateIsolationMaskVisibility(bool forceHidden)
-    {
-        if (_maskGO == null) return;
-        _maskGO.SetActive(!forceHidden);
-    }
-
-    void UpdateIsolationMask()
-    {
-        if (_maskMat == null) return;
-
-        if (_maskSR && _coinSR)
-        {
-            int coinOrder = _coinSR.sortingOrder;
-            int arrowOrder = (_arrowSR != null) ? _arrowSR.sortingOrder : coinOrder - 1;
-            int overlayOrder = Mathf.Min(coinOrder - 2, arrowOrder - 1);
-            _maskSR.sortingLayerID = _coinSR.sortingLayerID;
-            _maskSR.sortingOrder = overlayOrder;
-        }
-
-        _maskMat.SetColor(_propColor, new Color(maskColor.r, maskColor.g, maskColor.b, maskOpacity));
-        _maskMat.SetVector(_propRadius, new Vector2(Mathf.Abs(maskStretch.x), Mathf.Abs(maskStretch.y)));
-        _maskMat.SetFloat(_propFeather, Mathf.Clamp01(maskFeather));
-
-        var cam = _worldCam ? _worldCam : Camera.main;
-        Vector3 world = GetProbeWorld();
-        if (cam)
-        {
-            Vector3 vp = cam.WorldToViewportPoint(world);
-            _maskMat.SetVector(_propCenter, new Vector2(vp.x, vp.y));
-        }
-        else
-        {
-            _maskMat.SetVector(_propCenter, new Vector2(0.5f, 0.5f));
-        }
-
-        if (_maskGO && cam && cam.orthographic)
-        {
-            float h = cam.orthographicSize * 2f;
-            float w = h * cam.aspect;
-            _maskGO.transform.localScale = new Vector3(w, h, 1f);
-        }
-    }
-
-    void DestroyIsolationMask()
-    {
-        if (_maskGO) Destroy(_maskGO);
-        _maskGO = null;
-        _maskSR = null;
-        if (_maskMat) Destroy(_maskMat);
-        _maskMat = null;
-        if (_maskTex) Destroy(_maskTex);
-        _maskTex = null;
     }
 }
