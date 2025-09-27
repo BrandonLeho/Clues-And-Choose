@@ -2,221 +2,155 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [DisallowMultipleComponent]
-public class ArrowOcclusionMask : MonoBehaviour
+public class LocalArrowFocusMask : MonoBehaviour
 {
-    [Header("Mask")]
-    public Sprite capsuleSprite;
-    [Min(0f)] public float radius = 0.45f;
-    [Min(0f)] public float lengthPadding = 0.25f;
-    public bool spriteIsVertical = true;
-    public float xStretch = 1.0f;
-    public float yStretch = 1.0f;
+    [Header("What to fade/mask")]
+    public LayerMask targetLayers;
+    public bool includeInactiveObjects = false;
 
-    [Header("Feather Band")]
-    public Sprite featherSprite;
-    public Material featherMat;
-    [Min(0f)] public float featherWidth = 0.2f;
-    [Range(0f, 1f)] public float featherAlpha = 0.25f;
-    public Color featherColor = new Color(1f, 1f, 1f, 1f);
-    public bool featherBothSides = true;
+    [Header("Ellipse")]
+    public float radiusX = 1.25f;
+    public float radiusY = 1.25f;
 
-    [Header("Placement")]
-    public float zOffset = 0f;
-    public Vector3 worldNudge = Vector3.zero;
+    [Header("Feather")]
+    public float feather = 0.35f;
 
-    [Header("Affect Which Renderers")]
-    public LayerMask coinRootLayers = ~0;
-    public string coinRootTag = "";
+    [Header("Fade Settings")]
+    [Range(0f, 1f)] public float outsideAlpha = 0f;
+    public float refreshListEvery = 0.35f;
 
-    [Header("Refresh")]
-    [Min(0.02f)] public float reapplyInterval = 0.25f;
+    readonly Dictionary<SpriteRenderer, Color> _original = new Dictionary<SpriteRenderer, Color>(256);
+    readonly List<SpriteRenderer> _targets = new List<SpriteRenderer>(256);
+    float _rescanTimer;
+    bool _isActive;
 
-    SpriteMask _mask;
-    Transform _maskTf;
-
-    SpriteRenderer _featherSR;
-    Transform _featherTf;
-    Material _featherMatInst;
-    MaterialPropertyBlock _mpb;
-
-    readonly Dictionary<SpriteRenderer, SpriteMaskInteraction> _prev = new();
-    float _scanClock;
-    CoinPlacementProbe _activeProbe;
-
-    void Awake()
-    {
-        var maskGo = new GameObject("LocalArrowCapsuleMask");
-        maskGo.hideFlags = HideFlags.DontSave;
-        _maskTf = maskGo.transform;
-        _mask = maskGo.AddComponent<SpriteMask>();
-        _mask.sprite = capsuleSprite;
-        _mask.isCustomRangeActive = true;
-        _mask.frontSortingLayerID = 0;
-        _mask.backSortingLayerID = 0;
-        _mask.frontSortingOrder = 32767;
-        _mask.backSortingOrder = -32768;
-        _mask.enabled = false;
-        maskGo.SetActive(false);
-
-        var featherGo = new GameObject("LocalArrowCapsuleFeather");
-        featherGo.hideFlags = HideFlags.DontSave;
-        _featherTf = featherGo.transform;
-        _featherSR = featherGo.AddComponent<SpriteRenderer>();
-        _featherSR.sprite = featherSprite ? featherSprite : capsuleSprite;
-        _featherSR.maskInteraction = SpriteMaskInteraction.None;
-        _featherSR.sortingOrder = 32766;
-
-        if (featherMat != null)
-        {
-            _featherMatInst = new Material(featherMat);
-            _featherMatInst.name = $"{featherMat.name} (Instance)";
-            _featherSR.material = _featherMatInst;
-        }
-        _mpb = new MaterialPropertyBlock();
-
-        featherGo.SetActive(false);
-    }
-
-    void OnDestroy()
-    {
-        ClearAllOverrides();
-        if (_maskTf) Destroy(_maskTf.gameObject);
-        if (_featherTf) Destroy(_featherTf.gameObject);
-        if (_featherMatInst) Destroy(_featherMatInst);
-    }
+    void OnDisable() { RestoreAll(); _isActive = false; }
+    void OnDestroy() { RestoreAll(); _isActive = false; }
 
     void Update()
     {
         var probe = CoinPlacementProbe.Active;
-        if (!probe || !probe.gameObject.activeInHierarchy)
+        bool shouldBeActive = probe != null;
+
+        if (shouldBeActive && !_isActive)
         {
-            Deactivate();
-            return;
+            _isActive = true;
+            BuildTargetList();
+        }
+        else if (!shouldBeActive && _isActive)
+        {
+            _isActive = false;
+            RestoreAll();
         }
 
-        if (probe.requireInsideGridToShow && probe.gridMask)
+        if (!_isActive) return;
+
+        _rescanTimer -= Time.deltaTime;
+        if (_rescanTimer <= 0f)
         {
-            var cam = probe.uiCamera ? probe.uiCamera : Camera.main;
-            var inside = RectTransformUtility.RectangleContainsScreenPoint(
-                probe.gridMask, probe.GetProbeScreenPosition(), cam);
-            if (!inside) { Deactivate(); return; }
+            _rescanTimer = Mathf.Max(0.05f, refreshListEvery);
+            BuildTargetList();
         }
 
-        _activeProbe = probe;
-        ActivateAndPose(probe);
+        Vector3 center = probe.GetProbeWorld();
 
-        _scanClock += Time.deltaTime;
-        if (_scanClock >= reapplyInterval)
+        float rx = Mathf.Max(0.0001f, radiusX);
+        float ry = Mathf.Max(0.0001f, radiusY);
+        float featherBand = Mathf.Max(0.0001f, feather);
+
+        for (int i = _targets.Count - 1; i >= 0; i--)
         {
-            _scanClock = 0f;
-            ApplyOverrides();
-        }
-    }
-
-    void ActivateAndPose(CoinPlacementProbe probe)
-    {
-        var coinPos = probe.transform.position;
-        var tipPos = probe.GetProbeWorld();
-        var delta = tipPos - coinPos;
-        var dist = Mathf.Max(delta.magnitude, 1e-4f);
-
-        var center = coinPos + 0.5f * delta + worldNudge;
-        float angle = Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg;
-        if (spriteIsVertical) angle -= 90f;
-
-        _maskTf.position = new Vector3(center.x, center.y, probe.transform.position.z + zOffset);
-        _maskTf.rotation = Quaternion.Euler(0f, 0f, angle);
-
-        float diameter = Mathf.Max(0.0001f, 2f * radius);
-        float length = Mathf.Max(diameter, dist + lengthPadding * 2f);
-
-        diameter *= Mathf.Max(1e-4f, xStretch);
-        length *= Mathf.Max(1e-4f, yStretch);
-
-        var sprite = _mask.sprite ? _mask.sprite : capsuleSprite;
-        if (_mask.sprite != sprite) _mask.sprite = sprite;
-        var b = sprite.bounds.size;
-
-        float sx = diameter / Mathf.Max(1e-4f, b.x);
-        float sy = length / Mathf.Max(1e-4f, b.y);
-        _maskTf.localScale = new Vector3(sx, sy, 1f);
-
-        var coinSR = probe.GetComponent<SpriteRenderer>();
-        if (coinSR)
-        {
-            _mask.frontSortingLayerID = coinSR.sortingLayerID;
-            _mask.backSortingLayerID = coinSR.sortingLayerID;
-            _featherSR.sortingLayerID = coinSR.sortingLayerID;
-
-            _featherSR.sortingOrder = Mathf.Min(coinSR.sortingOrder - 1, 32766);
-        }
-
-        if (!_mask.enabled) _mask.enabled = true;
-        if (!_maskTf.gameObject.activeSelf) _maskTf.gameObject.SetActive(true);
-
-        _featherTf.position = _maskTf.position;
-        _featherTf.rotation = _maskTf.rotation;
-        _featherTf.localScale = _maskTf.localScale;
-        if (!_featherTf.gameObject.activeSelf) _featherTf.gameObject.SetActive(true);
-
-        if (_featherSR != null)
-        {
-            _featherSR.GetPropertyBlock(_mpb);
-            _mpb.SetFloat("_FeatherWidth", Mathf.Max(0.0001f, featherWidth));
-            _mpb.SetFloat("_FeatherAlpha", Mathf.Clamp01(featherAlpha));
-            _mpb.SetColor("_FeatherColor", featherColor);
-            _mpb.SetFloat("_SpriteHeight", b.y * sy);
-            _mpb.SetFloat("_SpriteWidth", b.x * sx);
-            _mpb.SetFloat("_BothSides", featherBothSides ? 1f : 0f);
-            _featherSR.SetPropertyBlock(_mpb);
-        }
-
-        ApplyOverrides();
-    }
-
-    void Deactivate()
-    {
-        if (_maskTf) _maskTf.gameObject.SetActive(false);
-        if (_mask) _mask.enabled = false;
-        if (_featherTf) _featherTf.gameObject.SetActive(false);
-
-        _activeProbe = null;
-        _scanClock = 0f;
-        ClearAllOverrides();
-    }
-
-    void ApplyOverrides()
-    {
-        if (!_activeProbe) return;
-        ClearAllOverrides();
-
-        var allProbes = FindObjectsByType<CoinPlacementProbe>(FindObjectsSortMode.None);
-        foreach (var p in allProbes)
-        {
-            if (!p) continue;
-            if (coinRootLayers != (coinRootLayers | (1 << p.gameObject.layer))) continue;
-            if (!string.IsNullOrEmpty(coinRootTag) && p.tag != coinRootTag) continue;
-
-            var srs = p.GetComponentsInChildren<SpriteRenderer>(includeInactive: true);
-            foreach (var sr in srs)
+            var sr = _targets[i];
+            if (!sr)
             {
-                if (!sr) continue;
-                var desired = (p == _activeProbe) ? SpriteMaskInteraction.None
-                                                  : SpriteMaskInteraction.VisibleOutsideMask;
-                if (!_prev.ContainsKey(sr))
-                    _prev[sr] = sr.maskInteraction;
-                sr.maskInteraction = desired;
+                _targets.RemoveAt(i);
+                continue;
             }
+
+            if (sr.transform && probe && sr.transform.IsChildOf(probe.transform))
+            {
+                RestoreOne(sr);
+                continue;
+            }
+
+            Vector3 p = sr.bounds.center;
+            float dx = (p.x - center.x) / rx;
+            float dy = (p.y - center.y) / ry;
+            float n = Mathf.Sqrt(dx * dx + dy * dy);
+
+            float t = 0f;
+            if (n > 1f)
+                t = Mathf.Clamp01((n - 1f) / (featherBand / Mathf.Min(rx, ry)));
+
+            float a = Mathf.Lerp(1f, outsideAlpha, Smooth01(t));
+
+            if (!_original.TryGetValue(sr, out var baseColor))
+            {
+                baseColor = sr.color;
+                _original[sr] = baseColor;
+            }
+
+            var c = baseColor;
+            c.a = baseColor.a * a;
+            sr.color = c;
         }
     }
 
-    void ClearAllOverrides()
+    void BuildTargetList()
     {
-        if (_prev.Count == 0) return;
-        foreach (var kv in _prev)
+        RestoreAll();
+        _targets.Clear();
+
+#if UNITY_2023_1_OR_NEWER
+        var found = Object.FindObjectsByType<SpriteRenderer>(includeInactiveObjects ? FindObjectsInactive.Include : FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+#else
+        var found = Object.FindObjectsOfType<SpriteRenderer>(includeInactiveObjects);
+#endif
+        foreach (var sr in found)
         {
-            if (kv.Key) kv.Key.maskInteraction = kv.Value;
+            if (!sr) continue;
+            if (((1 << sr.gameObject.layer) & targetLayers.value) == 0) continue;
+            _targets.Add(sr);
         }
-        _prev.Clear();
     }
+
+    void RestoreAll()
+    {
+        foreach (var kv in _original)
+        {
+            if (kv.Key) kv.Key.color = kv.Value;
+        }
+        _original.Clear();
+    }
+
+    void RestoreOne(SpriteRenderer sr)
+    {
+        if (_original.TryGetValue(sr, out var col))
+        {
+            if (sr) sr.color = col;
+            _original.Remove(sr);
+        }
+    }
+
+    static float Smooth01(float x)
+    {
+        x = Mathf.Clamp01(x);
+        return x * x * x * (x * (x * 6f - 15f) + 10f);
+    }
+
+#if UNITY_EDITOR
+    void OnDrawGizmosSelected()
+    {
+        var probe = CoinPlacementProbe.Active;
+        if (!probe) return;
+        Vector3 c = probe.GetProbeWorld();
+        Color g = new Color(0f, 1f, 0.5f, 0.3f);
+        Color f = new Color(0.2f, 0.8f, 1f, 0.15f);
+        UnityEditor.Handles.color = g;
+        UnityEditor.Handles.DrawWireDisc(c, Vector3.forward, radiusX);
+        UnityEditor.Handles.DrawWireDisc(c, Vector3.forward, radiusY);
+        UnityEditor.Handles.color = f;
+        UnityEditor.Handles.DrawWireDisc(c, Vector3.forward, Mathf.Max(radiusX, radiusY) + feather);
+    }
+#endif
 }
