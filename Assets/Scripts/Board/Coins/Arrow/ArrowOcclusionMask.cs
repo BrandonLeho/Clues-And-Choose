@@ -14,6 +14,16 @@ public class ArrowOcclusionMask : MonoBehaviour
     public float zOffset = 0f;
     public Vector3 worldNudge = Vector3.zero;
 
+    [Header("Stretch")]
+    public float stretchX = 1f;
+    public float stretchY = 1f;
+
+    [Header("Feather")]
+    public bool feather = true;
+    public float featherWidth = 0.1f;
+    public Color featherColor = new Color(0f, 0f, 0f, 0.25f);
+    public int featherOrderOffset = 1;
+
     [Header("Affect Which Renderers")]
     public LayerMask coinRootLayers = ~0;
     public string coinRootTag = "";
@@ -21,33 +31,41 @@ public class ArrowOcclusionMask : MonoBehaviour
     [Header("Refresh")]
     [Min(0.02f)] public float reapplyInterval = 0.25f;
 
-    SpriteMask _mask;
-    Transform _maskTf;
-    CoinPlacementProbe _activeProbe;
-    float _scanClock;
-
-    readonly Dictionary<SpriteRenderer, SpriteMaskInteraction> _prev = new();
+    SpriteMask m;
+    Transform mt;
+    SpriteRenderer featherSR;
+    CoinPlacementProbe active;
+    float clk;
+    readonly Dictionary<SpriteRenderer, SpriteMaskInteraction> prev = new();
 
     void Awake()
     {
         var go = new GameObject("LocalArrowCapsuleMask");
         go.hideFlags = HideFlags.DontSave;
-        _maskTf = go.transform;
-        _mask = go.AddComponent<SpriteMask>();
-        _mask.sprite = capsuleSprite;
-        _mask.isCustomRangeActive = true;
-        _mask.frontSortingLayerID = 0;
-        _mask.backSortingLayerID = 0;
-        _mask.frontSortingOrder = 32767;
-        _mask.backSortingOrder = -32768;
-        _mask.enabled = false;
-        _maskTf.gameObject.SetActive(false);
+        mt = go.transform;
+        m = go.AddComponent<SpriteMask>();
+        m.sprite = capsuleSprite;
+        m.isCustomRangeActive = true;
+        m.frontSortingLayerID = 0;
+        m.backSortingLayerID = 0;
+        m.frontSortingOrder = 32767;
+        m.backSortingOrder = -32768;
+        m.enabled = false;
+        mt.gameObject.SetActive(false);
+
+        var fgo = new GameObject("Feather");
+        fgo.hideFlags = HideFlags.DontSave;
+        fgo.transform.SetParent(mt, false);
+        featherSR = fgo.AddComponent<SpriteRenderer>();
+        featherSR.sprite = capsuleSprite;
+        featherSR.maskInteraction = SpriteMaskInteraction.None;
+        featherSR.enabled = false;
     }
 
     void OnDestroy()
     {
         ClearAllOverrides();
-        if (_maskTf) Destroy(_maskTf.gameObject);
+        if (mt) Destroy(mt.gameObject);
     }
 
     void Update()
@@ -67,13 +85,13 @@ public class ArrowOcclusionMask : MonoBehaviour
             if (!inside) { DeactivateMask(); return; }
         }
 
-        _activeProbe = probe;
+        active = probe;
         ActivateMaskFor(probe);
 
-        _scanClock += Time.deltaTime;
-        if (_scanClock >= reapplyInterval)
+        clk += Time.deltaTime;
+        if (clk >= reapplyInterval)
         {
-            _scanClock = 0f;
+            clk = 0f;
             ApplyOverrides();
         }
     }
@@ -82,83 +100,87 @@ public class ArrowOcclusionMask : MonoBehaviour
     {
         var coinPos = probe.transform.position;
         var tipPos = probe.GetProbeWorld();
-
-        var delta = tipPos - coinPos;
-        var dist = delta.magnitude;
+        var d = tipPos - coinPos;
+        var dist = d.magnitude;
         if (dist < 1e-4f) dist = 1e-4f;
 
-        var center = coinPos + 0.5f * delta + worldNudge;
-        _maskTf.position = new Vector3(center.x, center.y, probe.transform.position.z + zOffset);
+        var center = coinPos + 0.5f * d + worldNudge;
+        mt.position = new Vector3(center.x, center.y, probe.transform.position.z + zOffset);
 
-        float angleDeg = Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg;
-        if (spriteIsVertical) angleDeg -= 90f;
-        _maskTf.rotation = Quaternion.Euler(0f, 0f, angleDeg);
+        float ang = Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg;
+        if (spriteIsVertical) ang -= 90f;
+        mt.rotation = Quaternion.Euler(0f, 0f, ang);
 
-        var sprite = _mask.sprite;
-        if (!sprite)
-        {
-            _mask.sprite = capsuleSprite;
-            sprite = _mask.sprite;
-            if (!sprite) return;
-        }
-        Vector2 spriteSize = sprite.bounds.size;
-        float desiredDiameter = Mathf.Max(0.0001f, 2f * radius);
-        float desiredLength = Mathf.Max(desiredDiameter, dist + lengthPadding * 2f);
+        var sprite = m.sprite ? m.sprite : capsuleSprite;
+        if (!sprite) return;
+        if (!m.sprite) m.sprite = sprite;
 
-        float sx = desiredDiameter / Mathf.Max(1e-4f, spriteSize.x);
-        float sy = desiredLength / Mathf.Max(1e-4f, spriteSize.y);
-        _maskTf.localScale = new Vector3(sx, sy, 1f);
+        Vector2 size = sprite.bounds.size;
+        float desiredDiameter = Mathf.Max(0.0001f, 2f * radius) * Mathf.Max(0.0001f, stretchX);
+        float desiredLength = Mathf.Max(desiredDiameter, dist + lengthPadding * 2f) * Mathf.Max(0.0001f, stretchY);
+        float sx = desiredDiameter / Mathf.Max(1e-4f, size.x);
+        float sy = desiredLength / Mathf.Max(1e-4f, size.y);
+        mt.localScale = new Vector3(sx, sy, 1f);
 
         var coinSR = probe.GetComponent<SpriteRenderer>();
         if (coinSR)
         {
-            _mask.frontSortingLayerID = coinSR.sortingLayerID;
-            _mask.backSortingLayerID = coinSR.sortingLayerID;
+            m.frontSortingLayerID = coinSR.sortingLayerID;
+            m.backSortingLayerID = coinSR.sortingLayerID;
+            featherSR.sortingLayerID = coinSR.sortingLayerID;
+            featherSR.sortingOrder = coinSR.sortingOrder + featherOrderOffset;
         }
 
-        if (!_mask.enabled) _mask.enabled = true;
-        if (!_maskTf.gameObject.activeSelf) _maskTf.gameObject.SetActive(true);
+        if (!m.enabled) m.enabled = true;
+        if (!mt.gameObject.activeSelf) mt.gameObject.SetActive(true);
+
+        if (feather)
+        {
+            featherSR.enabled = true;
+            featherSR.sprite = sprite;
+            featherSR.transform.localRotation = Quaternion.identity;
+            float fOuterX = (desiredDiameter + featherWidth * 2f) / Mathf.Max(1e-4f, size.x);
+            float fOuterY = (desiredLength + featherWidth * 2f) / Mathf.Max(1e-4f, size.y);
+            featherSR.transform.localScale = new Vector3(fOuterX, fOuterY, 1f);
+            featherSR.color = featherColor;
+        }
+        else
+        {
+            featherSR.enabled = false;
+        }
 
         ApplyOverrides();
     }
 
     void DeactivateMask()
     {
-        if (_maskTf && _maskTf.gameObject.activeSelf)
-            _maskTf.gameObject.SetActive(false);
-        if (_mask && _mask.enabled)
-            _mask.enabled = false;
-
-        _activeProbe = null;
-        _scanClock = 0f;
+        if (mt && mt.gameObject.activeSelf) mt.gameObject.SetActive(false);
+        if (m && m.enabled) m.enabled = false;
+        active = null;
+        clk = 0f;
         ClearAllOverrides();
+        if (featherSR) featherSR.enabled = false;
     }
 
     void ApplyOverrides()
     {
-        if (!_activeProbe) return;
-
+        if (!active) return;
         ClearAllOverrides();
 
         var allProbes = FindObjectsByType<CoinPlacementProbe>(FindObjectsSortMode.None);
         foreach (var p in allProbes)
         {
             if (!p) continue;
-
             if (coinRootLayers != (coinRootLayers | (1 << p.gameObject.layer))) continue;
             if (!string.IsNullOrEmpty(coinRootTag) && p.tag != coinRootTag) continue;
 
-            var srs = p.GetComponentsInChildren<SpriteRenderer>(includeInactive: true);
+            var srs = p.GetComponentsInChildren<SpriteRenderer>(true);
             foreach (var sr in srs)
             {
                 if (!sr) continue;
-
-                var desired = (p == _activeProbe) ? SpriteMaskInteraction.None
-                                                  : SpriteMaskInteraction.VisibleOutsideMask;
-
-                if (!_prev.ContainsKey(sr))
-                    _prev[sr] = sr.maskInteraction;
-
+                var desired = (p == active) ? SpriteMaskInteraction.None
+                                            : SpriteMaskInteraction.VisibleOutsideMask;
+                if (!prev.ContainsKey(sr)) prev[sr] = sr.maskInteraction;
                 sr.maskInteraction = desired;
             }
         }
@@ -166,11 +188,9 @@ public class ArrowOcclusionMask : MonoBehaviour
 
     void ClearAllOverrides()
     {
-        if (_prev.Count == 0) return;
-        foreach (var kv in _prev)
-        {
+        if (prev.Count == 0) return;
+        foreach (var kv in prev)
             if (kv.Key) kv.Key.maskInteraction = kv.Value;
-        }
-        _prev.Clear();
+        prev.Clear();
     }
 }
