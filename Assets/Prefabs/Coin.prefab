@@ -618,13 +618,14 @@ MonoBehaviour:
   radius: 0.45
   lengthPadding: 0.25
   spriteIsVertical: 1
-  xStretch: 1
-  yStretch: 1
+  xStretch: 1.5
+  yStretch: 1.5
   featherSprite: {fileID: 21300000, guid: a134658295339a440bb95c24a161fb87, type: 3}
   featherMat: {fileID: 2100000, guid: a816f9869a99dce458c7b476a829343e, type: 2}
   featherWidth: 0.2
   featherAlpha: 0.25
   featherColor: {r: 1, g: 1, b: 1, a: 1}
+  featherBothSides: 1
   zOffset: 0
   worldNudge: {x: 0, y: 0, z: 0}
   coinRootLayers:

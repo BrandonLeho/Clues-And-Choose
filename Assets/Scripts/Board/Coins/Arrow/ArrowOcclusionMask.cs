@@ -18,6 +18,7 @@ public class ArrowOcclusionMask : MonoBehaviour
     [Min(0f)] public float featherWidth = 0.2f;
     [Range(0f, 1f)] public float featherAlpha = 0.25f;
     public Color featherColor = new Color(1f, 1f, 1f, 1f);
+    public bool featherBothSides = true;
 
     [Header("Placement")]
     public float zOffset = 0f;
@@ -35,6 +36,8 @@ public class ArrowOcclusionMask : MonoBehaviour
 
     SpriteRenderer _featherSR;
     Transform _featherTf;
+    Material _featherMatInst;
+    MaterialPropertyBlock _mpb;
 
     readonly Dictionary<SpriteRenderer, SpriteMaskInteraction> _prev = new();
     float _scanClock;
@@ -50,8 +53,8 @@ public class ArrowOcclusionMask : MonoBehaviour
         _mask.isCustomRangeActive = true;
         _mask.frontSortingLayerID = 0;
         _mask.backSortingLayerID = 0;
-        _mask.frontSortingOrder = 10000;
-        _mask.backSortingOrder = -10000;
+        _mask.frontSortingOrder = 32767;
+        _mask.backSortingOrder = -32768;
         _mask.enabled = false;
         maskGo.SetActive(false);
 
@@ -60,8 +63,17 @@ public class ArrowOcclusionMask : MonoBehaviour
         _featherTf = featherGo.transform;
         _featherSR = featherGo.AddComponent<SpriteRenderer>();
         _featherSR.sprite = featherSprite ? featherSprite : capsuleSprite;
-        _featherSR.sharedMaterial = featherMat;
-        _featherSR.sortingOrder = 10000;
+        _featherSR.maskInteraction = SpriteMaskInteraction.None;
+        _featherSR.sortingOrder = 32766;
+
+        if (featherMat != null)
+        {
+            _featherMatInst = new Material(featherMat);
+            _featherMatInst.name = $"{featherMat.name} (Instance)";
+            _featherSR.material = _featherMatInst;
+        }
+        _mpb = new MaterialPropertyBlock();
+
         featherGo.SetActive(false);
     }
 
@@ -70,6 +82,7 @@ public class ArrowOcclusionMask : MonoBehaviour
         ClearAllOverrides();
         if (_maskTf) Destroy(_maskTf.gameObject);
         if (_featherTf) Destroy(_featherTf.gameObject);
+        if (_featherMatInst) Destroy(_featherMatInst);
     }
 
     void Update()
@@ -123,6 +136,7 @@ public class ArrowOcclusionMask : MonoBehaviour
         var sprite = _mask.sprite ? _mask.sprite : capsuleSprite;
         if (_mask.sprite != sprite) _mask.sprite = sprite;
         var b = sprite.bounds.size;
+
         float sx = diameter / Mathf.Max(1e-4f, b.x);
         float sy = length / Mathf.Max(1e-4f, b.y);
         _maskTf.localScale = new Vector3(sx, sy, 1f);
@@ -132,8 +146,9 @@ public class ArrowOcclusionMask : MonoBehaviour
         {
             _mask.frontSortingLayerID = coinSR.sortingLayerID;
             _mask.backSortingLayerID = coinSR.sortingLayerID;
-
             _featherSR.sortingLayerID = coinSR.sortingLayerID;
+
+            _featherSR.sortingOrder = Mathf.Min(coinSR.sortingOrder - 1, 32766);
         }
 
         if (!_mask.enabled) _mask.enabled = true;
@@ -142,18 +157,19 @@ public class ArrowOcclusionMask : MonoBehaviour
         _featherTf.position = _maskTf.position;
         _featherTf.rotation = _maskTf.rotation;
         _featherTf.localScale = _maskTf.localScale;
-
-        if (_featherSR.sharedMaterial)
-        {
-            var m = _featherSR.sharedMaterial;
-            m.SetFloat("_FeatherWidth", Mathf.Max(0.0001f, featherWidth));
-            m.SetFloat("_FeatherAlpha", Mathf.Clamp01(featherAlpha));
-            m.SetColor("_FeatherColor", featherColor);
-            m.SetFloat("_SpriteHeight", b.y * sy);
-            m.SetFloat("_SpriteWidth", b.x * sx);
-        }
-
         if (!_featherTf.gameObject.activeSelf) _featherTf.gameObject.SetActive(true);
+
+        if (_featherSR != null)
+        {
+            _featherSR.GetPropertyBlock(_mpb);
+            _mpb.SetFloat("_FeatherWidth", Mathf.Max(0.0001f, featherWidth));
+            _mpb.SetFloat("_FeatherAlpha", Mathf.Clamp01(featherAlpha));
+            _mpb.SetColor("_FeatherColor", featherColor);
+            _mpb.SetFloat("_SpriteHeight", b.y * sy);
+            _mpb.SetFloat("_SpriteWidth", b.x * sx);
+            _mpb.SetFloat("_BothSides", featherBothSides ? 1f : 0f);
+            _featherSR.SetPropertyBlock(_mpb);
+        }
 
         ApplyOverrides();
     }

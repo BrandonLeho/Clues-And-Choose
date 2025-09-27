@@ -46,8 +46,8 @@ Material:
     - _FeatherAlpha: 0.25
     - _FeatherWidth: 0.2
     - _Radius: 0.45
-    - _SpriteHeight: 1
-    - _SpriteWidth: 1
+    - _SpriteHeight: 1.0625
+    - _SpriteWidth: 0.9
     - _ZWrite: 0
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}

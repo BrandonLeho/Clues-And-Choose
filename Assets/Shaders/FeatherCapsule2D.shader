@@ -8,6 +8,7 @@ Shader "Unlit/FeatherCapsule2D"
         _FeatherWidth ("Feather Width (world)", Float) = 0.2
         _SpriteWidth ("Sprite Width (world)", Float) = 1
         _SpriteHeight("Sprite Height (world)", Float) = 1
+        _BothSides ("Feather Both Sides (0/1)", Float) = 1
     }
     SubShader
     {
@@ -32,6 +33,7 @@ Shader "Unlit/FeatherCapsule2D"
             float  _FeatherWidth;
             float  _SpriteWidth;
             float  _SpriteHeight;
+            float  _BothSides;
 
             struct appdata
             {
@@ -45,7 +47,7 @@ Shader "Unlit/FeatherCapsule2D"
                 float4 pos : SV_POSITION;
                 float2 uv  : TEXCOORD0;
                 float4 color : COLOR;
-                float2 objXY : TEXCOORD1;
+                float2 spriteXY : TEXCOORD1;
             };
 
             v2f vert (appdata v)
@@ -54,14 +56,14 @@ Shader "Unlit/FeatherCapsule2D"
                 o.pos = TransformObjectToHClip(v.vertex.xyz);
                 o.uv = v.uv;
                 o.color = v.color;
+
                 float2 local = (v.uv - 0.5) * float2(_SpriteWidth, _SpriteHeight);
-                o.objXY = local;
+                o.spriteXY = local;
                 return o;
             }
 
             float sdCapsuleY(float2 p, float halfLen, float radius)
             {
-                
                 p.y = abs(p.y);
                 float2 q = float2(p.x, max(p.y - halfLen, 0.0));
                 return length(q) - radius;
@@ -73,17 +75,27 @@ Shader "Unlit/FeatherCapsule2D"
                 float totalH = _SpriteHeight;
                 float halfLen = max(0.0, 0.5 * totalH - radius);
 
-                float d = sdCapsuleY(i.objXY, halfLen, radius);
+                float d = sdCapsuleY(i.spriteXY, halfLen, radius);
 
-                float edge = saturate(1.0 - d / _FeatherWidth);  
-                float ring = saturate(edge) * step(0.0, d) * step(d, _FeatherWidth);
+                float w = max(_FeatherWidth, 1e-5);
+                float a = 0.0;
 
-                float a = ring * _FeatherAlpha;
+                if (_BothSides >= 0.5)
+                {
+                    float t = saturate(1.0 - abs(d) / w);
+                    a = t * _FeatherAlpha;
+                }
+                else
+                {
+                    float t = saturate(1.0 - d / w);
+                    t *= step(0.0, d) * step(d, w);
+                    a = t * _FeatherAlpha;
+                }
+
                 if (a <= 0.001) discard;
 
                 float4 col = _FeatherColor;
                 col.a *= a;
-
                 return col;
             }
             ENDHLSL
