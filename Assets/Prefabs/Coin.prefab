@@ -24,6 +24,7 @@ GameObject:
   - component: {fileID: 5770278430232050148}
   - component: {fileID: 1589490137157167867}
   - component: {fileID: 3231666208490763528}
+  - component: {fileID: 201241922734353509}
   m_Layer: 0
   m_Name: Coin
   m_TagString: Untagged
@@ -601,6 +602,30 @@ MonoBehaviour:
   disableCoinDragHandler: 1
   disableCursorBridge: 1
   disableChangeCursor: 1
+--- !u!114 &201241922734353509
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5861153836025292340}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 990dcbb980d565a478abd8d754407668, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ArrowOcclusionMask
+  capsuleSprite: {fileID: 5189691121816951081, guid: 0fda7b651cdc85140a6aa670eb91b7f8, type: 3}
+  extraLength: 0.25
+  radius: 0.6
+  tipPad: 0.15
+  onlyCoinsAndArrows: 1
+  useHeuristicNameMatch: 1
+  nameHints:
+  - Visual
+  - ArrowGuide
+  orderRangeBelow: 200
+  orderRangeAbove: 200
+  liveUpdate: 1
 --- !u!1 &7401751637502646406
 GameObject:
   m_ObjectHideFlags: 0
