@@ -59,6 +59,11 @@ public class CoinDropSnap : MonoBehaviour
     [Header("Contact Detection")]
     public float landingTriggerDistance = 0.01f;
 
+    [Header("Stability")]
+    public Transform scaleTarget;
+    public bool pinDuringSquash = true;
+    public bool forceFinalSnapAfterSquash = true;
+
     Vector3 _lastValidWorldPos;
     float _spawnZ;
     CoinDragHandler _drag;
@@ -78,6 +83,12 @@ public class CoinDropSnap : MonoBehaviour
 
         _drag.onPickUp.AddListener(OnPickUp);
         _drag.onDrop.AddListener(OnDrop);
+
+        if (!scaleTarget)
+        {
+            var visual = transform.Find("Visual");
+            scaleTarget = visual ? visual : (transform.childCount > 0 ? transform.GetChild(0) : transform);
+        }
 
         EnsureColorGridRef();
     }
@@ -200,18 +211,18 @@ public class CoinDropSnap : MonoBehaviour
     IEnumerator SnapTweenRoutine(Vector3 target, bool updateLastValid)
     {
         Vector3 start = transform.position;
-        Vector3 originalScale = transform.localScale;
+        Vector3 originalScale = scaleTarget ? scaleTarget.localScale : transform.localScale;
         _firedContactFX = false;
 
         if (snapDuration <= 0.0001f)
         {
             transform.position = target;
-            if (_sync) _sync.OwnerSnapTo(target, transform.localScale);
+            if (_sync) _sync.OwnerSnapTo(target, (scaleTarget ? scaleTarget.localScale : transform.localScale));
             if (updateLastValid) _lastValidWorldPos = target;
 
             if (updateLastValid)
             {
-                yield return StartCoroutine(Co_LandingSquash(originalScale, true));
+                yield return StartCoroutine(Co_LandingSquash(originalScale, true, target));
             }
             yield break;
         }
@@ -248,25 +259,32 @@ public class CoinDropSnap : MonoBehaviour
                 float fallSpeed01 = 1f - Mathf.Exp(vy * fallStretchSensitivity * Time.deltaTime);
                 float sx = Mathf.Lerp(1f, Mathf.Max(0.01f, fallSquashX), Mathf.Clamp01(fallSpeed01));
                 float sy = Mathf.Lerp(1f, Mathf.Max(1f, fallStretchY), Mathf.Clamp01(fallSpeed01));
-                transform.localScale = new Vector3(originalScale.x * sx, originalScale.y * sy, originalScale.z);
+                if (scaleTarget)
+                    scaleTarget.localScale = new Vector3(originalScale.x * sx, originalScale.y * sy, originalScale.z);
+                else
+                    transform.localScale = new Vector3(originalScale.x * sx, originalScale.y * sy, originalScale.z);
             }
             else
             {
-                transform.localScale = Vector3.Lerp(transform.localScale, originalScale, 12f * Time.deltaTime);
+                if (scaleTarget)
+                    scaleTarget.localScale = Vector3.Lerp(scaleTarget.localScale, originalScale, 12f * Time.deltaTime);
+                else
+                    transform.localScale = Vector3.Lerp(transform.localScale, originalScale, 12f * Time.deltaTime);
             }
 
-            bool nearEnd = (snapDuration - t) <= 0f;
-            if (sendNetworkDuringTween && _sync != null && !nearEnd)
-                _sync.OwnerSendPositionThrottled(pos, transform.localScale);
-
+            if (sendNetworkDuringTween && _sync != null)
+                _sync.OwnerSendPositionThrottled(pos, (scaleTarget ? scaleTarget.localScale : transform.localScale));
 
             t += Time.deltaTime;
             yield return null;
         }
 
         transform.position = target;
-        transform.localScale = originalScale;
-        if (_sync != null) _sync.OwnerSnapTo(target, transform.localScale);
+
+        if (scaleTarget) scaleTarget.localScale = originalScale;
+        else transform.localScale = originalScale;
+
+        if (_sync != null) _sync.OwnerSnapTo(target, (scaleTarget ? scaleTarget.localScale : transform.localScale));
         if (updateLastValid) _lastValidWorldPos = target;
 
         if (updateLastValid && !_firedContactFX)
@@ -274,7 +292,7 @@ public class CoinDropSnap : MonoBehaviour
 
         _snapRoutine = null;
 
-        yield return StartCoroutine(Co_LandingSquash(originalScale, updateLastValid));
+        yield return StartCoroutine(Co_LandingSquash(originalScale, updateLastValid, target));
     }
 
     void FireContactFX(Vector3 worldPos)
@@ -285,20 +303,29 @@ public class CoinDropSnap : MonoBehaviour
             StartCoroutine(Co_RingBurst(worldPos));
     }
 
-    IEnumerator Co_LandingSquash(Vector3 originalScale, bool doFx)
+    IEnumerator Co_LandingSquash(Vector3 originalScale, bool doFx, Vector3 hardPinTarget)
     {
         if (doFx) FireContactFX(transform.position);
 
         if (landSquashTime <= 0f)
         {
-            transform.localScale = originalScale * finalShrink;
+            Vector3 finalScale = originalScale * finalShrink;
+            if (scaleTarget) scaleTarget.localScale = finalScale;
+            else transform.localScale = finalScale;
+
             if (sendNetworkDuringTween && _sync != null)
-                _sync.OwnerSendPositionThrottled(transform.position, transform.localScale);
+                _sync.OwnerSendPositionThrottled(transform.position, (scaleTarget ? scaleTarget.localScale : transform.localScale));
+
+            if (forceFinalSnapAfterSquash)
+            {
+                transform.position = hardPinTarget;
+                if (_sync != null) _sync.OwnerSnapTo(hardPinTarget, (scaleTarget ? scaleTarget.localScale : transform.localScale));
+            }
             yield break;
         }
 
         Vector3 squash = new Vector3(originalScale.x * landSquashX, originalScale.y * landSquashY, originalScale.z);
-        Vector3 finalScale = originalScale * finalShrink;
+        Vector3 finalScale2 = originalScale * finalShrink;
 
         float t = 0f;
         float half = landSquashTime * 0.45f;
@@ -306,11 +333,16 @@ public class CoinDropSnap : MonoBehaviour
 
         while (t < half)
         {
+            if (pinDuringSquash) transform.position = hardPinTarget;
+
             float e = landSquashEase.Evaluate(t / Mathf.Max(1e-6f, half));
-            transform.localScale = Vector3.LerpUnclamped(originalScale, squash, e);
+            Vector3 s = Vector3.LerpUnclamped(originalScale, squash, e);
+
+            if (scaleTarget) scaleTarget.localScale = s;
+            else transform.localScale = s;
 
             if (sendNetworkDuringTween && _sync != null)
-                _sync.OwnerSendPositionThrottled(transform.position, transform.localScale);
+                _sync.OwnerSendPositionThrottled(transform.position, (scaleTarget ? scaleTarget.localScale : transform.localScale));
 
             t += Time.deltaTime;
             yield return null;
@@ -319,20 +351,33 @@ public class CoinDropSnap : MonoBehaviour
         t = 0f;
         while (t < back)
         {
+            if (pinDuringSquash) transform.position = hardPinTarget;
+
             float e = landSquashEase.Evaluate(t / Mathf.Max(1e-6f, back));
-            transform.localScale = Vector3.LerpUnclamped(squash, finalScale, e);
+            Vector3 s = Vector3.LerpUnclamped(squash, finalScale2, e);
+
+            if (scaleTarget) scaleTarget.localScale = s;
+            else transform.localScale = s;
 
             if (sendNetworkDuringTween && _sync != null)
-                _sync.OwnerSendPositionThrottled(transform.position, transform.localScale);
+                _sync.OwnerSendPositionThrottled(transform.position, (scaleTarget ? scaleTarget.localScale : transform.localScale));
 
             t += Time.deltaTime;
             yield return null;
         }
 
-        transform.localScale = finalScale;
+        if (scaleTarget) scaleTarget.localScale = finalScale2;
+        else transform.localScale = finalScale2;
 
-        if (sendNetworkDuringTween && _sync != null)
-            _sync.OwnerSendPositionThrottled(transform.position, transform.localScale);
+        if (forceFinalSnapAfterSquash)
+        {
+            transform.position = hardPinTarget;
+            if (_sync != null) _sync.OwnerSnapTo(hardPinTarget, (scaleTarget ? scaleTarget.localScale : transform.localScale));
+        }
+        else if (sendNetworkDuringTween && _sync != null)
+        {
+            _sync.OwnerSendPositionThrottled(transform.position, (scaleTarget ? scaleTarget.localScale : transform.localScale));
+        }
     }
 
     IEnumerator Co_RingBurst(Vector3 worldPos)

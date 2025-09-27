@@ -312,6 +312,9 @@ MonoBehaviour:
   colorGridName: ColorGridMask
   autoAddRectMask2DIfMissing: 0
   landingTriggerDistance: 1
+  scaleTarget: {fileID: 50855883203061400}
+  pinDuringSquash: 1
+  forceFinalSnapAfterSquash: 1
 --- !u!114 &1232689880800201139
 MonoBehaviour:
   m_ObjectHideFlags: 0
