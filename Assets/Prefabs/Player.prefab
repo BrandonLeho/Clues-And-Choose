@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 3739164918277268705}
   - component: {fileID: 2596536021153574824}
   - component: {fileID: 4015182123006275353}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: CursorVisual
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -27,7 +27,7 @@ Transform:
   m_GameObject: {fileID: 5203212849378902996}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.2772684, y: 0.043137282, z: 0}
+  m_LocalPosition: {x: -0.016849242, y: 0.0039215945, z: 0}
   m_LocalScale: {x: 1.0818121, y: 1.0818121, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -109,7 +109,7 @@ MonoBehaviour:
   fallbackTargetPixelHeight: 32
   viewerScaleFudge: 1
   hotspotNormalized: {x: 0, y: 1}
-  offsetPixels: {x: 20, y: -10}
+  offsetPixels: {x: 5, y: -3}
   offsetWorld: {x: 0, y: 0}
 --- !u!1 &5227058378306516699
 GameObject:
