@@ -55,8 +55,9 @@ public class CoinPlacementProbe : MonoBehaviour
     [Header("Mask Target Filtering")]
     public bool hideOtherCoins = true;
     public LayerMask layersToHide;
-    public bool maskAutoExpandRange = true;
-    [Range(0.05f, 1.0f)] public float maskRetouchInterval = 0.25f;
+
+    [Header("Mask Refresh")]
+    [Range(0.05f, 0.5f)] public float maskRescanInterval = 0.15f;
 
     bool _suppressUntilInside;
     CoinDragHandler _drag;
@@ -76,7 +77,11 @@ public class CoinPlacementProbe : MonoBehaviour
     SpriteMask _spotlightMask;
     readonly List<(SpriteRenderer sr, SpriteMaskInteraction prev)> _touched = new();
 
-    float _maskScanTimer;
+    static bool _globalRefreshRequested;
+    float _maskRefreshTimer;
+    bool _pendingRefresh;
+
+    public static void RequestMaskRefreshGlobal() => _globalRefreshRequested = true;
 
     public Vector3 GetProbeWorld() =>
         transform.TransformPoint(new Vector3(probeOffsetLocal.x, probeOffsetLocal.y, 0f));
@@ -142,10 +147,12 @@ public class CoinPlacementProbe : MonoBehaviour
         if (dragging)
         {
             StartArrow(showAsLocal: false);
+            RequestMaskRefreshGlobal();
         }
         else
         {
             StopArrow(isLocalCall: false);
+            RequestMaskRefreshGlobal();
         }
     }
 
@@ -187,9 +194,12 @@ public class CoinPlacementProbe : MonoBehaviour
         if (showAsLocal && enableSpotlightMask)
         {
             SetupSpotlight();
+            EnsureMaskSortingCoverage();
             ApplyMaskToOtherCoins(enable: true);
-            _maskScanTimer = maskRetouchInterval;
+            _maskRefreshTimer = maskRescanInterval;
         }
+
+        if (!showAsLocal) RequestMaskRefreshGlobal();
     }
 
     void StopArrow(bool isLocalCall)
@@ -213,31 +223,36 @@ public class CoinPlacementProbe : MonoBehaviour
 
     void Update()
     {
-        if (!_isDragging || !_arrowInst) { TickArrowAnimatorOnlyHide(); return; }
-
-        _arrowInst.localPosition = new Vector3(arrowOffsetLocal.x, arrowOffsetLocal.y, arrowLocalZ);
-
-        SyncArrowSortingLayerAndOrder();
-        UpdateTipLagRotation();
-
-        bool inside = IsProbeInsideGrid();
-        if (_suppressUntilInside)
+        if (!_isDragging || !_arrowInst) { TickArrowAnimatorOnlyHide(); }
+        else
         {
-            if (inside) { _suppressUntilInside = false; SetArrowShown(true); }
-            else SetArrowShown(false);
-        }
-        else SetArrowShown(inside);
+            _arrowInst.localPosition = new Vector3(arrowOffsetLocal.x, arrowOffsetLocal.y, arrowLocalZ);
 
-        TickArrowAnimator();
+            SyncArrowSortingLayerAndOrder();
+            UpdateTipLagRotation();
+
+            bool inside = IsProbeInsideGrid();
+            if (_suppressUntilInside)
+            {
+                if (inside) { _suppressUntilInside = false; SetArrowShown(true); }
+                else SetArrowShown(false);
+            }
+            else SetArrowShown(inside);
+
+            TickArrowAnimator();
+        }
 
         if (_spotlightMask && Active == this)
         {
-            UpdateSpotlightPose();
+            EnsureMaskSortingCoverage();
 
-            _maskScanTimer -= Time.unscaledDeltaTime;
-            if (_maskScanTimer <= 0f)
+            if (_globalRefreshRequested) { _globalRefreshRequested = false; _pendingRefresh = true; }
+
+            _maskRefreshTimer -= Time.unscaledDeltaTime;
+            if (_pendingRefresh || _maskRefreshTimer <= 0f)
             {
-                _maskScanTimer = maskRetouchInterval;
+                _pendingRefresh = false;
+                _maskRefreshTimer = Mathf.Max(0.05f, maskRescanInterval);
                 ApplyMaskToOtherCoins(enable: true);
             }
         }
@@ -364,21 +379,28 @@ public class CoinPlacementProbe : MonoBehaviour
             {
                 _spotlightMask.frontSortingLayerID = _coinSR.sortingLayerID;
                 _spotlightMask.backSortingLayerID = _coinSR.sortingLayerID;
-
-                if (maskAutoExpandRange)
-                {
-                    _spotlightMask.frontSortingOrder = int.MaxValue;
-                    _spotlightMask.backSortingOrder = int.MinValue;
-                }
-                else
-                {
-                    _spotlightMask.frontSortingOrder = _coinSR.sortingOrder + maskFrontSortingOrderBias;
-                    _spotlightMask.backSortingOrder = _coinSR.sortingOrder + maskBackSortingOrderBias;
-                }
             }
         }
+
         _spotlightMask.gameObject.SetActive(true);
+        EnsureMaskSortingCoverage();
         UpdateSpotlightPose();
+    }
+
+    void EnsureMaskSortingCoverage()
+    {
+        if (_spotlightMask == null) return;
+
+        if (_coinSR != null)
+        {
+            _spotlightMask.frontSortingLayerID = _coinSR.sortingLayerID;
+            _spotlightMask.backSortingLayerID = _coinSR.sortingLayerID;
+        }
+
+        _spotlightMask.isCustomRangeActive = true;
+
+        _spotlightMask.backSortingOrder = -100000000;
+        _spotlightMask.frontSortingOrder = 100000000;
     }
 
     void UpdateSpotlightPose()
@@ -407,14 +429,6 @@ public class CoinPlacementProbe : MonoBehaviour
         }
 
         _spotlightMask.transform.localScale = new Vector3(sx, sy, 1f);
-
-        if (maskAutoExpandRange && _coinSR != null)
-        {
-            _spotlightMask.frontSortingLayerID = _coinSR.sortingLayerID;
-            _spotlightMask.backSortingLayerID = _coinSR.sortingLayerID;
-            _spotlightMask.frontSortingOrder = int.MaxValue;
-            _spotlightMask.backSortingOrder = int.MinValue;
-        }
     }
 
     void TeardownSpotlight()
