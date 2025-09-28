@@ -68,10 +68,8 @@ public class CoinPlacementProbe : MonoBehaviour
     Vector3 _prevBaseWorld;
     bool _targetShown;
     float _animT;
-    bool _animating;
 
     CoinDragSync _netDrag;
-    bool _remoteMode;
 
     SpriteMask _spotlightMask;
     readonly List<(SpriteRenderer sr, SpriteMaskInteraction prev)> _touched = new();
@@ -125,7 +123,6 @@ public class CoinPlacementProbe : MonoBehaviour
 
     void OnPickUp()
     {
-        _remoteMode = false;
         StartArrow(showAsLocal: true);
     }
 
@@ -140,7 +137,6 @@ public class CoinPlacementProbe : MonoBehaviour
 
         if (dragging)
         {
-            _remoteMode = true;
             StartArrow(showAsLocal: false);
         }
         else
@@ -180,7 +176,6 @@ public class CoinPlacementProbe : MonoBehaviour
             _suppressUntilInside = showAsLocal ? startHiddenOnPickup : false;
             _animT = 0f;
             _targetShown = false;
-            _animating = false;
             _arrowInst.gameObject.SetActive(true);
             ApplyArrowPose();
         }
@@ -205,9 +200,7 @@ public class CoinPlacementProbe : MonoBehaviour
 
         _suppressUntilInside = false;
         _animT = 0f;
-        _animating = false;
         _targetShown = false;
-        _remoteMode = false;
 
         TeardownSpotlight();
         ApplyMaskToOtherCoins(enable: false);
@@ -298,7 +291,6 @@ public class CoinPlacementProbe : MonoBehaviour
             _arrowInst.gameObject.SetActive(true);
 
         _targetShown = shown;
-        _animating = true;
 
         if (_spotlightMask)
             _spotlightMask.gameObject.SetActive(shown);
@@ -314,7 +306,6 @@ public class CoinPlacementProbe : MonoBehaviour
             float dur = _targetShown ? Mathf.Max(0.0001f, entryDuration) : Mathf.Max(0.0001f, exitDuration);
             float step = Time.deltaTime / dur;
             _animT = Mathf.MoveTowards(_animT, target, step);
-            _animating = true;
             ApplyArrowPose();
         }
 
@@ -322,13 +313,11 @@ public class CoinPlacementProbe : MonoBehaviour
         {
             ApplyArrowPose();
             if (_arrowInst.gameObject.activeSelf) _arrowInst.gameObject.SetActive(false);
-            _animating = false;
         }
 
         if (Mathf.Approximately(_animT, 1f) && _targetShown)
         {
             ApplyArrowPose();
-            _animating = false;
         }
     }
 

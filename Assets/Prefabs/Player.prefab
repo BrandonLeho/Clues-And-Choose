@@ -17,7 +17,7 @@ GameObject:
   - component: {fileID: 7321503784007075703}
   - component: {fileID: 3331932311727374427}
   - component: {fileID: 4236259784190010632}
-  - component: {fileID: 790501969251130919}
+  - component: {fileID: 7863685656953625036}
   m_Layer: 5
   m_Name: Player
   m_TagString: Untagged
@@ -35,7 +35,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.98765427, y: 0.98765427, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -229,7 +229,7 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
---- !u!114 &790501969251130919
+--- !u!114 &7863685656953625036
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -238,9 +238,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 5227058378306516699}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 784f297bb08f5874d9dfdc396cf886ea, type: 3}
+  m_Script: {fileID: 11500000, guid: 54a03d88c52b6784596db3c699654305, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MatchCursorPixelSize
-  targetSR: {fileID: 6195233173872296309}
-  cam: {fileID: 0}
-  atZ: 9999
+  m_EditorClassIdentifier: Assembly-CSharp::CursorSpritePixelScaler
+  targetRenderer: {fileID: 6195233173872296309}
+  targetCamera: {fileID: 0}
+  matchLocalCursorTexture: 1
+  fallbackTargetPixelHeight: 32
+  viewerScaleFudge: 1

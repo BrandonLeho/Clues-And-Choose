@@ -27,12 +27,8 @@ public class CursorControllerModule : MonoBehaviour
     [SerializeField] private Vector2 draggingNudgePx = Vector2.zero;
 
     public enum ModeOfCursor { Default, Clickable, Draggable, Dragging }
-
-    public Texture2D CurrentTexture { get; private set; }
-    public Vector2 CurrentHotspotPx { get; private set; }
-    public System.Action OnCursorVisualChanged;
-
-    [SerializeField] private bool forceSoftwareCursor = false;
+    public static event System.Action<Texture2D> OnCursorTextureChanged;
+    public static Texture2D CurrentTexture { get; private set; }
 
     ModeOfCursor _currentMode = ModeOfCursor.Default;
 
@@ -133,11 +129,9 @@ public class CursorControllerModule : MonoBehaviour
                 break;
         }
 
+        Cursor.SetCursor(tex, hotspot, CursorMode.Auto);
         CurrentTexture = tex;
-        CurrentHotspotPx = hotspot;
-
-        Cursor.SetCursor(tex, hotspot, forceSoftwareCursor ? CursorMode.ForceSoftware : CursorMode.Auto);
-        OnCursorVisualChanged?.Invoke();
+        OnCursorTextureChanged?.Invoke(tex);
     }
 
     Vector2 EffectiveHotspot(Texture2D tex, Vector2 normalizedPivot, Vector2 nudgePx)

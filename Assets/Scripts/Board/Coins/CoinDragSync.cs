@@ -32,7 +32,6 @@ public class CoinDragSync : NetworkBehaviour
     float _lastSendTime = -999f;
     NetworkCoin _coin;
     float _lastAutoSend;
-    bool _streaming;
 
     Vector3 _targetPos;
     Vector3 _targetScale;
@@ -55,14 +54,12 @@ public class CoinDragSync : NetworkBehaviour
     public void BeginLocalDrag()
     {
         if (!IsLocalOwner) return;
-        _streaming = true;
         if (!isDragging) CmdSetDragging(true);
     }
 
     public void EndLocalDrag()
     {
         if (!IsLocalOwner) return;
-        _streaming = false;
         if (isDragging) CmdSetDragging(false);
     }
 

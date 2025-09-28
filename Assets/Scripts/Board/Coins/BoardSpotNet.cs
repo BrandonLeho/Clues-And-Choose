@@ -11,10 +11,10 @@ public class BoardSpotsNet : NetworkBehaviour
     [SerializeField] List<ValidDropSpot> spots = new List<ValidDropSpot>();
 
     public class SpotDict : SyncDictionary<int, uint> { }
-    public SpotDict occupancy = new SpotDict();
+    public readonly SpotDict occupancy = new SpotDict();
 
     public class CoinDict : SyncDictionary<uint, int> { }
-    public CoinDict coinToIndex = new CoinDict();
+    public readonly CoinDict coinToIndex = new CoinDict();
 
     Dictionary<int, ValidDropSpot> _indexToSpot = new Dictionary<int, ValidDropSpot>();
 
