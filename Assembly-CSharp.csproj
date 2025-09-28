@@ -82,6 +82,7 @@
     <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverRoulette\RouletteRosterBinder.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardFlip.cs" />
     <Compile Include="Assets\Scripts\Gameloop\RoundManager.cs" />
+    <Compile Include="Assets\Scripts\Controller\CursorController\CursorSpriteAligner.cs" />
     <Compile Include="Assets\Scripts\Board\GameChat\ChatUI.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardFrontHoverTilt.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\PlayerNameSync.cs" />
@@ -97,7 +98,6 @@
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerNameColorBinder.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceHoverScale.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinSlideInIntro.cs" />
-    <Compile Include="Assets\Scripts\Controller\CursorController\CursorSpritePixelScaler.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\PerimeterGlowEntry.cs" />
     <Compile Include="Assets\Scripts\UI\LobbyUIManager.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\EnableHoverAfterFlyIn.cs" />

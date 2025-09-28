@@ -399,8 +399,8 @@ public class CoinPlacementProbe : MonoBehaviour
 
         _spotlightMask.isCustomRangeActive = true;
 
-        _spotlightMask.backSortingOrder = -100000000;
-        _spotlightMask.frontSortingOrder = 100000000;
+        _spotlightMask.backSortingOrder = -10000;
+        _spotlightMask.frontSortingOrder = 10000;
     }
 
     void UpdateSpotlightPose()
