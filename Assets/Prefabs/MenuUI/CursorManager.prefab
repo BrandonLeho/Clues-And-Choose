@@ -54,7 +54,8 @@ MonoBehaviour:
   clickablePivot: {x: 0, y: 0}
   draggablePivot: {x: 0, y: 0}
   draggingPivot: {x: 0, y: 0}
-  defaultNudgePx: {x: -5, y: -7}
-  clickableNudgePx: {x: -5, y: -7}
-  draggableNudgePx: {x: -5, y: -7}
-  draggingNudgePx: {x: -5, y: -7}
+  defaultNudgePx: {x: 0, y: 0}
+  clickableNudgePx: {x: 5, y: 0}
+  draggableNudgePx: {x: 0, y: 0}
+  draggingNudgePx: {x: 0, y: 0}
+  clampHotspotToTexture: 0
