@@ -74,6 +74,7 @@ public class CoinDropSnap : MonoBehaviour
 
     RectTransform _colorGridRT;
     bool _firedContactFX;
+    bool _landingFxRunning;
 
     void Awake()
     {
@@ -305,6 +306,7 @@ public class CoinDropSnap : MonoBehaviour
 
     IEnumerator Co_LandingSquash(Vector3 originalScale, bool doFx, Vector3 hardPinTarget)
     {
+        _landingFxRunning = true;
         if (doFx) FireContactFX(transform.position);
 
         if (landSquashTime <= 0f)
@@ -321,6 +323,7 @@ public class CoinDropSnap : MonoBehaviour
                 transform.position = hardPinTarget;
                 if (_sync != null) _sync.OwnerSnapTo(hardPinTarget, (scaleTarget ? scaleTarget.localScale : transform.localScale));
             }
+            _landingFxRunning = false;
             yield break;
         }
 
@@ -378,6 +381,8 @@ public class CoinDropSnap : MonoBehaviour
         {
             _sync.OwnerSendPositionThrottled(transform.position, (scaleTarget ? scaleTarget.localScale : transform.localScale));
         }
+
+        _landingFxRunning = false;
     }
 
     IEnumerator Co_RingBurst(Vector3 worldPos)
@@ -499,5 +504,10 @@ public class CoinDropSnap : MonoBehaviour
         Vector3 back = _lastValidWorldPos;
         if (!keepCurrentZ) back.z = _spawnZ;
         StartSnapTween(back, updateLastValid: false);
+    }
+
+    public bool CanBeginDrag()
+    {
+        return _snapRoutine == null && !_landingFxRunning;
     }
 }

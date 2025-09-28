@@ -76,7 +76,7 @@ MonoBehaviour:
   syncDraggingLayer: 1
   networkDragBaseOrder: 990
   remoteClientSubtractiveBias: 10
-  disableColliderWhileDragging: 1
+  disableColliderWhileDragging: 0
   pickupScaleMultiplier: 1.25
   scaleLerpSpeed: 10
   debugInteract: 0

@@ -64,6 +64,8 @@ public class CoinDragHandler : MonoBehaviour
     ICoinDragPermission[] _permGuards;
     CoinRejectionFeedback _rejectFx;
 
+    static CoinDragHandler s_CurrentDragging;
+
     void Awake()
     {
         _rejectFx = GetComponent<CoinRejectionFeedback>();
@@ -162,10 +164,24 @@ public class CoinDragHandler : MonoBehaviour
         }
         else
         {
-            if (mouseDown && overMe)
+            if (mouseDown)
             {
-                if (!_isDragging) { BeginDrag(mouseId, p2); return; }
-                else { EndDrag(); return; }
+                if (!_isDragging)
+                {
+                    if (overMe)
+                    {
+                        BeginDrag(mouseId, p2);
+                        return;
+                    }
+                }
+                else
+                {
+                    if (Time.unscaledTime >= _noDropBefore)
+                    {
+                        EndDrag();
+                        return;
+                    }
+                }
             }
         }
     }
@@ -214,6 +230,13 @@ public class CoinDragHandler : MonoBehaviour
         if (_netCoin != null && !_netCoin.IsLocalOwner()) { _rejectFx?.Play(); return; }
         if (!GuardsAllowBeginDrag()) { _rejectFx?.Play(); return; }
 
+        if (s_CurrentDragging != null && s_CurrentDragging != this)
+        {
+            _rejectFx?.Play();
+            return;
+        }
+
+        s_CurrentDragging = this;
         _activePointerId = pointerId;
         _isDragging = true;
         _allowLocalMove = true;
@@ -240,6 +263,8 @@ public class CoinDragHandler : MonoBehaviour
         _isDragging = false;
         _activePointerId = -1;
         _allowLocalMove = false;
+
+        if (s_CurrentDragging == this) s_CurrentDragging = null;
 
         if (disableColliderWhileDragging) _col.enabled = true;
 
