@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6464213329439754255}
   - component: {fileID: 4467100925043099772}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Shaft
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -103,7 +103,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6507791230212047339}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: ArrowGuide
   m_TagString: Untagged
   m_Icon: {fileID: 0}

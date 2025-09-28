@@ -575,7 +575,7 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   enableSpotlightMask: 1
-  capsuleMaskSprite: {fileID: 5189691121816951081, guid: 0fda7b651cdc85140a6aa670eb91b7f8, type: 3}
+  capsuleMaskSprite: {fileID: 21300000, guid: e44964a2bd96c5b48b90775ce2c2a6d4, type: 3}
   maskScale: {x: 5, y: 3}
   maskOffsetLocal: {x: 0, y: -1.5}
   maskZOffset: -0.01
@@ -583,6 +583,10 @@ MonoBehaviour:
   maskFrontSortingOrderBias: 10000
   maskAlignToArrow: 1
   maskAutoLengthPerUnit: 0.6
+  hideOtherCoins: 1
+  layersToHide:
+    serializedVersion: 2
+    m_Bits: 512
 --- !u!114 &1589490137157167867
 MonoBehaviour:
   m_ObjectHideFlags: 0

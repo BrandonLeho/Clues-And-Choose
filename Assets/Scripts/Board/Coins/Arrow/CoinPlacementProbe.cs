@@ -52,6 +52,10 @@ public class CoinPlacementProbe : MonoBehaviour
     public bool maskAlignToArrow = true;
     public float maskAutoLengthPerUnit = 0.6f;
 
+    [Header("Mask Target Filtering")]
+    public bool hideOtherCoins = true;
+    public LayerMask layersToHide;
+
     bool _suppressUntilInside;
     CoinDragHandler _drag;
     Transform _arrowInst;
@@ -416,27 +420,44 @@ public class CoinPlacementProbe : MonoBehaviour
 
         if (_spotlightMask == null) return;
 
-        var allCoins = FindObjectsByType<CoinDragHandler>(FindObjectsSortMode.None);
-        for (int i = 0; i < allCoins.Length; i++)
+        void Touch(SpriteRenderer sr)
         {
-            var coin = allCoins[i];
-            if (!coin) continue;
-            if (coin.gameObject == this.gameObject) continue;
+            if (!sr) return;
+            for (int k = 0; k < _touched.Count; k++)
+                if (_touched[k].sr == sr) return;
 
-            var srs = coin.GetComponentsInChildren<SpriteRenderer>(includeInactive: true);
-            for (int j = 0; j < srs.Length; j++)
+            _touched.Add((sr, sr.maskInteraction));
+            sr.maskInteraction = SpriteMaskInteraction.VisibleOutsideMask;
+        }
+
+        if (hideOtherCoins)
+        {
+            var allCoins = FindObjectsByType<CoinDragHandler>(FindObjectsSortMode.None);
+            for (int i = 0; i < allCoins.Length; i++)
             {
-                var sr = srs[j];
+                var coin = allCoins[i];
+                if (!coin) continue;
+                if (coin.gameObject == this.gameObject) continue;
+
+                var srs = coin.GetComponentsInChildren<SpriteRenderer>(includeInactive: true);
+                for (int j = 0; j < srs.Length; j++)
+                    Touch(srs[j]);
+            }
+        }
+
+        if (layersToHide.value != 0)
+        {
+            var allSRs = FindObjectsByType<SpriteRenderer>(FindObjectsSortMode.None);
+            for (int i = 0; i < allSRs.Length; i++)
+            {
+                var sr = allSRs[i];
                 if (!sr) continue;
 
-                bool already = false;
-                for (int k = 0; k < _touched.Count; k++)
-                    if (_touched[k].sr == sr) { already = true; break; }
+                if (sr.transform.IsChildOf(this.transform)) continue;
 
-                if (already) continue;
-
-                _touched.Add((sr, sr.maskInteraction));
-                sr.maskInteraction = SpriteMaskInteraction.VisibleOutsideMask;
+                int mask = 1 << sr.gameObject.layer;
+                if ((layersToHide.value & mask) != 0)
+                    Touch(sr);
             }
         }
     }
