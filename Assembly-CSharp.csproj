@@ -123,6 +123,7 @@
     <Compile Include="Assets\Scripts\Board\Coins\CoinInteractionGate.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverRoulette\RouletteToRoundBridge.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\RegistryNameColorLookup.cs" />
+    <Compile Include="Assets\Scripts\Controller\CursorController\MatchCursorPixelSize.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\GridHoverRelay.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardAttachToBoard.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinHoverOffset.cs" />
