@@ -341,4 +341,51 @@ public class RoundManager : NetworkBehaviour
         Debug.Log($"[TurnOrder] Round1: Player {playerNetId} -> it's your turn to place a coin.");
     }
 
+    [Server]
+    public void ServerOnSpotClaimed(uint placerPlayerNetId, uint coinNetId, int spotIndex)
+    {
+        if (_cardCol < 0 || _cardRow < 0) return;
+
+        int spotCol, spotRow;
+        if (BoardSpotsNet.Instance == null || !BoardSpotsNet.Instance.TryGetSpotCoord(spotIndex, out spotCol, out spotRow))
+            return;
+
+        int dx = Mathf.Abs(spotCol - _cardCol);
+        int dy = Mathf.Abs(spotRow - _cardRow);
+        int manhattan = dx + dy;
+        float euclid = Mathf.Sqrt(dx * dx + dy * dy);
+
+        RpcPlacementCompared(coinNetId, spotCol, spotRow, _cardCol, _cardRow, manhattan, euclid);
+
+        if (placerPlayerNetId == 0 || placerPlayerNetId == _clueGiverNetId) return;
+
+        if (_turnPtr >= 0 && _turnPtr < _turnOrder.Count)
+        {
+            uint expected = _turnOrder[_turnPtr];
+
+            if (placerPlayerNetId == expected)
+            {
+                Debug.Log($"[TurnOrder] Player {placerPlayerNetId} placed a coin at ({spotCol},{spotRow}) and ends their choosing turn.");
+
+                _placedThisRound.Add(placerPlayerNetId);
+                int nonClueCount = Mathf.Max(0, _roster.Count - (_clueGiverNetId != 0 ? 1 : 0));
+                Debug.Log($"[PlacementProgress] {_placedThisRound.Count} / {nonClueCount} non-clue-givers placed.");
+
+                _turnPtr++;
+                if (_turnPtr < _turnOrder.Count)
+                {
+                    ServerAnnounceCurrentTurn();
+                }
+                else
+                {
+                    Debug.Log("[TurnOrder] Round1 complete. Choosing round 1 end — waiting for clue giver for second round or pass.");
+                }
+            }
+            else
+            {
+                Debug.Log($"[TurnOrder] Out-of-turn placement by {placerPlayerNetId}. Expected {expected}. No advance.");
+            }
+        }
+    }
+
 }

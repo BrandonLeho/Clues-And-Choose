@@ -127,6 +127,12 @@ public class BoardSpotsNet : NetworkBehaviour
                 ok = true;
 
                 RpcApplySpot(spotIndex, coinNetId);
+
+                if (RoundManager.Instance != null)
+                {
+                    uint placerPlayerNetId = sender?.identity ? sender.identity.netId : 0u;
+                    RoundManager.Instance.ServerOnSpotClaimed(placerPlayerNetId, coinNetId, spotIndex);
+                }
             }
         }
 
