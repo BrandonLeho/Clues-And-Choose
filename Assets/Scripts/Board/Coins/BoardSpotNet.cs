@@ -159,4 +159,22 @@ public class BoardSpotsNet : NetworkBehaviour
             RpcApplySpot(idx, 0);
         }
     }
+
+    public bool TryGetSpot(int spotIndex, out ValidDropSpot spot)
+        => _indexToSpot.TryGetValue(spotIndex, out spot) && spot != null;
+
+    public bool TryGetSpotCoord(int spotIndex, out int col, out int row)
+    {
+        col = row = -1;
+        if (!TryGetSpot(spotIndex, out var spot) || spot == null) return false;
+
+        var coord = spot.GetComponent<ChoiceGridCoord>()
+                    ?? spot.GetComponentInChildren<ChoiceGridCoord>(true)
+                    ?? spot.GetComponentInParent<ChoiceGridCoord>();
+        if (coord == null) return false;
+
+        col = coord.col;
+        row = coord.row;
+        return true;
+    }
 }
