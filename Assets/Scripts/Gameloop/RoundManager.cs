@@ -48,6 +48,9 @@ public class RoundManager : NetworkBehaviour
 
     HashSet<uint> _placedThisRound = new HashSet<uint>();
 
+    readonly List<uint> _turnOrder = new List<uint>();
+    int _turnPtr = -1;
+
     void Awake()
     {
         Instance = this;
@@ -211,8 +214,11 @@ public class RoundManager : NetworkBehaviour
 
         ServerResetPlacementsForRound();
 
+        ServerBuildRound1TurnOrder();
+
         RpcCardChoiceSet(_cardCol, _cardRow, _cardColor);
     }
+
 
 
     [ClientRpc]
@@ -242,19 +248,34 @@ public class RoundManager : NetworkBehaviour
         if (placerPlayerNetId != 0 && placerPlayerNetId != _clueGiverNetId)
         {
             _placedThisRound.Add(placerPlayerNetId);
-
             int nonClueCount = Mathf.Max(0, _roster.Count - (_clueGiverNetId != 0 ? 1 : 0));
             int remaining = Mathf.Max(0, nonClueCount - _placedThisRound.Count);
-
             Debug.Log($"[PlacementProgress] {_placedThisRound.Count} / {nonClueCount} non-clue-givers placed. Remaining={remaining}");
+        }
 
-            if (_placedThisRound.Count == nonClueCount && nonClueCount > 0)
+        if (_turnPtr >= 0 && _turnPtr < _turnOrder.Count)
+        {
+            uint expected = _turnOrder[_turnPtr];
+            if (placerPlayerNetId == expected)
             {
-                Debug.Log("[PlacementComplete] All non clue-giver players have placed their coins.");
+                _turnPtr++;
+                if (_turnPtr < _turnOrder.Count)
+                {
+                    ServerAnnounceCurrentTurn();
+                }
+                else
+                {
+                    Debug.Log("[TurnOrder] Round1 complete. Waiting for clue giver for round 2 or pass.");
+                }
+            }
+            else
+            {
+                Debug.Log($"[TurnOrder] Out-of-turn placement by {placerPlayerNetId}. Expected {expected}.");
             }
         }
 
         RpcPlacementCompared(coinNetId, spotCol, spotRow, _cardCol, _cardRow, manhattan, euclid);
+
     }
 
 
@@ -279,4 +300,45 @@ public class RoundManager : NetworkBehaviour
     {
         _placedThisRound.Clear();
     }
+
+    [Server]
+    void ServerBuildRound1TurnOrder()
+    {
+        _turnOrder.Clear();
+        _turnPtr = -1;
+
+        if (_roster.Count <= 1) return;
+
+        int start = Mathf.Clamp(_clueGiverRosterIndex, 0, Mathf.Max(0, _roster.Count - 1));
+        for (int i = 1; i < _roster.Count; i++)
+        {
+            int idx = (start + i) % _roster.Count;
+            uint pid = _roster[idx];
+            if (pid != _clueGiverNetId) _turnOrder.Add(pid);
+        }
+
+        if (_turnOrder.Count > 0)
+        {
+            _turnPtr = 0;
+            ServerAnnounceCurrentTurn();
+        }
+    }
+
+    [Server]
+    void ServerAnnounceCurrentTurn()
+    {
+        if (_turnPtr < 0 || _turnPtr >= _turnOrder.Count) return;
+
+        uint who = _turnOrder[_turnPtr];
+        Debug.Log($"[TurnOrder] Round1: Player {who} -> it's your turn to place a coin.");
+
+        RpcAnnounceCurrentTurn(who);
+    }
+
+    [ClientRpc]
+    void RpcAnnounceCurrentTurn(uint playerNetId)
+    {
+        Debug.Log($"[TurnOrder] Round1: Player {playerNetId} -> it's your turn to place a coin.");
+    }
+
 }
