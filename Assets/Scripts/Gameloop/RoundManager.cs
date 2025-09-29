@@ -232,7 +232,10 @@ public class RoundManager : NetworkBehaviour
     {
         if (_cardCol < 0 || _cardRow < 0) return;
 
-        uint placerPlayerNetId = sender?.identity ? sender.identity.netId : 0u;
+        uint placerPlayerNetId = sender?.identity ? sender.identity.netId
+                          : (NetworkServer.spawned.TryGetValue(coinNetId, out var coinId) && coinId.connectionToClient != null
+                             ? coinId.connectionToClient.identity?.netId ?? 0u
+                             : 0u);
 
         int spotCol, spotRow;
         if (BoardSpotsNet.Instance == null || !BoardSpotsNet.Instance.TryGetSpotCoord(spotIndex, out spotCol, out spotRow))

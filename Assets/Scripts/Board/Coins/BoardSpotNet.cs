@@ -127,17 +127,36 @@ public class BoardSpotsNet : NetworkBehaviour
                 ok = true;
 
                 RpcApplySpot(spotIndex, coinNetId);
-
-                if (RoundManager.Instance != null)
-                {
-                    uint placerPlayerNetId = sender?.identity ? sender.identity.netId : 0u;
-                    RoundManager.Instance.ServerOnSpotClaimed(placerPlayerNetId, coinNetId, spotIndex);
-                }
             }
         }
 
-        TargetClaimResult(sender, ok, spotIndex, center);
+        NetworkConnectionToClient conn = sender;
+
+        if (conn == null)
+        {
+            if (NetworkServer.spawned.TryGetValue(coinNetId, out var coinIdentity))
+                conn = coinIdentity.connectionToClient;
+        }
+
+        if (conn != null)
+        {
+            TargetClaimResult(conn, ok, spotIndex, center);
+        }
+        else
+        {
+            RpcClaimResultBroadcast(ok, spotIndex, center);
+            Debug.LogWarning($"[BoardSpotsNet] TargetClaimResult fallback: sender & coin owner connections were null. Broadcasted result for spot {spotIndex} (ok={ok}).");
+        }
+
+        uint placerNetId = sender?.identity ? sender.identity.netId
+                        : (NetworkServer.spawned.TryGetValue(coinNetId, out var coinId) && coinId.connectionToClient != null
+                            ? coinId.connectionToClient.identity?.netId ?? 0u
+                            : 0u);
+
+        if (ok && RoundManager.Instance != null)
+            RoundManager.Instance.ServerOnSpotClaimed(placerNetId, coinNetId, spotIndex);
     }
+
 
     [TargetRpc]
     void TargetClaimResult(NetworkConnection target, bool ok, int spotIndex, Vector3 worldCenter)
@@ -183,4 +202,15 @@ public class BoardSpotsNet : NetworkBehaviour
         row = coord.row;
         return true;
     }
+
+    [ClientRpc]
+    void RpcClaimResultBroadcast(bool ok, int spotIndex, Vector3 worldCenter)
+    {
+        if (_pendingCallbacks.TryGetValue(spotIndex, out var cb))
+        {
+            _pendingCallbacks.Remove(spotIndex);
+            cb?.Invoke(ok, worldCenter);
+        }
+    }
+
 }
