@@ -161,6 +161,8 @@ public class CoinNetworkSpawner : NetworkBehaviour
                     gate.ArmForSeconds(totalBlock);
                 }
             }
+            var mgr = CoinRoundLockManager.Instance;
+            if (mgr) mgr.ReannounceLocked();
         }
     }
 
