@@ -485,8 +485,6 @@ public class CoinPlacementProbe : MonoBehaviour
                 bool isLanding = otherDrop && otherDrop.IsLanding;
                 bool isDragging = otherProbe && otherProbe.IsDraggingForMask;
 
-                Debug.Log("[Hide Coin] isDragging: " + isDragging + " | isLocked: " + isLocked + " | isLanding: " + isLanding);
-
                 if (!isDragging || isLocked || isLanding)
                     continue;
 

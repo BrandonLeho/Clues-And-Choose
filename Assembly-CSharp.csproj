@@ -126,6 +126,7 @@
     <Compile Include="Assets\Scripts\Board\Coins\CoinDragHandler.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinInteractionGate.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverRoulette\RouletteToRoundBridge.cs" />
+    <Compile Include="Assets\Scripts\Gameloop\PlayerChoiceNotifier.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\RegistryNameColorLookup.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\GridHoverRelay.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardAttachToBoard.cs" />
