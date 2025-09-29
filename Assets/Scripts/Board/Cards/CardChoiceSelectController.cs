@@ -33,6 +33,7 @@ public class CardChoiceSelectController : MonoBehaviour
     public float anticipationTime = 0.085f;
     public AnimationCurve anticipationEase = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
+
     [Header("Losers Exit")]
     public bool losersExitWithCharacter = true;
     public float losersExitStagger = 0.03f;
@@ -42,6 +43,7 @@ public class CardChoiceSelectController : MonoBehaviour
     public float losersExitRotate = 6f;
     public AnimationCurve losersExitEase = AnimationCurve.EaseInOut(0, 0, 1, 1);
     public bool losersExitFade = true;
+
 
     [Serializable]
     public struct ChoicePayload
@@ -189,9 +191,6 @@ public class CardChoiceSelectController : MonoBehaviour
         var payload = new ChoicePayload { col = col, row = row, color = color, label = "" };
         onChoiceSelected?.Invoke(payload);
 
-        if (RoundManager.Instance)
-            RoundManager.Instance.ClientReportCardChoice(col, row, color);
-
         if (disableFurtherInputOnSelect)
         {
             foreach (var ch in choices)
@@ -245,6 +244,8 @@ public class CardChoiceSelectController : MonoBehaviour
         scaleT.localScale = endScale;
         if (losersExitFade && cg) cg.alpha = 0f;
     }
+
+
 
     IEnumerator CoFade(CanvasGroup cg, float from, float to, float duration)
     {
@@ -343,4 +344,5 @@ public class CardChoiceSelectController : MonoBehaviour
         var p = rt.anchoredPosition3D;
         rt.anchoredPosition3D = new Vector3(p.x, p.y, 0f);
     }
+
 }

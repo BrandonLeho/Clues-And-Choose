@@ -15,24 +15,6 @@ public class RoundManager : NetworkBehaviour
     public UnityEvent<int, uint> onRoundChangedClient;
     public UnityEvent<uint> onClueGiverChangedClient;
 
-    [Serializable]
-    public class CardChoiceEvent : UnityEvent<int, int, Color> { }
-    public CardChoiceEvent onCardChoiceSetClient;
-
-    [Serializable]
-    public struct PlacementComparedPayload
-    {
-        public uint coinNetId;
-        public int spotCol, spotRow;
-        public int cardCol, cardRow;
-        public int manhattan;
-        public float euclidean;
-    }
-
-    [Serializable]
-    public class PlacementComparedEvent : UnityEvent<PlacementComparedPayload> { }
-    public PlacementComparedEvent onPlacementComparedClient;
-
     readonly SyncList<uint> _roster = new SyncList<uint>();
 
     [SyncVar(hook = nameof(OnRoundIndexChanged))] int _roundIndex = -1;
@@ -41,10 +23,6 @@ public class RoundManager : NetworkBehaviour
 
     public int CurrentRoundIndex => _roundIndex;
     public uint CurrentClueGiverNetId => _clueGiverNetId;
-
-    [SyncVar(hook = nameof(OnCardColChanged))] int _cardCol = -1;
-    [SyncVar(hook = nameof(OnCardRowChanged))] int _cardRow = -1;
-    [SyncVar(hook = nameof(OnCardColorChanged))] Color _cardColor = Color.clear;
 
     void Awake()
     {
@@ -92,7 +70,7 @@ public class RoundManager : NetworkBehaviour
 
     void OnRosterChanged(SyncList<uint>.Operation op, int index, uint oldItem, uint newItem)
     {
-        // TODO: UI update on roster change
+        // TODO; When I want UI update on roster change
     }
 
     [Server]
@@ -120,10 +98,6 @@ public class RoundManager : NetworkBehaviour
 
         _clueGiverRosterIndex = (_clueGiverRosterIndex + 1 + _roster.Count) % _roster.Count;
         SetClueGiverByRosterIndex(_clueGiverRosterIndex);
-
-        _cardCol = -1;
-        _cardRow = -1;
-        _cardColor = Color.clear;
 
         RpcNotifyRoundStarted(_roundIndex, _clueGiverNetId);
     }
@@ -171,76 +145,5 @@ public class RoundManager : NetworkBehaviour
     {
         onRoundChangedClient?.Invoke(roundIndex, clueGiverNetId);
         onClueGiverChangedClient?.Invoke(clueGiverNetId);
-    }
-
-
-    void OnCardColChanged(int _, int newVal) => RaiseCardChoiceSet();
-    void OnCardRowChanged(int _, int newVal) => RaiseCardChoiceSet();
-    void OnCardColorChanged(Color _, Color __) => RaiseCardChoiceSet();
-
-    void RaiseCardChoiceSet()
-    {
-        if (_cardCol >= 0 && _cardRow >= 0)
-            onCardChoiceSetClient?.Invoke(_cardCol, _cardRow, _cardColor);
-    }
-
-    public void ClientReportCardChoice(int col, int row, Color color)
-    {
-        if (!NetworkClient.active) return;
-        CmdSetCardChoice(col, row, color);
-    }
-
-    public void ClientReportCoinPlaced(uint coinNetId, int spotIndex)
-    {
-        if (!NetworkClient.active) return;
-        CmdReportCoinPlaced(coinNetId, spotIndex);
-    }
-
-    [Command(requiresAuthority = false)]
-    void CmdSetCardChoice(int col, int row, Color color)
-    {
-        _cardCol = Mathf.Max(0, col);
-        _cardRow = Mathf.Max(0, row);
-        _cardColor = color;
-        RpcCardChoiceSet(_cardCol, _cardRow, _cardColor);
-    }
-
-    [ClientRpc]
-    void RpcCardChoiceSet(int col, int row, Color color)
-    {
-        onCardChoiceSetClient?.Invoke(col, row, color);
-    }
-
-    [Command(requiresAuthority = false)]
-    void CmdReportCoinPlaced(uint coinNetId, int spotIndex)
-    {
-        if (_cardCol < 0 || _cardRow < 0) return;
-
-        int spotCol, spotRow;
-        if (BoardSpotsNet.Instance == null || !BoardSpotsNet.Instance.TryGetSpotCoord(spotIndex, out spotCol, out spotRow))
-            return;
-
-        int dx = Mathf.Abs(spotCol - _cardCol);
-        int dy = Mathf.Abs(spotRow - _cardRow);
-        int manhattan = dx + dy;
-        float euclid = Mathf.Sqrt(dx * dx + dy * dy);
-
-        RpcPlacementCompared(coinNetId, spotCol, spotRow, _cardCol, _cardRow, manhattan, euclid);
-    }
-
-    [ClientRpc]
-    void RpcPlacementCompared(uint coinNetId, int spotCol, int spotRow, int cardCol, int cardRow, int manhattan, float euclidean)
-    {
-        var payload = new PlacementComparedPayload
-        {
-            coinNetId = coinNetId,
-            spotCol = spotCol,
-            spotRow = spotRow,
-            cardCol = cardCol,
-            cardRow = cardRow,
-            manhattan = manhattan,
-            euclidean = euclidean
-        };
-        onPlacementComparedClient?.Invoke(payload);
     }
 }

@@ -174,8 +174,6 @@ public class CoinDropSnap : MonoBehaviour
                         _occupiedSpot = best;
                         StartSnapTween(target, updateLastValid: true);
 
-                        if (RoundManager.Instance) RoundManager.Instance.ClientReportCoinPlaced(netId.netId, best.spotIndex);
-
                         if (lockCoinAfterPlacement)
                         {
                             var guard = GetComponent<CoinPlacedLock>();
@@ -477,8 +475,6 @@ public class CoinDropSnap : MonoBehaviour
 
                     _occupiedSpot = spot;
                     StartSnapTween(target, updateLastValid: true);
-
-                    if (RoundManager.Instance) RoundManager.Instance.ClientReportCoinPlaced(netId.netId, spot.spotIndex);
 
                     if (lockCoinAfterPlacement)
                     {
