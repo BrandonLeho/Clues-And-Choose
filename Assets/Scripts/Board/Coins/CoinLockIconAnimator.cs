@@ -1,15 +1,21 @@
 using System.Collections;
 using UnityEngine;
 
-[RequireComponent(typeof(SpriteRenderer))]
-public sealed class CoinLockIconAnimator : MonoBehaviour
+public sealed class CoinLockIconGroupAnimator : MonoBehaviour
 {
-    [Header("Scale")]
-    [Min(0f)] public float baseScale = 1f;
-    [Min(0f)] public float upscaledMultiplier = 1.2f;
+    [Header("Targets (siblings)")]
+    public GameObject iconGO;
+    public SpriteRenderer iconRenderer;
+    public GameObject backgroundGO;
+    public SpriteRenderer backgroundRenderer;
+
+    [Header("Icon Scale")]
+    [Min(0f)] public float iconBaseScale = 1f;
+    [Min(1f)] public float iconUpscaledMultiplier = 1.2f;
 
     [Header("Alpha")]
-    [Range(0f, 1f)] public float baseAlpha = 1f;
+    [Range(0f, 1f)] public float iconBaseAlpha = 1f;
+    [Range(0f, 1f)] public float bgBaseAlpha = 0.6f;
 
     [Header("Timing (seconds)")]
     [Min(0.01f)] public float fadeInDuration = 0.20f;
@@ -17,50 +23,95 @@ public sealed class CoinLockIconAnimator : MonoBehaviour
     [Min(0.01f)] public float scaleInDuration = 0.20f;
     [Min(0.01f)] public float scaleOutDuration = 0.20f;
 
-    [Header("Ease")]
+    [Header("Ease (0..1 bias toward smoothstep)")]
     [Range(0f, 1f)] public float easeInBias = 0.6f;
     [Range(0f, 1f)] public float easeOutBias = 0.6f;
 
-    SpriteRenderer _sr;
     Coroutine _anim;
+    bool _spawnSettled;      // becomes true when spawner announces
+    bool _pendingLockShow;   // received Lock before settle; show once settled
 
     void Awake()
     {
-        _sr = GetComponent<SpriteRenderer>();
+        if (iconGO && !iconRenderer) iconRenderer = iconGO.GetComponent<SpriteRenderer>();
+        if (backgroundGO && !backgroundRenderer) backgroundRenderer = backgroundGO.GetComponent<SpriteRenderer>();
 
-        SetAlpha(0f);
-        SetScale(baseScale * upscaledMultiplier);
+        SetIconScale(iconBaseScale * iconUpscaledMultiplier);
+        SetIconAlpha(0f);
+        SetBgAlpha(0f);
+
+        if (iconGO) iconGO.SetActive(false);
+        if (backgroundGO) backgroundGO.SetActive(false);
     }
 
     void OnEnable()
     {
+        // Lock state events
         CoinRoundLockManager.OnLocked += HandleLocked;
         CoinRoundLockManager.OnUnlocked += HandleUnlocked;
+
+        // Spawn settle event from the spawner
+        CoinNetworkSpawner.OnInitialSpawnSettled += HandleSpawnSettled;
     }
 
     void OnDisable()
     {
         CoinRoundLockManager.OnLocked -= HandleLocked;
         CoinRoundLockManager.OnUnlocked -= HandleUnlocked;
+        CoinNetworkSpawner.OnInitialSpawnSettled -= HandleSpawnSettled;
+    }
+
+    void HandleSpawnSettled()
+    {
+        _spawnSettled = true;
+
+        // If we were told "locked" earlier, play it now; otherwise, if we *are* locked now, show it.
+        if (_pendingLockShow || CoinRoundLockManager.IsLocked)
+        {
+            _pendingLockShow = false;
+            PlayLockedIn();
+        }
     }
 
     void HandleLocked()
     {
-        if (_anim != null) StopCoroutine(_anim);
-        _anim = StartCoroutine(AnimateIn());
+        // If coins haven't reached their spawn positions yet, defer.
+        if (!_spawnSettled)
+        {
+            _pendingLockShow = true;
+            return;
+        }
+
+        PlayLockedIn();
     }
 
     void HandleUnlocked()
     {
+        _pendingLockShow = false; // no longer pending
         if (_anim != null) StopCoroutine(_anim);
         _anim = StartCoroutine(AnimateOut());
     }
 
+    // === animations ===
+    void PlayLockedIn()
+    {
+        if (iconGO && !iconGO.activeSelf) iconGO.SetActive(true);
+        if (backgroundGO && !backgroundGO.activeSelf) backgroundGO.SetActive(true);
+
+        if (_anim != null) StopCoroutine(_anim);
+        _anim = StartCoroutine(AnimateIn());
+    }
+
     IEnumerator AnimateIn()
     {
-        float a0 = _sr.color.a, a1 = Mathf.Clamp01(baseAlpha);
+        float aIcon0 = iconRenderer ? iconRenderer.color.a : 0f;
+        float aIcon1 = Mathf.Clamp01(iconBaseAlpha);
+        float aBg0 = backgroundRenderer ? backgroundRenderer.color.a : 0f;
+        float aBg1 = Mathf.Clamp01(bgBaseAlpha);
+
         float tA = 0f;
-        float s0 = transform.localScale.x, s1 = baseScale;
+        float s0 = GetIconScaleX();
+        float s1 = iconBaseScale;
         float tS = 0f;
 
         while (tA < fadeInDuration || tS < scaleInDuration)
@@ -68,17 +119,16 @@ public sealed class CoinLockIconAnimator : MonoBehaviour
             if (tA < fadeInDuration)
             {
                 tA += Time.deltaTime;
-                float uA = Mathf.Clamp01(tA / fadeInDuration);
-                uA = Smooth(uA, easeInBias);
-                SetAlpha(Mathf.Lerp(a0, a1, uA));
+                float uA = Smooth01(tA / fadeInDuration, easeInBias);
+                SetIconAlpha(Mathf.Lerp(aIcon0, aIcon1, uA));
+                SetBgAlpha(Mathf.Lerp(aBg0, aBg1, uA));
             }
 
             if (tS < scaleInDuration)
             {
                 tS += Time.deltaTime;
-                float uS = Mathf.Clamp01(tS / scaleInDuration);
-                uS = Smooth(uS, easeInBias);
-                SetScale(Mathf.Lerp(s0, s1, uS));
+                float uS = Smooth01(tS / scaleInDuration, easeInBias);
+                SetIconScale(Mathf.Lerp(s0, s1, uS));
             }
 
             yield return null;
@@ -88,9 +138,12 @@ public sealed class CoinLockIconAnimator : MonoBehaviour
 
     IEnumerator AnimateOut()
     {
-        float a0 = _sr.color.a, a1 = 0f;
+        float aIcon0 = iconRenderer ? iconRenderer.color.a : 0f;
+        float aBg0 = backgroundRenderer ? backgroundRenderer.color.a : 0f;
+
         float tA = 0f;
-        float s0 = transform.localScale.x, s1 = baseScale * upscaledMultiplier;
+        float s0 = GetIconScaleX();
+        float s1 = iconBaseScale * iconUpscaledMultiplier;
         float tS = 0f;
 
         while (tA < fadeOutDuration || tS < scaleOutDuration)
@@ -98,49 +151,42 @@ public sealed class CoinLockIconAnimator : MonoBehaviour
             if (tA < fadeOutDuration)
             {
                 tA += Time.deltaTime;
-                float uA = Mathf.Clamp01(tA / fadeOutDuration);
-                uA = Smooth(uA, easeOutBias);
-                SetAlpha(Mathf.Lerp(a0, a1, uA));
+                float uA = Smooth01(tA / fadeOutDuration, easeOutBias);
+                SetIconAlpha(Mathf.Lerp(aIcon0, 0f, uA));
+                SetBgAlpha(Mathf.Lerp(aBg0, 0f, uA));
             }
 
             if (tS < scaleOutDuration)
             {
                 tS += Time.deltaTime;
-                float uS = Mathf.Clamp01(tS / scaleOutDuration);
-                uS = Smooth(uS, easeOutBias);
-                SetScale(Mathf.Lerp(s0, s1, uS));
+                float uS = Smooth01(tS / scaleOutDuration, easeOutBias);
+                SetIconScale(Mathf.Lerp(s0, s1, uS));
             }
 
             yield return null;
         }
+
+        if (iconGO) iconGO.SetActive(false);
+        if (backgroundGO) backgroundGO.SetActive(false);
         _anim = null;
     }
 
-    float Smooth(float u, float bias)
+    // helpers
+    float Smooth01(float u, float bias)
     {
+        u = Mathf.Clamp01(u);
         if (bias <= 0f) return u;
         float s = Mathf.SmoothStep(0f, 1f, u);
         return Mathf.Lerp(u, s, bias);
     }
 
-    void SetAlpha(float a)
-    {
-        a = Mathf.Clamp01(a);
-        var c = _sr.color;
-        c.a = a;
-        _sr.color = c;
-    }
-
-    void SetScale(float s)
-    {
-        transform.localScale = new Vector3(s, s, 1f);
-    }
+    void SetIconAlpha(float a) { if (!iconRenderer) return; var c = iconRenderer.color; c.a = Mathf.Clamp01(a); iconRenderer.color = c; }
+    void SetBgAlpha(float a) { if (!backgroundRenderer) return; var c = backgroundRenderer.color; c.a = Mathf.Clamp01(a); backgroundRenderer.color = c; }
+    void SetIconScale(float s) { if (iconGO) iconGO.transform.localScale = new Vector3(s, s, 1f); }
+    float GetIconScaleX() { return iconGO ? iconGO.transform.localScale.x : iconBaseScale; }
 
 #if UNITY_EDITOR
-    [ContextMenu("Preview: Locked (In)")]
-    void _PreviewIn() => HandleLocked();
-
-    [ContextMenu("Preview: Unlocked (Out)")]
-    void _PreviewOut() => HandleUnlocked();
+    [ContextMenu("Preview: Locked (In)")] void _PreviewIn() { _spawnSettled = true; HandleLocked(); }
+    [ContextMenu("Preview: Unlocked (Out)")] void _PreviewOut() { HandleUnlocked(); }
 #endif
 }

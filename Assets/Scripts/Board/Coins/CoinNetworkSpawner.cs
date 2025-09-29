@@ -36,6 +36,7 @@ public class CoinNetworkSpawner : NetworkBehaviour
     [Range(0, 1)][SerializeField] float endAlpha = 1f;
 
     bool _spawned;
+    public static event System.Action OnInitialSpawnSettled;
 
     public override void OnStartServer()
     {
@@ -93,6 +94,8 @@ public class CoinNetworkSpawner : NetworkBehaviour
             if (rt) slots.Add(rt);
         }
         if (slots.Count == 0) return;
+
+        float maxSettleDelay = 0f;
 
         Vector3 fbStart = worldParent ? worldParent.position : Vector3.zero;
         float fbStep = 1.0f;
@@ -157,10 +160,21 @@ public class CoinNetworkSpawner : NetworkBehaviour
                     float speed = Mathf.Max(0.01f, slideUnitsPerSecond);
                     float travelSeconds = distance / speed;
                     float totalBlock = globalStartDelay + travelSeconds + 0.05f;
+                    maxSettleDelay = Mathf.Max(maxSettleDelay, totalBlock);
 
                     gate.ArmForSeconds(totalBlock);
                 }
             }
+
+            if (useSlideIn)
+            {
+                RpcInitialSpawnSettled(maxSettleDelay);
+            }
+            else
+            {
+                RpcInitialSpawnSettled(0f);
+            }
+
             var mgr = CoinRoundLockManager.Instance;
             if (mgr) mgr.ReannounceLocked();
         }
@@ -225,5 +239,17 @@ public class CoinNetworkSpawner : NetworkBehaviour
         return plane.Raycast(ray, out float enter)
             ? ray.GetPoint(enter)
             : worldCamera.ScreenToWorldPoint(new Vector3(sp.x, sp.y, planeZ));
+    }
+
+    [ClientRpc]
+    void RpcInitialSpawnSettled(float delaySeconds)
+    {
+        StartCoroutine(CoInitialSpawnSettled(delaySeconds));
+    }
+
+    System.Collections.IEnumerator CoInitialSpawnSettled(float delaySeconds)
+    {
+        if (delaySeconds > 0f) yield return new WaitForSeconds(delaySeconds);
+        OnInitialSpawnSettled?.Invoke();
     }
 }
