@@ -76,12 +76,15 @@ public class CoinPlacementProbe : MonoBehaviour
 
     SpriteMask _spotlightMask;
     readonly List<(SpriteRenderer sr, SpriteMaskInteraction prev)> _touched = new();
+    readonly HashSet<SpriteRenderer> _touchedSet = new();
 
     static bool _globalRefreshRequested;
     float _maskRefreshTimer;
     bool _pendingRefresh;
 
     public bool IsDraggingForMask => _isDragging;
+
+
 
 
     public static void RequestMaskRefreshGlobal() => _globalRefreshRequested = true;
@@ -453,6 +456,7 @@ public class CoinPlacementProbe : MonoBehaviour
                 if (entry.sr) entry.sr.maskInteraction = entry.prev;
             }
             _touched.Clear();
+            _touchedSet.Clear();
             return;
         }
 
@@ -461,11 +465,27 @@ public class CoinPlacementProbe : MonoBehaviour
         void Touch(SpriteRenderer sr)
         {
             if (!sr) return;
-            for (int k = 0; k < _touched.Count; k++)
-                if (_touched[k].sr == sr) return;
-
-            _touched.Add((sr, sr.maskInteraction));
+            if (_touchedSet.Add(sr))
+                _touched.Add((sr, sr.maskInteraction));
             sr.maskInteraction = SpriteMaskInteraction.VisibleOutsideMask;
+        }
+
+        var shouldHideNow = new HashSet<SpriteRenderer>();
+
+        bool ShouldHideCoinSR(SpriteRenderer sr, CoinDragHandler coin)
+        {
+            if (!coin) return false;
+            if (coin.gameObject == this.gameObject) return false;
+
+            var probe = coin.GetComponent<CoinPlacementProbe>();
+            var drop = coin.GetComponent<CoinDropSnap>();
+            var lockC = coin.GetComponent<CoinPlacedLock>();
+
+            bool isDragging = probe && probe.IsDraggingForMask;
+            bool isLocked = lockC && lockC.locked;
+            bool isLanding = drop && drop.IsLanding;
+
+            return isDragging && !isLocked && !isLanding;
         }
 
         if (hideOtherCoins)
@@ -475,22 +495,17 @@ public class CoinPlacementProbe : MonoBehaviour
             {
                 var coin = allCoins[i];
                 if (!coin) continue;
-                if (coin.gameObject == gameObject) continue;
 
-                var otherProbe = coin.GetComponent<CoinPlacementProbe>();
-                var otherDrop = coin.GetComponent<CoinDropSnap>();
-                var otherLock = coin.GetComponent<CoinPlacedLock>();
-
-                bool isLocked = otherLock && otherLock.locked;
-                bool isLanding = otherDrop && otherDrop.IsLanding;
-                bool isDragging = otherProbe && otherProbe.IsDraggingForMask;
-
-                if (!isDragging || isLocked || isLanding)
-                    continue;
-
-                var srs = coin.GetComponentsInChildren<SpriteRenderer>(includeInactive: true);
-                for (int j = 0; j < srs.Length; j++)
-                    Touch(srs[j]);
+                if (ShouldHideCoinSR(null, coin))
+                {
+                    var srs = coin.GetComponentsInChildren<SpriteRenderer>(includeInactive: true);
+                    for (int j = 0; j < srs.Length; j++)
+                    {
+                        var sr = srs[j];
+                        if (!sr) continue;
+                        shouldHideNow.Add(sr);
+                    }
+                }
             }
         }
 
@@ -504,24 +519,30 @@ public class CoinPlacementProbe : MonoBehaviour
 
                 if (sr.transform.IsChildOf(transform)) continue;
 
+                int mask = 1 << sr.gameObject.layer;
+                if ((layersToHide.value & mask) == 0) continue;
+
                 var coin = sr.GetComponentInParent<CoinDragHandler>();
                 if (coin)
                 {
-                    var probe = coin.GetComponent<CoinPlacementProbe>();
-                    var drop = coin.GetComponent<CoinDropSnap>();
-                    var lockComp = coin.GetComponent<CoinPlacedLock>();
-
-                    bool isLocked = lockComp && lockComp.locked;
-                    bool isLanding = drop && drop.IsLanding;
-                    bool isDragging = probe && probe.IsDraggingForMask;
-
-                    if (!isDragging || isLocked || isLanding)
-                        continue;
+                    if (!ShouldHideCoinSR(sr, coin)) continue;
                 }
 
-                int mask = 1 << sr.gameObject.layer;
-                if ((layersToHide.value & mask) != 0)
-                    Touch(sr);
+                shouldHideNow.Add(sr);
+            }
+        }
+
+        foreach (var sr in shouldHideNow) Touch(sr);
+
+        for (int i = _touched.Count - 1; i >= 0; i--)
+        {
+            var entry = _touched[i];
+            var sr = entry.sr;
+            if (!sr || !shouldHideNow.Contains(sr))
+            {
+                if (sr) sr.maskInteraction = entry.prev;
+                _touched.RemoveAt(i);
+                if (sr) _touchedSet.Remove(sr);
             }
         }
     }
