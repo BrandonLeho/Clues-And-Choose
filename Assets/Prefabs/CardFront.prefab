@@ -574,6 +574,7 @@ GameObject:
   - component: {fileID: 8022577447092842684}
   - component: {fileID: 7427924630026965985}
   - component: {fileID: 7665591576090681039}
+  - component: {fileID: 1143096123862332326}
   m_Layer: 5
   m_Name: FrontFaces
   m_TagString: Untagged
@@ -771,8 +772,32 @@ MonoBehaviour:
   losersExitFade: 1
   onChoiceSelected:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1143096123862332326}
+        m_TargetAssemblyTypeName: ChoiceSelectToUnlockAll, Assembly-CSharp
+        m_MethodName: OnChoiceSelected
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   floatingLayer: {fileID: 2598848174874173899}
+--- !u!114 &1143096123862332326
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3757834583549455463}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f6fbdbc844545443b00ac0fb86a57a6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChoiceSelectToUnlockAll
 --- !u!1 &4549066936200691178
 GameObject:
   m_ObjectHideFlags: 0
