@@ -504,7 +504,22 @@ public class CoinPlacementProbe : MonoBehaviour
                 var sr = allSRs[i];
                 if (!sr) continue;
 
-                if (sr.transform.IsChildOf(this.transform)) continue;
+                if (sr.transform.IsChildOf(transform)) continue;
+
+                var coin = sr.GetComponentInParent<CoinDragHandler>();
+                if (coin)
+                {
+                    var probe = coin.GetComponent<CoinPlacementProbe>();
+                    var drop = coin.GetComponent<CoinDropSnap>();
+                    var lockComp = coin.GetComponent<CoinPlacedLock>();
+
+                    bool isLocked = lockComp && lockComp.locked;
+                    bool isLanding = drop && drop.IsLanding;
+                    bool isDragging = probe && probe.IsDraggingForMask;
+
+                    if (!isDragging || isLocked || isLanding)
+                        continue;
+                }
 
                 int mask = 1 << sr.gameObject.layer;
                 if ((layersToHide.value & mask) != 0)
