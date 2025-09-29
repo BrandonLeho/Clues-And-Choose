@@ -79,6 +79,8 @@ public class CoinPlacedLock : NetworkBehaviour, ICoinDragPermission
                 if (rej) rej.enabled = true;
             }
         }
+
+        CoinPlacementProbe.RequestMaskRefreshGlobal();
     }
 
     void CacheBaselineIfNeeded()

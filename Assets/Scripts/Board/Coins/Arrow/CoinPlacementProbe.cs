@@ -81,6 +81,9 @@ public class CoinPlacementProbe : MonoBehaviour
     float _maskRefreshTimer;
     bool _pendingRefresh;
 
+    public bool IsDraggingForMask => _isDragging;
+
+
     public static void RequestMaskRefreshGlobal() => _globalRefreshRequested = true;
 
     public Vector3 GetProbeWorld() =>
@@ -472,7 +475,18 @@ public class CoinPlacementProbe : MonoBehaviour
             {
                 var coin = allCoins[i];
                 if (!coin) continue;
-                if (coin.gameObject == this.gameObject) continue;
+                if (coin.gameObject == gameObject) continue;
+
+                var otherProbe = coin.GetComponent<CoinPlacementProbe>();
+                var otherDrop = coin.GetComponent<CoinDropSnap>();
+                var otherLock = coin.GetComponent<CoinPlacedLock>();
+
+                bool isLocked = otherLock && otherLock.locked;
+                bool isLanding = otherDrop && otherDrop.IsLanding;
+                bool isDragging = otherProbe && otherProbe.IsDraggingForMask;
+
+                if (!isDragging || isLocked || isLanding)
+                    continue;
 
                 var srs = coin.GetComponentsInChildren<SpriteRenderer>(includeInactive: true);
                 for (int j = 0; j < srs.Length; j++)

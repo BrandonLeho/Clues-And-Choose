@@ -76,6 +76,9 @@ public class CoinDropSnap : MonoBehaviour
     bool _firedContactFX;
     bool _landingFxRunning;
 
+    public bool IsLanding => _snapRoutine != null || _landingFxRunning;
+
+
     void Awake()
     {
         _drag = GetComponent<CoinDragHandler>();
@@ -206,6 +209,7 @@ public class CoinDropSnap : MonoBehaviour
     void StartSnapTween(Vector3 target, bool updateLastValid)
     {
         if (_snapRoutine != null) StopCoroutine(_snapRoutine);
+        CoinPlacementProbe.RequestMaskRefreshGlobal();
         _snapRoutine = StartCoroutine(SnapTweenRoutine(target, updateLastValid));
     }
 
@@ -383,6 +387,7 @@ public class CoinDropSnap : MonoBehaviour
         }
 
         _landingFxRunning = false;
+        CoinPlacementProbe.RequestMaskRefreshGlobal();
     }
 
     IEnumerator Co_RingBurst(Vector3 worldPos)
