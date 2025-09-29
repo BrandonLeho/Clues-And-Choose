@@ -46,11 +46,6 @@ public class RoundManager : NetworkBehaviour
     [SyncVar(hook = nameof(OnCardRowChanged))] int _cardRow = -1;
     [SyncVar(hook = nameof(OnCardColorChanged))] Color _cardColor = Color.clear;
 
-    HashSet<uint> _placedThisRound = new HashSet<uint>();
-
-    readonly List<uint> _turnOrder = new List<uint>();
-    int _turnPtr = -1;
-
     void Awake()
     {
         Instance = this;
@@ -129,7 +124,6 @@ public class RoundManager : NetworkBehaviour
         _cardCol = -1;
         _cardRow = -1;
         _cardColor = Color.clear;
-        ServerResetPlacementsForRound();
 
         RpcNotifyRoundStarted(_roundIndex, _clueGiverNetId);
     }
@@ -203,23 +197,13 @@ public class RoundManager : NetworkBehaviour
     }
 
     [Command(requiresAuthority = false)]
-    void CmdSetCardChoice(int col, int row, Color color, NetworkConnectionToClient sender = null)
+    void CmdSetCardChoice(int col, int row, Color color)
     {
         _cardCol = Mathf.Max(0, col);
         _cardRow = Mathf.Max(0, row);
         _cardColor = color;
-
-        uint setter = sender?.identity ? sender.identity.netId : 0u;
-        Debug.Log($"[CardChoice] ClueGiver={_clueGiverNetId} SetBy={setter} -> cell=({_cardCol},{_cardRow}) color={_cardColor}");
-
-        ServerResetPlacementsForRound();
-
-        ServerBuildRound1TurnOrder();
-
         RpcCardChoiceSet(_cardCol, _cardRow, _cardColor);
     }
-
-
 
     [ClientRpc]
     void RpcCardChoiceSet(int col, int row, Color color)
@@ -228,14 +212,9 @@ public class RoundManager : NetworkBehaviour
     }
 
     [Command(requiresAuthority = false)]
-    void CmdReportCoinPlaced(uint coinNetId, int spotIndex, NetworkConnectionToClient sender = null)
+    void CmdReportCoinPlaced(uint coinNetId, int spotIndex)
     {
         if (_cardCol < 0 || _cardRow < 0) return;
-
-        uint placerPlayerNetId = sender?.identity ? sender.identity.netId
-                          : (NetworkServer.spawned.TryGetValue(coinNetId, out var coinId) && coinId.connectionToClient != null
-                             ? coinId.connectionToClient.identity?.netId ?? 0u
-                             : 0u);
 
         int spotCol, spotRow;
         if (BoardSpotsNet.Instance == null || !BoardSpotsNet.Instance.TryGetSpotCoord(spotIndex, out spotCol, out spotRow))
@@ -246,41 +225,8 @@ public class RoundManager : NetworkBehaviour
         int manhattan = dx + dy;
         float euclid = Mathf.Sqrt(dx * dx + dy * dy);
 
-        Debug.Log($"[Placement] Player={placerPlayerNetId} Coin={coinNetId} Spot=({spotCol},{spotRow}) vs Card=({_cardCol},{_cardRow}) -> Manhattan={manhattan} Euclid={euclid:0.###}");
-
-        if (placerPlayerNetId != 0 && placerPlayerNetId != _clueGiverNetId)
-        {
-            _placedThisRound.Add(placerPlayerNetId);
-            int nonClueCount = Mathf.Max(0, _roster.Count - (_clueGiverNetId != 0 ? 1 : 0));
-            int remaining = Mathf.Max(0, nonClueCount - _placedThisRound.Count);
-            Debug.Log($"[PlacementProgress] {_placedThisRound.Count} / {nonClueCount} non-clue-givers placed. Remaining={remaining}");
-        }
-
-        if (_turnPtr >= 0 && _turnPtr < _turnOrder.Count)
-        {
-            uint expected = _turnOrder[_turnPtr];
-            if (placerPlayerNetId == expected)
-            {
-                _turnPtr++;
-                if (_turnPtr < _turnOrder.Count)
-                {
-                    ServerAnnounceCurrentTurn();
-                }
-                else
-                {
-                    Debug.Log("[TurnOrder] Round1 complete. Waiting for clue giver for round 2 or pass.");
-                }
-            }
-            else
-            {
-                Debug.Log($"[TurnOrder] Out-of-turn placement by {placerPlayerNetId}. Expected {expected}.");
-            }
-        }
-
         RpcPlacementCompared(coinNetId, spotCol, spotRow, _cardCol, _cardRow, manhattan, euclid);
-
     }
-
 
     [ClientRpc]
     void RpcPlacementCompared(uint coinNetId, int spotCol, int spotRow, int cardCol, int cardRow, int manhattan, float euclidean)
@@ -297,98 +243,4 @@ public class RoundManager : NetworkBehaviour
         };
         onPlacementComparedClient?.Invoke(payload);
     }
-
-    [Server]
-    void ServerResetPlacementsForRound()
-    {
-        _placedThisRound.Clear();
-    }
-
-    [Server]
-    void ServerBuildRound1TurnOrder()
-    {
-        _turnOrder.Clear();
-        _turnPtr = -1;
-
-        if (_roster.Count <= 1) return;
-
-        int start = Mathf.Clamp(_clueGiverRosterIndex, 0, Mathf.Max(0, _roster.Count - 1));
-        for (int i = 1; i < _roster.Count; i++)
-        {
-            int idx = (start + i) % _roster.Count;
-            uint pid = _roster[idx];
-            if (pid != _clueGiverNetId) _turnOrder.Add(pid);
-        }
-
-        if (_turnOrder.Count > 0)
-        {
-            _turnPtr = 0;
-            ServerAnnounceCurrentTurn();
-        }
-    }
-
-    [Server]
-    void ServerAnnounceCurrentTurn()
-    {
-        if (_turnPtr < 0 || _turnPtr >= _turnOrder.Count) return;
-
-        uint who = _turnOrder[_turnPtr];
-        Debug.Log($"[TurnOrder] Round1: Player {who} -> it's your turn to place a coin.");
-
-        RpcAnnounceCurrentTurn(who);
-    }
-
-    [ClientRpc]
-    void RpcAnnounceCurrentTurn(uint playerNetId)
-    {
-        Debug.Log($"[TurnOrder] Round1: Player {playerNetId} -> it's your turn to place a coin.");
-    }
-
-    [Server]
-    public void ServerOnSpotClaimed(uint placerPlayerNetId, uint coinNetId, int spotIndex)
-    {
-        if (_cardCol < 0 || _cardRow < 0) return;
-
-        int spotCol, spotRow;
-        if (BoardSpotsNet.Instance == null || !BoardSpotsNet.Instance.TryGetSpotCoord(spotIndex, out spotCol, out spotRow))
-            return;
-
-        int dx = Mathf.Abs(spotCol - _cardCol);
-        int dy = Mathf.Abs(spotRow - _cardRow);
-        int manhattan = dx + dy;
-        float euclid = Mathf.Sqrt(dx * dx + dy * dy);
-
-        RpcPlacementCompared(coinNetId, spotCol, spotRow, _cardCol, _cardRow, manhattan, euclid);
-
-        if (placerPlayerNetId == 0 || placerPlayerNetId == _clueGiverNetId) return;
-
-        if (_turnPtr >= 0 && _turnPtr < _turnOrder.Count)
-        {
-            uint expected = _turnOrder[_turnPtr];
-
-            if (placerPlayerNetId == expected)
-            {
-                Debug.Log($"[TurnOrder] Player {placerPlayerNetId} placed a coin at ({spotCol},{spotRow}) and ends their choosing turn.");
-
-                _placedThisRound.Add(placerPlayerNetId);
-                int nonClueCount = Mathf.Max(0, _roster.Count - (_clueGiverNetId != 0 ? 1 : 0));
-                Debug.Log($"[PlacementProgress] {_placedThisRound.Count} / {nonClueCount} non-clue-givers placed.");
-
-                _turnPtr++;
-                if (_turnPtr < _turnOrder.Count)
-                {
-                    ServerAnnounceCurrentTurn();
-                }
-                else
-                {
-                    Debug.Log("[TurnOrder] Round1 complete. Choosing round 1 end — waiting for clue giver for second round or pass.");
-                }
-            }
-            else
-            {
-                Debug.Log($"[TurnOrder] Out-of-turn placement by {placerPlayerNetId}. Expected {expected}. No advance.");
-            }
-        }
-    }
-
 }
