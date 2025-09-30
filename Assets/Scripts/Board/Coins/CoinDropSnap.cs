@@ -52,12 +52,10 @@ public class CoinDropSnap : MonoBehaviour
     public float ringEndScale = 1.4f;
     public float ringStartAlpha = 1f;
 
-    [Header("Ring Mask Target (auto-assigned)")]
+    [Header("Ring Mask Target")]
     public string colorGridName = "ColorGrid";
     public bool autoAddRectMask2DIfMissing = false;
 
-    [Header("Contact Detection")]
-    public float landingTriggerDistance = 0.01f;
 
     [Header("Stability")]
     public Transform scaleTarget;

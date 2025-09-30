@@ -344,5 +344,4 @@ public class CardChoiceSelectController : MonoBehaviour
         var p = rt.anchoredPosition3D;
         rt.anchoredPosition3D = new Vector3(p.x, p.y, 0f);
     }
-
 }

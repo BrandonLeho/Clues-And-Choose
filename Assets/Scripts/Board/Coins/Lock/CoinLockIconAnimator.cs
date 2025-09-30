@@ -3,7 +3,7 @@ using UnityEngine;
 
 public sealed class CoinLockIconGroupAnimator : MonoBehaviour
 {
-    [Header("Targets (siblings)")]
+    [Header("Targets")]
     public GameObject iconGO;
     public SpriteRenderer iconRenderer;
     public GameObject backgroundGO;
@@ -17,19 +17,19 @@ public sealed class CoinLockIconGroupAnimator : MonoBehaviour
     [Range(0f, 1f)] public float iconBaseAlpha = 1f;
     [Range(0f, 1f)] public float bgBaseAlpha = 0.6f;
 
-    [Header("Timing (seconds)")]
+    [Header("Timing")]
     [Min(0.01f)] public float fadeInDuration = 0.20f;
     [Min(0.01f)] public float fadeOutDuration = 0.20f;
     [Min(0.01f)] public float scaleInDuration = 0.20f;
     [Min(0.01f)] public float scaleOutDuration = 0.20f;
 
-    [Header("Ease (0..1 bias toward smoothstep)")]
+    [Header("Ease")]
     [Range(0f, 1f)] public float easeInBias = 0.6f;
     [Range(0f, 1f)] public float easeOutBias = 0.6f;
 
     Coroutine _anim;
-    bool _spawnSettled;      // becomes true when spawner announces
-    bool _pendingLockShow;   // received Lock before settle; show once settled
+    bool _spawnSettled;
+    bool _pendingLockShow;
 
     void Awake()
     {
@@ -46,11 +46,9 @@ public sealed class CoinLockIconGroupAnimator : MonoBehaviour
 
     void OnEnable()
     {
-        // Lock state events
         CoinRoundLockManager.OnLocked += HandleLocked;
         CoinRoundLockManager.OnUnlocked += HandleUnlocked;
 
-        // Spawn settle event from the spawner
         CoinNetworkSpawner.OnInitialSpawnSettled += HandleSpawnSettled;
     }
 
@@ -65,7 +63,6 @@ public sealed class CoinLockIconGroupAnimator : MonoBehaviour
     {
         _spawnSettled = true;
 
-        // If we were told "locked" earlier, play it now; otherwise, if we *are* locked now, show it.
         if (_pendingLockShow || CoinRoundLockManager.IsLocked)
         {
             _pendingLockShow = false;
@@ -75,7 +72,6 @@ public sealed class CoinLockIconGroupAnimator : MonoBehaviour
 
     void HandleLocked()
     {
-        // If coins haven't reached their spawn positions yet, defer.
         if (!_spawnSettled)
         {
             _pendingLockShow = true;
@@ -87,12 +83,11 @@ public sealed class CoinLockIconGroupAnimator : MonoBehaviour
 
     void HandleUnlocked()
     {
-        _pendingLockShow = false; // no longer pending
+        _pendingLockShow = false;
         if (_anim != null) StopCoroutine(_anim);
         _anim = StartCoroutine(AnimateOut());
     }
 
-    // === animations ===
     void PlayLockedIn()
     {
         if (iconGO && !iconGO.activeSelf) iconGO.SetActive(true);
@@ -171,7 +166,6 @@ public sealed class CoinLockIconGroupAnimator : MonoBehaviour
         _anim = null;
     }
 
-    // helpers
     float Smooth01(float u, float bias)
     {
         u = Mathf.Clamp01(u);
