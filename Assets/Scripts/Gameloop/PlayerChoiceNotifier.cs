@@ -28,6 +28,11 @@ public sealed class PlayerChoiceNotifier : NetworkBehaviour
     [ClientRpc]
     void RpcUnlockAllCoins()
     {
+        if (ClueGiverState.IsLocalPlayerClueGiver())
+        {
+            return;
+        }
+
         var mgr = FindFirstObjectByType<CoinRoundLockManager>();
         if (mgr) mgr.UnlockAllCoins();
     }
