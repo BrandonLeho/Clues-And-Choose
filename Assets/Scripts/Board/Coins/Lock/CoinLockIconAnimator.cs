@@ -48,8 +48,18 @@ public sealed class CoinLockIconGroupAnimator : MonoBehaviour
     {
         CoinRoundLockManager.OnLocked += HandleLocked;
         CoinRoundLockManager.OnUnlocked += HandleUnlocked;
-
         CoinNetworkSpawner.OnInitialSpawnSettled += HandleSpawnSettled;
+        GameRuleSettings.OnLockAllCoinsChanged += HandleRuleFlip;
+
+        if (GameRuleSettings.IsLockAllEnabled)
+        {
+            if (_spawnSettled) PlayLockedIn();
+            else _pendingLockShow = true;
+        }
+        else
+        {
+            gameObject.SetActive(false);
+        }
     }
 
     void OnDisable()
@@ -57,6 +67,7 @@ public sealed class CoinLockIconGroupAnimator : MonoBehaviour
         CoinRoundLockManager.OnLocked -= HandleLocked;
         CoinRoundLockManager.OnUnlocked -= HandleUnlocked;
         CoinNetworkSpawner.OnInitialSpawnSettled -= HandleSpawnSettled;
+        GameRuleSettings.OnLockAllCoinsChanged -= HandleRuleFlip;
     }
 
     void HandleSpawnSettled()
@@ -183,4 +194,17 @@ public sealed class CoinLockIconGroupAnimator : MonoBehaviour
     [ContextMenu("Preview: Locked (In)")] void _PreviewIn() { _spawnSettled = true; HandleLocked(); }
     [ContextMenu("Preview: Unlocked (Out)")] void _PreviewOut() { HandleUnlocked(); }
 #endif
+
+    void HandleRuleFlip(bool enabled)
+    {
+        if (enabled)
+        {
+            if (_spawnSettled) PlayLockedIn();
+            else _pendingLockShow = true;
+        }
+        else
+        {
+            HandleUnlocked();
+        }
+    }
 }

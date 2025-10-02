@@ -64,4 +64,27 @@ public sealed class CoinRoundLockManager : MonoBehaviour
         if (IsLocked) OnLocked?.Invoke();
         else OnUnlocked?.Invoke();
     }
+
+    void OnEnable()
+    {
+        GameRuleSettings.OnLockAllCoinsChanged += HandleRuleFlip;
+        if (GameRuleSettings.IsLockAllEnabled) HandleRuleFlip(true);
+    }
+
+    void OnDisable()
+    {
+        GameRuleSettings.OnLockAllCoinsChanged -= HandleRuleFlip;
+    }
+
+    void HandleRuleFlip(bool enabled)
+    {
+        if (enabled)
+        {
+            LockAllCoins();
+        }
+        else
+        {
+            UnlockAllCoins();
+        }
+    }
 }

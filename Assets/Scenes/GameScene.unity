@@ -13730,7 +13730,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 0.14333849
+    x: 0.084079795
     y: 0
     width: 10
     height: 10
@@ -115148,6 +115148,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ce9bc0c6fce66234dabc3b75e454d275, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LockIconAnimator
+  instantOnRuleToggle: 0
   iconGO: {fileID: 38887939}
   iconRenderer: {fileID: 38887940}
   backgroundGO: {fileID: 1128015559}

@@ -80,6 +80,7 @@
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerListBinder.cs" />
     <Compile Include="Assets\Scripts\GameNetworking\NetworkChat.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\NetworkCoin.cs" />
+    <Compile Include="Assets\Scripts\Gameloop\GameRuleSettings.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\PerimeterGlowGraphic.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverRoulette\RouletteRosterBinder.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardFlip.cs" />
@@ -130,6 +131,7 @@
     <Compile Include="Assets\Scripts\Gameloop\PlayerChoiceNotifier.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\RegistryNameColorLookup.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\GridHoverRelay.cs" />
+    <Compile Include="Assets\Scripts\Board\Coins\Lock\LockAllCoinsToggleUI.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardAttachToBoard.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinHoverOffset.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinCursorBridge.cs" />

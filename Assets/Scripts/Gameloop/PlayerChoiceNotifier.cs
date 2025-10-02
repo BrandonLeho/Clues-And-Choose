@@ -36,4 +36,20 @@ public sealed class PlayerChoiceNotifier : NetworkBehaviour
         var mgr = FindFirstObjectByType<CoinRoundLockManager>();
         if (mgr) mgr.UnlockAllCoins();
     }
+
+    void RpcOnChoiceSelected_UnlockPhase()
+    {
+        var lockMgr = FindFirstObjectByType<CoinRoundLockManager>();
+        if (!lockMgr) return;
+
+        if (GameRuleSettings.IsLockAllEnabled)
+        {
+            if (!ClueGiverState.IsLocalPlayerClueGiver())
+                lockMgr.UnlockAllCoins();
+        }
+        else
+        {
+            lockMgr.UnlockAllCoins();
+        }
+    }
 }
