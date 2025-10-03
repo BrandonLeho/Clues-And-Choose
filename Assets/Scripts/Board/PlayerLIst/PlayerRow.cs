@@ -1,4 +1,4 @@
-using UnityEngine;
+/* using UnityEngine;
 using TMPro;
 
 public class PlayerRow : MonoBehaviour
@@ -19,4 +19,4 @@ public class PlayerRow : MonoBehaviour
     {
         nameText.text = isReady ? $"{nameText.text} (Ready)" : nameText.text.Replace(" (Ready)", "");
     }
-}
+} */

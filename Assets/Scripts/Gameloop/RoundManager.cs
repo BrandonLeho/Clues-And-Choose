@@ -24,6 +24,9 @@ public class RoundManager : NetworkBehaviour
     public int CurrentRoundIndex => _roundIndex;
     public uint CurrentClueGiverNetId => _clueGiverNetId;
 
+    public static event System.Action OnServerRosterChanged;
+    public static event System.Action<uint> OnServerClueGiverChanged;
+
     void Awake()
     {
         Instance = this;
@@ -71,6 +74,7 @@ public class RoundManager : NetworkBehaviour
     void OnRosterChanged(SyncList<uint>.Operation op, int index, uint oldItem, uint newItem)
     {
         // TODO; When I want UI update on roster change
+        OnServerRosterChanged?.Invoke();
     }
 
     [Server]
@@ -128,6 +132,7 @@ public class RoundManager : NetworkBehaviour
     {
         _clueGiverNetId = netId;
         if (clueGiverState) clueGiverState.ServerSetClueGiver(netId);
+        OnServerClueGiverChanged?.Invoke(netId);
     }
 
     void OnRoundIndexChanged(int _, int newRound)
@@ -146,4 +151,7 @@ public class RoundManager : NetworkBehaviour
         onRoundChangedClient?.Invoke(roundIndex, clueGiverNetId);
         onClueGiverChangedClient?.Invoke(clueGiverNetId);
     }
+
+    [Server] public List<uint> ServerGetRosterSnapshot() => new List<uint>(_roster);
+    [Server] public uint ServerGetClueGiverNetIdUnsafe() => _clueGiverNetId;
 }

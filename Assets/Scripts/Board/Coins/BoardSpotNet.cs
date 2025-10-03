@@ -107,6 +107,23 @@ public class BoardSpotsNet : NetworkBehaviour
         bool ok = false;
         Vector3 center = Vector3.zero;
 
+        if (sender != null)
+        {
+            var reqId = sender.identity ? sender.identity.netId : 0u;
+            Debug.Log($"[Claim] Request from {reqId} coin={coinNetId} spot={spotIndex}");
+        }
+
+        if (sender != null && CoinPlacementTurnManager.Instance != null)
+        {
+            uint requesterPlayerNetId = sender.identity ? sender.identity.netId : 0u;
+            if (!CoinPlacementTurnManager.Instance.ServerCanPlayerPlace(requesterPlayerNetId))
+            {
+                Debug.LogWarning($"[Claim] REJECT (not your turn) requester={requesterPlayerNetId} " + $"current={CoinPlacementTurnManager.Instance.currentPlacerNetId} spot={spotIndex}");
+                TargetClaimResult(sender, false, spotIndex, Vector3.zero);
+                return;
+            }
+        }
+
         if (_indexToSpot.TryGetValue(spotIndex, out var spot))
         {
             uint cur = occupancy.ContainsKey(spotIndex) ? occupancy[spotIndex] : 0;
@@ -127,6 +144,20 @@ public class BoardSpotsNet : NetworkBehaviour
                 ok = true;
 
                 RpcApplySpot(spotIndex, coinNetId);
+
+                Debug.Log($"[Claim] SUCCESS spot={spotIndex} coin={coinNetId} by player={sender?.identity?.netId}");
+
+                if (CoinPlacementTurnManager.Instance != null)
+                {
+                    var before = CoinPlacementTurnManager.Instance.currentPlacerNetId;
+                    CoinPlacementTurnManager.Instance.ServerAdvanceToNext();
+                    var after = CoinPlacementTurnManager.Instance.currentPlacerNetId;
+                    Debug.Log($"[Turn] Advanced: {before} → {after}");
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"[Claim] REJECT (occupied) spot={spotIndex} currentCoin={cur}");
             }
         }
 

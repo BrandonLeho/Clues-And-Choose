@@ -58,6 +58,7 @@
     <Compile Include="Assets\Scripts\Controller\CursorController\ChangeCursor.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerInteractionHandler.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinPulseController.cs" />
+    <Compile Include="Assets\Scripts\Gameloop\PlacingPhaseController.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\ColorBoard2D.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverRoulette\RouletteText.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorLockRegistry.cs" />
@@ -79,6 +80,7 @@
     <Compile Include="Assets\Scripts\Board\ColorBoard\PaletteGrid.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerListBinder.cs" />
     <Compile Include="Assets\Scripts\GameNetworking\NetworkChat.cs" />
+    <Compile Include="Assets\Scripts\Board\Coins\CoinPlacementGuard.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\NetworkCoin.cs" />
     <Compile Include="Assets\Scripts\Gameloop\GameRuleSettings.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\PerimeterGlowGraphic.cs" />
@@ -97,10 +99,12 @@
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceClickRelay.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardGenerator.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceGridCoord.cs" />
+    <Compile Include="Assets\Scripts\Gameloop\CoinPlacementTurnManager.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\Arrow\CoinPlacementProbe.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerNameColorBinder.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceHoverScale.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinSlideInIntro.cs" />
+    <Compile Include="Assets\Scripts\Board\Cards\ChoiceToPlacingPhaseBridge.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\PerimeterGlowEntry.cs" />
     <Compile Include="Assets\Scripts\UI\LobbyUIManager.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\EnableHoverAfterFlyIn.cs" />

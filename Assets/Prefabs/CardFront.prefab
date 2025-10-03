@@ -575,6 +575,7 @@ GameObject:
   - component: {fileID: 7427924630026965985}
   - component: {fileID: 7665591576090681039}
   - component: {fileID: 1143096123862332326}
+  - component: {fileID: 6814454083520272157}
   m_Layer: 5
   m_Name: FrontFaces
   m_TagString: Untagged
@@ -798,6 +799,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1f6fbdbc844545443b00ac0fb86a57a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ChoiceSelectToUnlockAll
+--- !u!114 &6814454083520272157
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3757834583549455463}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf0b1271e7b90ad40a20a78cbb2867a6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChoiceToPlacingPhaseBridge
+  controller: {fileID: 7665591576090681039}
 --- !u!1 &4549066936200691178
 GameObject:
   m_ObjectHideFlags: 0
