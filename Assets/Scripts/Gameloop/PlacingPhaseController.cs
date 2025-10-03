@@ -37,7 +37,10 @@ public sealed class PlacingPhaseController : NetworkBehaviour
         if (cyclesCompleted == 1)
         {
             RpcEndFirstCycle_LockAll();
-            RpcShowEndRoundPrompt();
+
+            var cgConn = GetClueGiverConnection();
+            if (cgConn != null)
+                TargetShowEndRoundPrompt(cgConn);
         }
         else
         {
@@ -50,16 +53,19 @@ public sealed class PlacingPhaseController : NetworkBehaviour
     {
         if (!IsConnectionClueGiver(sender)) return;
 
+        RpcAnnounceRoundDecision(endNow);
+
+        RpcHideEndRoundPrompt();
+
         if (endNow)
         {
-            RpcHideEndRoundPrompt();
             ServerBeginScoring();
         }
         else
         {
-            RpcHideEndRoundPrompt();
             if (CoinPlacementTurnManager.Instance)
                 CoinPlacementTurnManager.Instance.ServerBeginCycleAtFirst();
+
             RpcEnablePerTurnLocks();
         }
     }
@@ -70,6 +76,15 @@ public sealed class PlacingPhaseController : NetworkBehaviour
         if (conn == null || conn.identity == null) return false;
         uint cg = RoundManager.Instance ? RoundManager.Instance.ServerGetClueGiverNetIdUnsafe() : 0u;
         return conn.identity.netId == cg;
+    }
+
+    [Server]
+    NetworkConnectionToClient GetClueGiverConnection()
+    {
+        if (!RoundManager.Instance) return null;
+        uint cg = RoundManager.Instance.ServerGetClueGiverNetIdUnsafe();
+        if (cg == 0 || !NetworkServer.spawned.TryGetValue(cg, out var id)) return null;
+        return id.connectionToClient;
     }
 
     [ClientRpc]
@@ -87,13 +102,15 @@ public sealed class PlacingPhaseController : NetworkBehaviour
 
         var mgr = CoinRoundLockManager.Instance;
         if (mgr) mgr.LockAllCoins();
-        Debug.Log("[Phase] First placement cycle finished → All players locked, awaiting clue giver choice.");
+
+        Debug.Log("[Phase] First placement cycle finished → All players locked. Waiting for clue giver decision…");
     }
 
-    [ClientRpc]
-    void RpcShowEndRoundPrompt()
+    [TargetRpc]
+    void TargetShowEndRoundPrompt(NetworkConnection target)
     {
         EndRoundPromptUI.Instance?.Show();
+        Debug.Log("[Phase] End Round prompt shown (clue giver only).");
     }
 
     [ClientRpc]
@@ -102,11 +119,15 @@ public sealed class PlacingPhaseController : NetworkBehaviour
         EndRoundPromptUI.Instance?.Hide();
     }
 
+    [ClientRpc]
+    void RpcAnnounceRoundDecision(bool endNow)
+    {
+        Debug.Log(endNow ? "[Phase] Clue giver chose: END ROUND" : "[Phase] Clue giver chose: ANOTHER CYCLE");
+    }
+
     [Server]
     void ServerBeginScoring()
     {
-        Debug.Log("[Phase] Begin SCORING (stub) — coins remain locked.");
-        // TODO: plug in scoring flow here
-        // RpcHideEndRoundPrompt();
+        Debug.Log("[Phase] Begin SCORING (stub). Coins remain locked.");
     }
 }

@@ -10,7 +10,6 @@ public sealed class EndRoundPromptChoiceBridge : MonoBehaviour
     {
         var ctrl = PlacingPhaseController.Instance;
         if (!ctrl) return;
-
         bool endNow = choice == EndRoundOptionHover.OptionKind.Yes;
         ctrl.CmdClueGiverChoose(endNow);
     }
