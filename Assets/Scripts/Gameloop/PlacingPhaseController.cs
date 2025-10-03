@@ -12,9 +12,26 @@ public sealed class PlacingPhaseController : NetworkBehaviour
     {
         if (CoinPlacementTurnManager.Instance)
         {
-            Debug.Log("[Phase] Start Placing: building order and selecting first placer");
             CoinPlacementTurnManager.Instance.ServerBeginCycleAtFirst();
         }
 
+        RpcEnablePerTurnLocks();
+    }
+
+    [ClientRpc]
+    void RpcEnablePerTurnLocks()
+    {
+        var binder = FindFirstObjectByType<CoinTurnLockBinder>();
+        if (binder) binder.SetModeActive(true);
+    }
+
+    [ClientRpc]
+    public void RpcDisablePerTurnLocks()
+    {
+        var binder = FindFirstObjectByType<CoinTurnLockBinder>();
+        if (binder) binder.SetModeActive(false);
+
+        var mgr = CoinRoundLockManager.Instance;
+        if (mgr) mgr.UnlockAllCoins();
     }
 }

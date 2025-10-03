@@ -11,6 +11,11 @@ public class LockAllCoinsToggleUI : MonoBehaviour
         toggle.onValueChanged.AddListener(OnChanged);
     }
 
+    void Start()
+    {
+        toggle.isOn = true;
+    }
+
     void OnEnable()
     {
         if (GameRuleSettings.Instance)
