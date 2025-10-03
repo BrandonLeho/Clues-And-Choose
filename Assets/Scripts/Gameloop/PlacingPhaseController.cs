@@ -6,21 +6,23 @@ public sealed class PlacingPhaseController : NetworkBehaviour
     public static PlacingPhaseController Instance { get; private set; }
     void Awake() => Instance = this;
 
+    [SyncVar] int cyclesCompleted = 0;
+
     public override void OnStartServer()
     {
         base.OnStartServer();
-        CoinPlacementTurnManager.OnServerFirstCycleCompleted += HandleFirstCycleCompleted_Server;
+        CoinPlacementTurnManager.OnServerFirstCycleCompleted += HandleServerCycleCompleted;
     }
-
     public override void OnStopServer()
     {
-        CoinPlacementTurnManager.OnServerFirstCycleCompleted -= HandleFirstCycleCompleted_Server;
+        CoinPlacementTurnManager.OnServerFirstCycleCompleted -= HandleServerCycleCompleted;
         base.OnStopServer();
     }
 
     [Command(requiresAuthority = false)]
     public void CmdStartPlacingPhase()
     {
+        cyclesCompleted = 0;
         if (CoinPlacementTurnManager.Instance)
             CoinPlacementTurnManager.Instance.ServerBeginCycleAtFirst();
 
@@ -28,11 +30,46 @@ public sealed class PlacingPhaseController : NetworkBehaviour
     }
 
     [Server]
-    void HandleFirstCycleCompleted_Server()
+    void HandleServerCycleCompleted()
     {
-        RpcEndFirstCycle_LockAll();
-        uint clue = RoundManager.Instance ? RoundManager.Instance.ServerGetClueGiverNetIdUnsafe() : 0u;
-        RpcShowEndRoundPrompt(clue);
+        cyclesCompleted++;
+
+        if (cyclesCompleted == 1)
+        {
+            RpcEndFirstCycle_LockAll();
+            RpcShowEndRoundPrompt();
+        }
+        else
+        {
+            ServerBeginScoring();
+        }
+    }
+
+    [Command(requiresAuthority = false)]
+    public void CmdClueGiverChoose(bool endNow, NetworkConnectionToClient sender = null)
+    {
+        if (!IsConnectionClueGiver(sender)) return;
+
+        if (endNow)
+        {
+            RpcHideEndRoundPrompt();
+            ServerBeginScoring();
+        }
+        else
+        {
+            RpcHideEndRoundPrompt();
+            if (CoinPlacementTurnManager.Instance)
+                CoinPlacementTurnManager.Instance.ServerBeginCycleAtFirst();
+            RpcEnablePerTurnLocks();
+        }
+    }
+
+    [Server]
+    bool IsConnectionClueGiver(NetworkConnectionToClient conn)
+    {
+        if (conn == null || conn.identity == null) return false;
+        uint cg = RoundManager.Instance ? RoundManager.Instance.ServerGetClueGiverNetIdUnsafe() : 0u;
+        return conn.identity.netId == cg;
     }
 
     [ClientRpc]
@@ -54,26 +91,22 @@ public sealed class PlacingPhaseController : NetworkBehaviour
     }
 
     [ClientRpc]
-    void RpcShowEndRoundPrompt(uint clueGiverNetId)
+    void RpcShowEndRoundPrompt()
     {
-        var me = NetworkClient.connection?.identity;
-        if (!me) return;
-
-        if (me.netId == clueGiverNetId)
-        {
-            var ui = EndRoundPromptUI.Instance ?? FindFirstObjectByType<EndRoundPromptUI>();
-            if (ui)
-            {
-                ui.Show();
-            }
-            else
-            {
-                Debug.LogWarning("[Phase] EndRoundPromptUI not found in scene.");
-            }
-        }
+        EndRoundPromptUI.Instance?.Show();
     }
 
-    // (Later) When the clue giver decides:
-    // [Command] public void CmdClueGiverNextRound()
-    // [Command] public void CmdClueGiverEndRound()
+    [ClientRpc]
+    void RpcHideEndRoundPrompt()
+    {
+        EndRoundPromptUI.Instance?.Hide();
+    }
+
+    [Server]
+    void ServerBeginScoring()
+    {
+        Debug.Log("[Phase] Begin SCORING (stub) — coins remain locked.");
+        // TODO: plug in scoring flow here
+        // RpcHideEndRoundPrompt();
+    }
 }

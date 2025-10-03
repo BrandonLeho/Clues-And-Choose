@@ -64,6 +64,7 @@
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorLockRegistry.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardMarker.cs" />
     <Compile Include="Assets\Scripts\Gameloop\ClueGiverState.cs" />
+    <Compile Include="Assets\Scripts\Board\EndRoundPrompt\EndRoundOptionHover.cs" />
     <Compile Include="Assets\Scripts\Background\UVScroller.cs" />
     <Compile Include="Assets\Scripts\GameNetworking\NetKeepAlive.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandler.cs" />
@@ -92,8 +93,8 @@
     <Compile Include="Assets\Scripts\Board\GameChat\ChatUI.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardFrontHoverTilt.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\PlayerNameSync.cs" />
+    <Compile Include="Assets\Scripts\Board\EndRoundPrompt\EndRoundPromptChoiceBridge.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardChoiceSelectController.cs" />
-    <Compile Include="Assets\Scripts\Gameloop\EndRoundPromptUI.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinVisual.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinDropSnap.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorChoosingPhaseController.cs" />
@@ -143,6 +144,7 @@
     <Compile Include="Assets\Scripts\Board\Coins\CoinCursorBridge.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\SwatchHoverNeon.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\BoardLabels.cs" />
+    <Compile Include="Assets\Scripts\Board\EndRoundPrompt\EndRoundPromptUI.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\GameScenePlayerList.cs" />
     <Compile Include="Assets\Scripts\UI\PanelSwapper.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardChoiceToGridHover.cs" />

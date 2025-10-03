@@ -13731,7 +13731,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 22.627748
+    x: 36.079594
     y: 0
     width: 10
     height: 10
@@ -26473,6 +26473,7 @@ GameObject:
   - component: {fileID: 456332853}
   - component: {fileID: 456332855}
   - component: {fileID: 456332854}
+  - component: {fileID: 456332856}
   m_Layer: 5
   m_Name: NO
   m_TagString: Untagged
@@ -26496,7 +26497,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -50, y: -50}
+  m_AnchoredPosition: {x: 50, y: -50}
   m_SizeDelta: {x: 75, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &456332854
@@ -26598,6 +26599,54 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 456332852}
   m_CullTransparentMesh: 1
+--- !u!114 &456332856
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 456332852}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 624a7625ee3d20b448aaaa35a0a8e1be, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EndRoundOptionHover
+  kind: 1
+  hoverScale: 1.2
+  scaleDuration: 0.18
+  scaleEase:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  outlineWidth: 0.35
+  outlineSoftness: 0.2
+  yesOutline: {r: 0.25, g: 1, b: 0.25, a: 1}
+  noOutline: {r: 1, g: 0.25, b: 0.25, a: 1}
+  enableGlow: 1
+  glowOffset: 0
+  glowInner: 1
+  glowOuter: 0.35
+  glowPower: 0.9
 --- !u!224 &460069284 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 3337803732932086652, guid: 96c2c7455eef99f46961f53ff646d8a6, type: 3}
@@ -112090,6 +112139,7 @@ GameObject:
   - component: {fileID: 1822670083}
   - component: {fileID: 1822670085}
   - component: {fileID: 1822670084}
+  - component: {fileID: 1822670086}
   m_Layer: 5
   m_Name: YES
   m_TagString: Untagged
@@ -112113,7 +112163,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 50, y: -50}
+  m_AnchoredPosition: {x: -50, y: -50}
   m_SizeDelta: {x: 75, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1822670084
@@ -112215,6 +112265,54 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1822670082}
   m_CullTransparentMesh: 1
+--- !u!114 &1822670086
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1822670082}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 624a7625ee3d20b448aaaa35a0a8e1be, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EndRoundOptionHover
+  kind: 0
+  hoverScale: 1.2
+  scaleDuration: 0.18
+  scaleEase:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  outlineWidth: 0.35
+  outlineSoftness: 0.2
+  yesOutline: {r: 0.25, g: 1, b: 0.25, a: 1}
+  noOutline: {r: 1, g: 0.25, b: 0.25, a: 1}
+  enableGlow: 1
+  glowOffset: 0
+  glowInner: 1
+  glowOuter: 0.35
+  glowPower: 0.9
 --- !u!1001 &1823677599
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -122181,6 +122279,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EndRoundPromptUI
   panel: {fileID: 1977132911}
   canvasGroup: {fileID: 1977132913}
+  extraElements:
+  - {fileID: 120796076}
+  extraMoveUpOffset: 65
+  yesOption: {fileID: 1822670086}
+  noOption: {fileID: 456332856}
   duration: 0.45
   ease:
     serializedVersion: 2
@@ -122208,6 +122311,10 @@ MonoBehaviour:
     m_RotationOrder: 4
   extraOffscreenPixels: 500
   startHidden: 1
+  impactScale: 1.35
+  impactDuration: 0.15
+  impactExtraGlow: 0.5
+  smallUpNudge: 5
 --- !u!225 &1977132913
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -122218,7 +122325,7 @@ CanvasGroup:
   m_Enabled: 1
   m_Alpha: 1
   m_Interactable: 0
-  m_BlocksRaycasts: 0
+  m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
 --- !u!1001 &1977204307
 PrefabInstance:
