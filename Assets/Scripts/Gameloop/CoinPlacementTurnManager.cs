@@ -1,6 +1,6 @@
+// CoinPlacementTurnManager.cs
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Mirror;
 using UnityEngine;
 
@@ -8,99 +8,152 @@ public class CoinPlacementTurnManager : NetworkBehaviour
 {
     public static CoinPlacementTurnManager Instance;
 
+    public static System.Action<uint> OnPlacerChangedClient;
+
+    public static event System.Action OnServerFirstCycleCompleted;
+
     [Header("Debug")]
     [SerializeField] bool debugLogs = true;
 
-    [SyncVar(hook = nameof(OnPlacerChangedHook))]
+    [SyncVar(hook = nameof(OnPlacerChanged_Hook))]
     public uint currentPlacerNetId;
 
-    public static System.Action<uint> OnPlacerChangedClient;
-
     List<uint> _order = new();
+    HashSet<uint> _placedThisCycle = new();
     int _idx = -1;
+    bool _firstCycleComplete = false;
 
     void Awake() => Instance = this;
-
-    public override void OnStartServer()
-    {
-        base.OnStartServer();
-        RoundManager.OnServerRosterChanged += RebuildOrderAndMaybeReset;
-        RoundManager.OnServerClueGiverChanged += _ => RebuildOrderAndMaybeReset();
-        RebuildOrderAndMaybeReset();
-    }
-
-    public override void OnStopServer()
-    {
-        RoundManager.OnServerRosterChanged -= RebuildOrderAndMaybeReset;
-        RoundManager.OnServerClueGiverChanged -= _ => RebuildOrderAndMaybeReset();
-        base.OnStopServer();
-    }
-
-    [Server]
-    void RebuildOrderAndMaybeReset()
-    {
-        if (!RoundManager.Instance) return;
-
-        var roster = RoundManager.Instance.ServerGetRosterSnapshot();
-        uint clue = RoundManager.Instance.ServerGetClueGiverNetIdUnsafe();
-
-        var newOrder = roster.Where(id => id != clue).ToList();
-
-        int newIdx = (currentPlacerNetId != 0) ? newOrder.IndexOf(currentPlacerNetId) : -1;
-
-        _order = newOrder;
-        if (_order.Count == 0) { _idx = -1; SetPlacer(0); return; }
-
-        _idx = (newIdx >= 0) ? newIdx : 0;
-        SetPlacer(_order[_idx]);
-        LogOrder("rebuild");
-    }
 
     [Server]
     public void ServerBeginCycleAtFirst()
     {
-        if (debugLogs) Debug.Log("[Turn] Begin cycle at first");
+        _firstCycleComplete = false;
+        BuildOrder();
+        _placedThisCycle.Clear();
 
-        RebuildOrderAndMaybeReset();
-        if (_order.Count > 0) { _idx = 0; SetPlacer(_order[_idx]); }
+        if (_order.Count == 0)
+        {
+            SetPlacer(0);
+            Log("[Turn] Begin: no eligible placers (empty order).");
+            _firstCycleComplete = true;
+            OnServerFirstCycleCompleted?.Invoke();
+            return;
+        }
 
-        LogOrder("begin cycle");
-        LogPlacerChanged(currentPlacerNetId, "by begin");
+        _idx = 0;
+        SetPlacer(_order[_idx]);
+        LogOrder("begin");
     }
 
     [Server]
-    public void ServerAdvanceToNext()
+    public void ServerNoteSuccessfulPlacement(uint playerNetId)
     {
-        if (debugLogs) Debug.Log("[Turn] Advance to next");
+        if (_firstCycleComplete) return;
 
-        if (_order.Count == 0) { SetPlacer(0); return; }
-        int cur = _order.IndexOf(currentPlacerNetId);
-        _idx = (cur >= 0 ? cur : -1) + 1;
-        if (_idx >= _order.Count) _idx = 0;
-        SetPlacer(_order[_idx]);
+        if (_order.Count == 0)
+        {
+            Log("[Turn] NotePlacement: empty order.");
+            return;
+        }
 
-        LogOrder("advance");
-        LogPlacerChanged(currentPlacerNetId, "by advance");
+        if (_order.Contains(playerNetId))
+            _placedThisCycle.Add(playerNetId);
+
+        if (_placedThisCycle.Count >= _order.Count)
+        {
+            _firstCycleComplete = true;
+            Log("[Turn] First cycle COMPLETE. Stopping turn (no active placer).");
+            SetPlacer(0);
+            OnServerFirstCycleCompleted?.Invoke();
+            return;
+        }
+
+        int start = Mathf.Clamp(_order.IndexOf(currentPlacerNetId) + 1, 0, _order.Count - 1);
+        for (int step = 0; step < _order.Count; step++)
+        {
+            int nxt = (start + step) % _order.Count;
+            uint cand = _order[nxt];
+            if (!_placedThisCycle.Contains(cand))
+            {
+                _idx = nxt;
+                SetPlacer(cand);
+                LogOrder("advance");
+                return;
+            }
+        }
+
+        _firstCycleComplete = true;
+        Log("[Turn] First cycle COMPLETE (fallback).");
+        SetPlacer(0);
+        OnServerFirstCycleCompleted?.Invoke();
     }
 
     [Server]
     public bool ServerCanPlayerPlace(uint playerNetId)
+        => !_firstCycleComplete && _order.Count > 0 && playerNetId == currentPlacerNetId;
+
+    public override void OnStartServer()
     {
-        bool can = _order.Count > 0 && playerNetId == currentPlacerNetId;
-        if (debugLogs)
-        {
-            Debug.Log($"[Turn] CanPlace? requester={FmtPlayer(playerNetId)} " +
-                      $"current={FmtPlayer(currentPlacerNetId)} => {(can ? "YES" : "NO")}");
-        }
-        return can;
+        base.OnStartServer();
+        RoundManager.OnServerRosterChanged += RebuildOrderAndResetIfNeeded;
+        RoundManager.OnServerClueGiverChanged += _ => RebuildOrderAndResetIfNeeded();
+        BuildOrder();
+    }
+
+    public override void OnStopServer()
+    {
+        RoundManager.OnServerRosterChanged -= RebuildOrderAndResetIfNeeded;
+        RoundManager.OnServerClueGiverChanged -= _ => RebuildOrderAndResetIfNeeded();
+        base.OnStopServer();
+    }
+
+    [Server]
+    void RebuildOrderAndResetIfNeeded()
+    {
+        _firstCycleComplete = false;
+        _placedThisCycle.Clear();
+        BuildOrder();
+        if (_order.Count == 0) SetPlacer(0);
+        else { _idx = 0; SetPlacer(_order[_idx]); }
+        LogOrder("rebuild/reset");
+    }
+
+    [Server]
+    void BuildOrder()
+    {
+        _order.Clear();
+        var roster = RoundManager.Instance ? RoundManager.Instance.ServerGetRosterSnapshot() : new List<uint>();
+        uint clue = RoundManager.Instance ? RoundManager.Instance.ServerGetClueGiverNetIdUnsafe() : 0;
+        foreach (var id in roster)
+            if (id != clue) _order.Add(id);
+        if (debugLogs) Log($"[Turn] Built order (non–clue givers): {string.Join(", ", _order)}");
     }
 
     void SetPlacer(uint id) => currentPlacerNetId = id;
 
-    void OnPlacerChangedHook(uint _, uint newId)
+    void OnPlacerChanged_Hook(uint _, uint newId)
     {
-        LogPlacerChanged(newId, "↔ SyncVar hook (client)");
+        if (debugLogs) Log($"[Turn] Current placer: {Fmt(newId)}");
         OnPlacerChangedClient?.Invoke(newId);
+    }
+
+    void Log(string msg) { if (debugLogs) Debug.Log(msg); }
+
+    void LogOrder(string reason)
+    {
+        if (!debugLogs) return;
+        string Seq() => _order.Count == 0 ? "(empty)" :
+            string.Join(" → ", _order.Select(x => x == currentPlacerNetId ? $"{Fmt(x)} (CURRENT)" : Fmt(x)));
+        Debug.Log($"[Turn] Order after {reason}: {Seq()}  | placed:{_placedThisCycle.Count}/{_order.Count}");
+    }
+
+    static string Fmt(uint id)
+    {
+        if (id == 0) return "(none)";
+        if (NetworkServer.active && NetworkServer.spawned.TryGetValue(id, out var srv)) return $"{srv.gameObject.name}[{id}]";
+        if (NetworkClient.active && NetworkClient.spawned.TryGetValue(id, out var cli)) return $"{cli.gameObject.name}[{id}]";
+        return $"[{id}]";
     }
 
     public static bool IsLocalPlayersTurn()
@@ -108,42 +161,4 @@ public class CoinPlacementTurnManager : NetworkBehaviour
         var me = NetworkClient.connection?.identity;
         return me && Instance && Instance.currentPlacerNetId != 0 && me.netId == Instance.currentPlacerNetId;
     }
-
-    static string FmtPlayer(uint netId)
-    {
-        if (netId == 0) return "(none)";
-        string goName = null;
-
-        if (NetworkServer.active && NetworkServer.spawned.TryGetValue(netId, out var srvId))
-            goName = srvId.gameObject.name;
-        else if (NetworkClient.active && NetworkClient.spawned.TryGetValue(netId, out var cliId))
-            goName = cliId.gameObject.name;
-
-        return goName != null ? $"{goName} [netId={netId}]" : $"[netId={netId}]";
-    }
-
-    void LogOrder(string reason)
-    {
-        if (!debugLogs) return;
-        var sb = new StringBuilder();
-        sb.Append("[Turn] Order (non–clue givers) after ").Append(reason).Append(": ");
-        if (_order.Count == 0) sb.Append("(empty)");
-        else
-        {
-            for (int i = 0; i < _order.Count; i++)
-            {
-                if (i > 0) sb.Append(" → ");
-                sb.Append(FmtPlayer(_order[i]));
-                if (_order[i] == currentPlacerNetId) sb.Append(" (CURRENT)");
-            }
-        }
-        Debug.Log(sb.ToString());
-    }
-
-    void LogPlacerChanged(uint newId, string via)
-    {
-        if (!debugLogs) return;
-        Debug.Log($"[Turn] Current placer set {via}: {FmtPlayer(newId)}");
-    }
-
 }

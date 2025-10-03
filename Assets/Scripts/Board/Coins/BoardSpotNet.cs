@@ -149,10 +149,8 @@ public class BoardSpotsNet : NetworkBehaviour
 
                 if (CoinPlacementTurnManager.Instance != null)
                 {
-                    var before = CoinPlacementTurnManager.Instance.currentPlacerNetId;
-                    CoinPlacementTurnManager.Instance.ServerAdvanceToNext();
-                    var after = CoinPlacementTurnManager.Instance.currentPlacerNetId;
-                    Debug.Log($"[Turn] Advanced: {before} → {after}");
+                    uint placer = sender?.identity ? sender.identity.netId : 0u;
+                    CoinPlacementTurnManager.Instance.ServerNoteSuccessfulPlacement(placer);
                 }
             }
             else
