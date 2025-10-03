@@ -31,6 +31,8 @@ public sealed class PlacingPhaseController : NetworkBehaviour
     void HandleFirstCycleCompleted_Server()
     {
         RpcEndFirstCycle_LockAll();
+        uint clue = RoundManager.Instance ? RoundManager.Instance.ServerGetClueGiverNetIdUnsafe() : 0u;
+        RpcShowEndRoundPrompt(clue);
     }
 
     [ClientRpc]
@@ -49,6 +51,26 @@ public sealed class PlacingPhaseController : NetworkBehaviour
         var mgr = CoinRoundLockManager.Instance;
         if (mgr) mgr.LockAllCoins();
         Debug.Log("[Phase] First placement cycle finished → All players locked, awaiting clue giver choice.");
+    }
+
+    [ClientRpc]
+    void RpcShowEndRoundPrompt(uint clueGiverNetId)
+    {
+        var me = NetworkClient.connection?.identity;
+        if (!me) return;
+
+        if (me.netId == clueGiverNetId)
+        {
+            var ui = EndRoundPromptUI.Instance ?? FindFirstObjectByType<EndRoundPromptUI>();
+            if (ui)
+            {
+                ui.Show();
+            }
+            else
+            {
+                Debug.LogWarning("[Phase] EndRoundPromptUI not found in scene.");
+            }
+        }
     }
 
     // (Later) When the clue giver decides:

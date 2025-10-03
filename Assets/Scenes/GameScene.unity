@@ -13731,7 +13731,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 19.349535
+    x: 22.627748
     y: 0
     width: 10
     height: 10
@@ -122136,6 +122136,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1977132911}
+  - component: {fileID: 1977132912}
+  - component: {fileID: 1977132913}
   m_Layer: 5
   m_Name: RoundPassConfirmation
   m_TagString: Untagged
@@ -122165,6 +122167,59 @@ RectTransform:
   m_AnchoredPosition: {x: -835, y: -410}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1977132912
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1977132910}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f08039f2f68c23e438034efab62aa425, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EndRoundPromptUI
+  panel: {fileID: 1977132911}
+  canvasGroup: {fileID: 1977132913}
+  duration: 0.45
+  ease:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  extraOffscreenPixels: 500
+  startHidden: 1
+--- !u!225 &1977132913
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1977132910}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!1001 &1977204307
 PrefabInstance:
   m_ObjectHideFlags: 0
