@@ -382,7 +382,7 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  lockAllCoinsEnabled: 0
+  lockAllCoinsEnabled: 1
 --- !u!4 &163601710
 Transform:
   m_ObjectHideFlags: 0
