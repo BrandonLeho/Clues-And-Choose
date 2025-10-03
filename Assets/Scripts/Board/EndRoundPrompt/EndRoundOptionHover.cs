@@ -114,7 +114,6 @@ public sealed class EndRoundOptionHover : MonoBehaviour, IPointerEnterHandler, I
         ClearGlow(_label);
     }
 
-    // ---- TMP helpers ----
     void SetOutline(TMP_Text t, Color col, float width, float softness)
     {
         if (!t) return;
