@@ -189,11 +189,11 @@ public sealed class EndRoundPromptUI : MonoBehaviour
         if (chosen != null)
             yield return chosen.PlayImpactBurst(impactScale, impactDuration, impactExtraGlow);
 
+        OnChoiceDecided?.Invoke(choice);
+
         PlayTo(false);
         while (animCo != null) yield return null;
 
         if (chosen != null) chosen.ResetVisuals();
-
-        OnChoiceDecided?.Invoke(choice);
     }
 }
