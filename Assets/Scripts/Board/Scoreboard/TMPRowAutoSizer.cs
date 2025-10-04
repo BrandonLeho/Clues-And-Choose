@@ -7,9 +7,10 @@ using System.Collections.Generic;
 public class ScoreboardRowAutoSizer : MonoBehaviour
 {
     [Header("Sizing")]
-    public float minFontSize = 18f;
-    public float maxFontSizeLimit = 120f;
-    public float paddingLeftRight = 16f;
+    [Min(1f)] public float minFontSize = 18f;
+    [Min(1f)] public float maxFontSizeLimit = 120f;
+    public float extraLeftRightPadding = 16f;
+    public float safetyPaddingPerEntry = 6f;
     public float measureEpsilon = 0.1f;
 
     [Header("Apply")]
@@ -36,8 +37,12 @@ public class ScoreboardRowAutoSizer : MonoBehaviour
 
         var hlg = parent.GetComponent<HorizontalLayoutGroup>();
         float spacing = hlg ? hlg.spacing : 0f;
+        int entryCount = entries.Length;
 
-        float available = parent.rect.width - (paddingLeftRight * 2f);
+        float containerWidth = parent.rect.width;
+        int padLeft = hlg ? hlg.padding.left : 0;
+        int padRight = hlg ? hlg.padding.right : 0;
+        float available = containerWidth - padLeft - padRight - (extraLeftRightPadding * 2f);
         if (available <= 0f) return;
 
         var allTMPs = parent.GetComponentsInChildren<TMP_Text>(true);
@@ -46,15 +51,19 @@ public class ScoreboardRowAutoSizer : MonoBehaviour
         {
             originalAuto[t] = t.enableAutoSizing;
             t.enableAutoSizing = false;
+            t.textWrappingMode = TextWrappingModes.NoWrap;
+            t.overflowMode = TextOverflowModes.Overflow;
         }
 
         float lo = minFontSize;
         float hi = Mathf.Max(minFontSize, maxFontSizeLimit);
-
         for (int iter = 0; iter < 18; iter++)
         {
             float mid = (lo + hi) * 0.5f;
-            float needed = MeasureTotalWidth(entries, mid, spacing);
+            float needed = MeasureTotalWidth(entries, mid)
+                         + (entryCount > 1 ? spacing * (entryCount - 1) : 0f)
+                         + (safetyPaddingPerEntry * entryCount);
+
             if (needed <= available) lo = mid; else hi = mid;
             if (Mathf.Abs(hi - lo) <= measureEpsilon) break;
         }
@@ -66,12 +75,9 @@ public class ScoreboardRowAutoSizer : MonoBehaviour
             t.ForceMeshUpdate();
             t.enableAutoSizing = false;
         }
-
-        foreach (var kv in originalAuto)
-            kv.Key.enableAutoSizing = false;
     }
 
-    float MeasureTotalWidth(ScoreboardEntryRefs[] entries, float testSize, float spacing)
+    float MeasureTotalWidth(ScoreboardEntryRefs[] entries, float testSize)
     {
         float total = 0f;
 
@@ -81,6 +87,7 @@ public class ScoreboardRowAutoSizer : MonoBehaviour
             if (!e) continue;
 
             float maxW = 0f;
+
             if (e.nameTMP)
             {
                 float orig = e.nameTMP.fontSize;
@@ -89,6 +96,7 @@ public class ScoreboardRowAutoSizer : MonoBehaviour
                 maxW = Mathf.Max(maxW, e.nameTMP.preferredWidth);
                 e.nameTMP.fontSize = orig;
             }
+
             if (e.scoreTMP)
             {
                 float orig = e.scoreTMP.fontSize;
@@ -101,7 +109,6 @@ public class ScoreboardRowAutoSizer : MonoBehaviour
             total += maxW;
         }
 
-        if (entries.Length > 1) total += spacing * (entries.Length - 1);
         return total;
     }
 }
