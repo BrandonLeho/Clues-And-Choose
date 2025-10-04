@@ -51,6 +51,8 @@ public sealed class PlacingPhaseController : NetworkBehaviour
     [Command(requiresAuthority = false)]
     public void CmdClueGiverChoose(bool endNow, NetworkConnectionToClient sender = null)
     {
+        if (!IsConnectionClueGiver(sender)) return;
+
         RpcAnnounceRoundDecision(endNow);
 
         RpcHideEndRoundPrompt();
