@@ -34,7 +34,12 @@ public class ScoreboardBar : MonoBehaviour
         if (names == null || names.Count == 0) return;
 
         var hlg = listParent.GetComponent<HorizontalLayoutGroup>();
-        if (hlg) hlg.spacing = rowSpacing;
+        if (hlg)
+        {
+            hlg.spacing = rowSpacing;
+            hlg.childControlWidth = true;
+            hlg.childForceExpandWidth = false;
+        }
 
         foreach (var name in names)
         {
