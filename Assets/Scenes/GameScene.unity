@@ -812,52 +812,6 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 7613232968694909624, guid: 96c2c7455eef99f46961f53ff646d8a6, type: 3}
   m_PrefabInstance: {fileID: 20746002}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &22710340
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 22710342}
-  - component: {fileID: 22710341}
-  m_Layer: 0
-  m_Name: RebuildScoreboard
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &22710341
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 22710340}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa12f00a8624cda40a76204f7eb52e97, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::HotkeyRebuilder
-  autosizer: {fileID: 313719348}
-  hotkey: 114
---- !u!4 &22710342
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 22710340}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.32932, y: 4.02358, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &27410469
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -13778,7 +13732,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 0.9195504
+    x: 63.923958
     y: 0
     width: 10
     height: 10
@@ -16439,8 +16393,7 @@ GameObject:
   m_Component:
   - component: {fileID: 313719347}
   - component: {fileID: 313719350}
-  - component: {fileID: 313719349}
-  - component: {fileID: 313719348}
+  - component: {fileID: 313719351}
   m_Layer: 5
   m_Name: Scoreboard
   m_TagString: Untagged
@@ -16467,70 +16420,6 @@ RectTransform:
   m_AnchoredPosition: {x: -113, y: 410}
   m_SizeDelta: {x: 1122, y: 160}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &313719348
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 313719346}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fc181fe801939c046ba9d80a40135951, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ScoreboardRowAutoSizer
-  minFontSize: 1
-  maxFontSizeLimit: 32
-  extraLeftRightPadding: 0
-  safetyPaddingPerEntry: 4
-  measureEpsilon: 0.1
-  applyOnEnable: 1
-  applyOnRectChange: 1
-  setEntryPreferredWidths: 1
-  normalizeHLGSettings: 1
-  equalColumnMode: 0
-  enforceSingleLineNoWrap: 1
---- !u!114 &313719349
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 313719346}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b43327fc15efcdc429aadc3151535939, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ScoreboardBar
-  listParent: {fileID: 313719347}
-  entryPrefab: {fileID: 6711628183575113144, guid: c0e0e523e297cc44790e4b9f58c8c0e4, type: 3}
-  rowSpacing: 16
-  rebuildOnEnable: 1
-  applyToName: 1
-  nameEffects:
-    colorMode: 0
-    explicitColor: {r: 1, g: 1, b: 1, a: 1}
-    enableOutline: 1
-    outlineWidth: 0.05
-    outlineSoftness: 0.1
-    enableGlow: 1
-    glowOffset: 0
-    glowInner: 0
-    glowOuter: 0.03
-    glowPower: 0.2
-  applyToScore: 1
-  scoreEffects:
-    colorMode: 1
-    explicitColor: {r: 1, g: 1, b: 1, a: 1}
-    enableOutline: 0
-    outlineWidth: 0.25
-    outlineSoftness: 0.15
-    enableGlow: 0
-    glowOffset: 0
-    glowInner: 1
-    glowOuter: 0.25
-    glowPower: 0.75
-  autoSizer: {fileID: 313719348}
 --- !u!114 &313719350
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16557,6 +16446,22 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!114 &313719351
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 313719346}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c9f0dffc2b4fced4688bb543237c1cd4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ScoreboardManager
+  listParent: {fileID: 313719347}
+  bannerPrefab: {fileID: 7305315926120879016, guid: c0e0e523e297cc44790e4b9f58c8c0e4, type: 3}
+  maxNameFontSize: 72
+  defaultStartingScore: 0
 --- !u!1001 &314994250
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -135234,4 +135139,3 @@ SceneRoots:
   - {fileID: 968499496}
   - {fileID: 1151922452}
   - {fileID: 2047605433}
-  - {fileID: 22710342}
