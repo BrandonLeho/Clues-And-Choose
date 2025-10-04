@@ -3,6 +3,9 @@ using UnityEngine;
 
 public sealed class PlacingPhaseController : NetworkBehaviour
 {
+    [Header("Rules")]
+    [SyncVar] public bool reverseSecondCycleEnabled = true;
+
     public static PlacingPhaseController Instance { get; private set; }
     void Awake() => Instance = this;
 
@@ -24,7 +27,7 @@ public sealed class PlacingPhaseController : NetworkBehaviour
     {
         cyclesCompleted = 0;
         if (CoinPlacementTurnManager.Instance)
-            CoinPlacementTurnManager.Instance.ServerBeginCycleAtFirst();
+            CoinPlacementTurnManager.Instance.ServerBeginCycleAtFirst(false);
 
         RpcEnablePerTurnLocks();
     }
@@ -64,7 +67,7 @@ public sealed class PlacingPhaseController : NetworkBehaviour
         else
         {
             if (CoinPlacementTurnManager.Instance)
-                CoinPlacementTurnManager.Instance.ServerBeginCycleAtFirst();
+                CoinPlacementTurnManager.Instance.ServerBeginCycleAtFirst(reverseSecondCycleEnabled);
 
             RpcEnablePerTurnLocks();
         }
@@ -129,5 +132,18 @@ public sealed class PlacingPhaseController : NetworkBehaviour
     void ServerBeginScoring()
     {
         Debug.Log("[Phase] Begin SCORING (stub). Coins remain locked.");
+    }
+
+
+    // Just in case I want to change the reverse order during runtime
+    public void CmdSetReverseSecondCycle(bool value)
+    {
+        reverseSecondCycleEnabled = value;
+        RpcAnnounceReverseToggle(value);
+    }
+    [ClientRpc]
+    void RpcAnnounceReverseToggle(bool value)
+    {
+        Debug.Log($"[Phase] Reverse second cycle: {(value ? "ON" : "OFF")}");
     }
 }

@@ -20,17 +20,32 @@ public class CoinPlacementTurnManager : NetworkBehaviour
 
     List<uint> _order = new();
     HashSet<uint> _placedThisCycle = new();
+    List<uint> _currentCyclePlacedOrder = new();
+    List<uint> _lastCompletedOrder = null;
+
     int _idx = -1;
     bool _firstCycleComplete = false;
 
     void Awake() => Instance = this;
 
     [Server]
-    public void ServerBeginCycleAtFirst()
+    public void ServerBeginCycleAtFirst(bool useReverseOfLast = false)
     {
         _firstCycleComplete = false;
-        BuildOrder();
         _placedThisCycle.Clear();
+
+        _currentCyclePlacedOrder.Clear();
+
+        if (useReverseOfLast && _lastCompletedOrder != null && _lastCompletedOrder.Count > 0)
+        {
+            _order = new List<uint>(_lastCompletedOrder);
+            _order.Reverse();
+            if (debugLogs) Log("[Turn] Using REVERSED last cycle order: " + string.Join(", ", _order));
+        }
+        else
+        {
+            BuildOrder();
+        }
 
         if (_order.Count == 0)
         {
@@ -58,11 +73,16 @@ public class CoinPlacementTurnManager : NetworkBehaviour
         }
 
         if (_order.Contains(playerNetId))
+        {
             _placedThisCycle.Add(playerNetId);
+            if (!_currentCyclePlacedOrder.Contains(playerNetId))
+                _currentCyclePlacedOrder.Add(playerNetId);
+        }
 
         if (_placedThisCycle.Count >= _order.Count)
         {
             _firstCycleComplete = true;
+            _lastCompletedOrder = new List<uint>(_currentCyclePlacedOrder);
             Log("[Turn] First cycle COMPLETE. Stopping turn (no active placer).");
             SetPlacer(0);
             OnServerFirstCycleCompleted?.Invoke();
@@ -113,6 +133,9 @@ public class CoinPlacementTurnManager : NetworkBehaviour
     {
         _firstCycleComplete = false;
         _placedThisCycle.Clear();
+        _currentCyclePlacedOrder.Clear();
+        _lastCompletedOrder = null;
+
         BuildOrder();
         if (_order.Count == 0) SetPlacer(0);
         else { _idx = 0; SetPlacer(_order[_idx]); }
