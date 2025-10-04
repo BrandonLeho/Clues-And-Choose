@@ -13732,7 +13732,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 0.38381258
+    x: 13.699963
     y: 0
     width: 10
     height: 10
@@ -16433,9 +16433,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc181fe801939c046ba9d80a40135951, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ScoreboardRowAutoSizer
-  minFontSize: 10
+  minFontSize: 1
   maxFontSizeLimit: 32
-  paddingLeftRight: 16
+  paddingLeftRight: 8
   measureEpsilon: 0.1
   applyOnEnable: 1
   applyOnRectChange: 1

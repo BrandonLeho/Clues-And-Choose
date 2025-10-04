@@ -147,8 +147,8 @@
     <Compile Include="Assets\Scripts\Board\Coins\CoinCursorBridge.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\SwatchHoverNeon.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\BoardLabels.cs" />
-    <Compile Include="Assets\Scripts\Board\Scoreboard\TMPGlowOutlineConfig.cs" />
     <Compile Include="Assets\Scripts\Board\EndRoundPrompt\EndRoundPromptUI.cs" />
+    <Compile Include="Assets\Scripts\Board\Scoreboard\TMPGlowOutlineConfig.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\GameScenePlayerList.cs" />
     <Compile Include="Assets\Scripts\UI\PanelSwapper.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardChoiceToGridHover.cs" />
