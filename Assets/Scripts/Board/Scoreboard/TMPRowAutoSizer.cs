@@ -21,6 +21,10 @@ public class ScoreboardRowAutoSizer : MonoBehaviour
     public bool setEntryPreferredWidths = true;
     public bool normalizeHLGSettings = true;
 
+    [Header("No-Wrap Control")]
+    public bool equalColumnMode = false;
+    public bool enforceSingleLineNoWrap = true;
+
     void OnEnable()
     {
         if (applyOnEnable) ResizeNow(null);
@@ -56,16 +60,11 @@ public class ScoreboardRowAutoSizer : MonoBehaviour
         if (available <= 0f) return;
 
         var allTMPs = parent.GetComponentsInChildren<TMP_Text>(true);
-        var originalAuto = new Dictionary<TMP_Text, bool>(allTMPs.Length);
-        var originalWrap = new Dictionary<TMP_Text, TextWrappingModes>(allTMPs.Length);
-        var originalOverflow = new Dictionary<TMP_Text, TextOverflowModes>(allTMPs.Length);
+        var stash = new List<(TMP_Text t, bool auto, TextWrappingModes wrap, TextOverflowModes over)>(allTMPs.Length);
 
         foreach (var t in allTMPs)
         {
-            originalAuto[t] = t.enableAutoSizing;
-            originalWrap[t] = t.textWrappingMode;
-            originalOverflow[t] = t.overflowMode;
-
+            stash.Add((t, t.enableAutoSizing, t.textWrappingMode, t.overflowMode));
             t.enableAutoSizing = false;
             t.textWrappingMode = TextWrappingModes.NoWrap;
             t.overflowMode = TextOverflowModes.Overflow;
@@ -74,14 +73,15 @@ public class ScoreboardRowAutoSizer : MonoBehaviour
         float lo = minFontSize;
         float hi = Mathf.Max(minFontSize, maxFontSizeLimit);
 
-        for (int iter = 0; iter < 20; iter++)
+        for (int iter = 0; iter < 22; iter++)
         {
             float mid = (lo + hi) * 0.5f;
-            float totalNeeded = MeasureTotalWidth(entries, mid)
-                              + (entryCount > 1 ? spacing * (entryCount - 1) : 0f)
-                              + (safetyPaddingPerEntry * entryCount);
 
-            if (totalNeeded <= available) lo = mid; else hi = mid;
+            bool fits = equalColumnMode
+                ? FitsEqualColumns(entries, mid, available, spacing)
+                : FitsMeasuredWidths(entries, mid, available, spacing);
+
+            if (fits) lo = mid; else hi = mid;
             if (Mathf.Abs(hi - lo) <= measureEpsilon) break;
         }
 
@@ -92,54 +92,69 @@ public class ScoreboardRowAutoSizer : MonoBehaviour
             t.fontSize = finalSize;
             t.ForceMeshUpdate();
             t.enableAutoSizing = false;
+            if (enforceSingleLineNoWrap)
+            {
+                t.textWrappingMode = TextWrappingModes.NoWrap;
+                t.overflowMode = TextOverflowModes.Overflow;
+            }
         }
 
         if (setEntryPreferredWidths)
         {
-            for (int i = 0; i < entries.Length; i++)
+            if (equalColumnMode)
             {
-                var e = entries[i];
-                if (!e) continue;
+                float totalSpacing = entryCount > 1 ? spacing * (entryCount - 1) : 0f;
+                float per = Mathf.Max(0f, (available - totalSpacing) / entryCount) - safetyPaddingPerEntry;
 
-                float width = MeasureEntryMaxWidth(e, finalSize) + safetyPaddingPerEntry;
-
-                var entryRect = e.GetComponent<RectTransform>();
-                if (!entryRect) continue;
-
-                var le = entryRect.GetComponent<LayoutElement>();
-                if (!le) le = entryRect.gameObject.AddComponent<LayoutElement>();
-
-                le.minWidth = -1f;
-                le.flexibleWidth = 0f;
-                le.preferredWidth = width;
+                for (int i = 0; i < entries.Length; i++)
+                    EnsureLE(entries[i]).preferredWidth = Mathf.Max(0f, per);
+            }
+            else
+            {
+                for (int i = 0; i < entries.Length; i++)
+                {
+                    float w = MeasureEntryMaxWidth(entries[i], finalSize) + safetyPaddingPerEntry;
+                    EnsureLE(entries[i]).preferredWidth = Mathf.Max(0f, w);
+                }
             }
         }
 
-        foreach (var t in allTMPs)
+        foreach (var s in stash)
         {
-            t.enableAutoSizing = false;
-            t.textWrappingMode = originalWrap[t];
-            t.overflowMode = originalOverflow[t];
+            s.t.enableAutoSizing = false;
         }
     }
 
-    float MeasureTotalWidth(ScoreboardEntryRefs[] entries, float testSize)
+    bool FitsMeasuredWidths(ScoreboardEntryRefs[] entries, float testSize, float available, float spacing)
     {
-        float total = 0f;
+        float sum = 0f;
         for (int i = 0; i < entries.Length; i++)
+            sum += MeasureEntryMaxWidth(entries[i], testSize) + safetyPaddingPerEntry;
+
+        float totalNeeded = sum + (entries.Length > 1 ? spacing * (entries.Length - 1) : 0f);
+        return totalNeeded <= available + 0.01f;
+    }
+
+    bool FitsEqualColumns(ScoreboardEntryRefs[] entries, float testSize, float available, float spacing)
+    {
+        int n = entries.Length;
+        float totalSpacing = n > 1 ? spacing * (n - 1) : 0f;
+        float per = (available - totalSpacing) / Mathf.Max(1, n);
+        float target = Mathf.Max(0f, per - safetyPaddingPerEntry);
+
+        for (int i = 0; i < n; i++)
         {
-            var e = entries[i];
-            if (!e) continue;
-            total += MeasureEntryMaxWidth(e, testSize);
+            float need = MeasureEntryMaxWidth(entries[i], testSize);
+            if (need > target + 0.01f) return false;
         }
-        return total;
+        return true;
     }
 
     float MeasureEntryMaxWidth(ScoreboardEntryRefs e, float testSize)
     {
         float maxW = 0f;
 
-        if (e.nameTMP)
+        if (e && e.nameTMP)
         {
             float orig = e.nameTMP.fontSize;
             e.nameTMP.fontSize = testSize;
@@ -147,8 +162,7 @@ public class ScoreboardRowAutoSizer : MonoBehaviour
             maxW = Mathf.Max(maxW, e.nameTMP.preferredWidth);
             e.nameTMP.fontSize = orig;
         }
-
-        if (e.scoreTMP)
+        if (e && e.scoreTMP)
         {
             float orig = e.scoreTMP.fontSize;
             e.scoreTMP.fontSize = testSize;
@@ -158,5 +172,18 @@ public class ScoreboardRowAutoSizer : MonoBehaviour
         }
 
         return maxW;
+    }
+
+    LayoutElement EnsureLE(ScoreboardEntryRefs e)
+    {
+        var r = e ? e.GetComponent<RectTransform>() : null;
+        var le = r ? r.GetComponent<LayoutElement>() : null;
+        if (!le && r) le = r.gameObject.AddComponent<LayoutElement>();
+        if (le)
+        {
+            le.minWidth = -1f;
+            le.flexibleWidth = 0f;
+        }
+        return le;
     }
 }
