@@ -50,8 +50,9 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\Board\ColorChooser\BackgroundDeselect.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\RandomChildPaletteColor.cs" />
-    <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardManager.cs" />
+    <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreRegistry.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\BoardLabelsHighlighter.cs" />
+    <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardBuilder.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorPickMirrorBinder.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\NeonRectBorderBinder.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ClassicScoreboard\ScoreboardLabels.cs" />
@@ -101,7 +102,6 @@
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorChoosingPhaseController.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\BoardSpotNet.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceClickRelay.cs" />
-    <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardBanner.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ClassicScoreboard\ScoreboardFitter.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceGridCoord.cs" />
     <Compile Include="Assets\Scripts\Gameloop\CoinPlacementTurnManager.cs" />
@@ -115,10 +115,11 @@
     <Compile Include="Assets\Scripts\UI\LobbyUIManager.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\EnableHoverAfterFlyIn.cs" />
     <Compile Include="Assets\Scripts\Animation\ImpactPulse.cs" />
+    <Compile Include="Assets\Scripts\Board\Scoreboard\BannerGlowController.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\Lock\CoinLockedState.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinRejectionFeedback.cs" />
+    <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreBannerEntry.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinSpawnOnPhaseEnd.cs" />
-    <Compile Include="Assets\Scripts\Board\Scoreboard\PlayerBannerColorBinder.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverRoulette\RouletteEntryManager.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardHover.cs" />
     <Compile Include="Assets\Scripts\Steam\SteamLobby.cs" />
@@ -178,6 +179,7 @@
     <None Include="Assets\ScriptTemplates\53-Mirror__Network Behaviour With Actions-NewNetworkBehaviourWithActions.cs.txt" />
     <None Include="Assets\Mirror\Plugins\Mono.Cecil\Mono.CecilX.Rocks.dll" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Surface-Mobile.shader" />
+    <None Include="Assets\Shaders\BannerOutlineGlow.shader" />
     <None Include="Assets\com.rlabrecque.steamworks.net\Plugins\steam_api64.dll" />
     <None Include="Assets\TextMesh Pro\Shaders\SDFFunctions.hlsl" />
     <None Include="Assets\Mirror\Readme.txt" />
@@ -197,6 +199,7 @@
     <None Include="Assets\Shaders\NeonRect.shader" />
     <None Include="Assets\ScriptTemplates\55-Mirror__Network Room Player-NewNetworkRoomPlayer.cs.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile Masking.shader" />
+    <None Include="Assets\Shaders\BannerTopLight.shader" />
     <None Include="Assets\ThirdPartyAssets\KennyCursorPack\License.txt" />
     <None Include="Assets\ScriptTemplates\54-Mirror__Custom Interest Management-CustomInterestManagement.cs.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF Overlay.shader" />
