@@ -26,4 +26,10 @@ public static class ScoreRegistry
         _scores[name] = s;
         OnScoreChanged?.Invoke(name, s);
     }
+
+    public static void InitializeScoresForRound()
+    {
+        foreach (var name in RosterStore.Instance.Names)
+            SetScore(name, 0);
+    }
 }
