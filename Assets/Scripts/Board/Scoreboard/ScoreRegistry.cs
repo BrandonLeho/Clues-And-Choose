@@ -4,10 +4,11 @@ using System.Collections.Generic;
 public static class ScoreRegistry
 {
     public static event Action<string, int> OnScoreChanged;
-
     static readonly Dictionary<string, int> _scores = new();
-
     public static IReadOnlyDictionary<string, int> GetAll() => _scores;
+
+    static bool _isNetworkApplying;
+    public static bool IsNetworkApplying => _isNetworkApplying;
 
     public static int GetScore(string name)
     {
@@ -33,5 +34,17 @@ public static class ScoreRegistry
     {
         foreach (var name in RosterStore.Instance.Names)
             SetScore(name, 0);
+    }
+
+    public static void SetScoreFromNetwork(string name, int value)
+    {
+        try { _isNetworkApplying = true; SetScore(name, value); }
+        finally { _isNetworkApplying = false; }
+    }
+
+    public static void AddScoreFromNetwork(string name, int delta)
+    {
+        try { _isNetworkApplying = true; AddScore(name, delta); }
+        finally { _isNetworkApplying = false; }
     }
 }

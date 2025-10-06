@@ -15,19 +15,27 @@ public class ScoreRegistryNetBridge : NetworkBehaviour
     [Server]
     void HandleServerScoreChanged(string name, int newScore)
     {
+        if (ScoreRegistry.IsNetworkApplying) return;
+
         RpcPushScore(name, newScore);
     }
 
     [ClientRpc]
     void RpcPushScore(string name, int newScore)
     {
-        ScoreRegistry.SetScore(name, newScore);
+        ScoreRegistry.SetScoreFromNetwork(name, newScore);
+    }
+
+    [ClientRpc]
+    void RpcAddScore(string name, int delta)
+    {
+        ScoreRegistry.AddScoreFromNetwork(name, delta);
     }
 
     [TargetRpc]
     public void TargetSyncAllScores(NetworkConnection target)
     {
         foreach (var kv in ScoreRegistry.GetAll())
-            ScoreRegistry.SetScore(kv.Key, kv.Value);
+            ScoreRegistry.SetScoreFromNetwork(kv.Key, kv.Value);
     }
 }
