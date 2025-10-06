@@ -10,6 +10,10 @@ public sealed class PlacingPhaseController : NetworkBehaviour
     void Awake() => Instance = this;
 
     [SyncVar] int cyclesCompleted = 0;
+    [SyncVar] int targetCol = -1;
+    [SyncVar] int targetRow = -1;
+    [SyncVar] Color targetColor = Color.white;
+
 
     public override void OnStartServer()
     {
@@ -131,9 +135,49 @@ public sealed class PlacingPhaseController : NetworkBehaviour
     [Server]
     void ServerBeginScoring()
     {
-        Debug.Log("[Phase] Begin SCORING (stub). Coins remain locked.");
-    }
+        Debug.Log("[Phase] Begin SCORING");
 
+        if (targetCol < 0 || targetRow < 0)
+        {
+            Debug.LogWarning("[Scoring] No target set yet. Did the clue giver select a card choice?");
+            return;
+        }
+
+        Debug.Log($"[Scoring] Chosen target → col={(targetCol + 1)}, row={RowLetters(targetRow)} (0-based: c={targetCol}, r={targetRow}) color={ColorToHex(targetColor)}");
+
+        var board = BoardSpotsNet.Instance;
+        if (board == null)
+        {
+            Debug.LogWarning("[Scoring] BoardSpotsNet not found.");
+            return;
+        }
+
+        foreach (var kv in board.occupancy)
+        {
+            int spotIndex = kv.Key;
+            uint coinNetId = kv.Value;
+            if (coinNetId == 0) continue;
+
+            if (!board.TryGetSpotCoord(spotIndex, out int coinCol, out int coinRow))
+                continue;
+
+            int dx = Mathf.Abs(coinCol - targetCol);
+            int dy = Mathf.Abs(coinRow - targetRow);
+            int manhattan = dx + dy;
+            float euclid = Mathf.Sqrt(dx * dx + dy * dy);
+
+            string rowLabel = RowLetters(coinRow);
+            string ownerStr = "";
+            if (NetworkServer.spawned.TryGetValue(coinNetId, out var id))
+            {
+                uint owner = id.connectionToClient?.identity ? id.connectionToClient.identity.netId : 0u;
+                ownerStr = owner != 0 ? $" owner={owner}" : "";
+            }
+
+            Debug.Log($"[Scoring] Coin netId={coinNetId}{ownerStr} at (col={(coinCol + 1)}, row={rowLabel}) " +
+                    $"→ dx={dx}, dy={dy}, manhattan={manhattan}, euclid={euclid:0.###}");
+        }
+    }
 
     // Just in case I want to change the reverse order during runtime
     public void CmdSetReverseSecondCycle(bool value)
@@ -146,4 +190,29 @@ public sealed class PlacingPhaseController : NetworkBehaviour
     {
         Debug.Log($"[Phase] Reverse second cycle: {(value ? "ON" : "OFF")}");
     }
+
+    [Command(requiresAuthority = false)]
+    public void CmdSetChosenTarget(int col, int row, Color color, NetworkConnectionToClient sender = null)
+    {
+        if (!IsConnectionClueGiver(sender)) return;
+        targetCol = col;
+        targetRow = row;
+        targetColor = color;
+
+        Debug.Log($"[Scoring] Target set by clue giver → col={(col + 1)}, row={RowLetters(row)} color={ColorToHex(color)}");
+    }
+
+    static string RowLetters(int idx)
+    {
+        idx = Mathf.Max(0, idx);
+        string s = "";
+        while (idx >= 0) { int r = idx % 26; s = (char)('A' + r) + s; idx = idx / 26 - 1; }
+        return s;
+    }
+    static string ColorToHex(Color c)
+    {
+        Color32 c32 = c;
+        return $"#{c32.r:X2}{c32.g:X2}{c32.b:X2}{c32.a:X2}";
+    }
+
 }

@@ -7,7 +7,7 @@ using UnityEngine.Events;
 [RequireComponent(typeof(RectTransform))]
 public class CardChoiceSelectController : MonoBehaviour
 {
-    [Header("Choices (children)")]
+    [Header("Choices")]
     public List<ChoiceClickRelay> choices = new List<ChoiceClickRelay>();
 
     [Header("Focus Target")]
@@ -190,6 +190,8 @@ public class CardChoiceSelectController : MonoBehaviour
 
         var payload = new ChoicePayload { col = col, row = row, color = color, label = "" };
         onChoiceSelected?.Invoke(payload);
+        var phase = PlacingPhaseController.Instance;
+        if (phase) phase.CmdSetChosenTarget(col, row, color);
 
         if (disableFurtherInputOnSelect)
         {

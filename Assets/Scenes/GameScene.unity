@@ -13732,7 +13732,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 4.7032213
+    x: 56.645786
     y: 0
     width: 10
     height: 10
@@ -68654,7 +68654,7 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  debugLogs: 1
+  debugLogs: 0
   currentPlacerNetId: 0
 --- !u!4 &1151922452
 Transform:
@@ -128004,7 +128004,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a64a8960da5d2cf4595969b89cb720ca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CoinTurnLockBinder
-  debugLogs: 1
+  debugLogs: 0
 --- !u!4 &2047605433
 Transform:
   m_ObjectHideFlags: 0

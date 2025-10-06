@@ -5,7 +5,7 @@ using UnityEngine.UI;
 [RequireComponent(typeof(ChoiceGridCoord))]
 public class CardChoiceToGridHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
-    [Header("Optional")]
+    [Header("Front Face")]
     public bool requireFrontFacing = false;
     public bool isFrontFacing = true;
 
