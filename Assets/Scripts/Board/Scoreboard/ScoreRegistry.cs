@@ -7,6 +7,8 @@ public static class ScoreRegistry
 
     static readonly Dictionary<string, int> _scores = new();
 
+    public static IReadOnlyDictionary<string, int> GetAll() => _scores;
+
     public static int GetScore(string name)
     {
         return (name != null && _scores.TryGetValue(name, out var s)) ? s : 0;

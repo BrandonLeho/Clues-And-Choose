@@ -1,32 +1,33 @@
-/* using Mirror;
-using UnityEngine;
+using Mirror;
 
 public class ScoreRegistryNetBridge : NetworkBehaviour
 {
-    public static ScoreRegistryNetBridge Instance;
-
-    void Awake() => Instance = this;
-
     public override void OnStartServer()
     {
-        ScoreRegistry.OnScoreChanged += ServerForwardScoreChanged;
+        ScoreRegistry.OnScoreChanged += HandleServerScoreChanged;
     }
 
     public override void OnStopServer()
     {
-        ScoreRegistry.OnScoreChanged -= ServerForwardScoreChanged;
+        ScoreRegistry.OnScoreChanged -= HandleServerScoreChanged;
     }
 
     [Server]
-    void ServerForwardScoreChanged(string name, int newScore)
+    void HandleServerScoreChanged(string name, int newScore)
     {
-        RpcApplyScore(name, newScore);
+        RpcPushScore(name, newScore);
     }
 
     [ClientRpc]
-    void RpcApplyScore(string name, int newScore)
+    void RpcPushScore(string name, int newScore)
     {
         ScoreRegistry.SetScore(name, newScore);
     }
+
+    [TargetRpc]
+    public void TargetSyncAllScores(NetworkConnection target)
+    {
+        foreach (var kv in ScoreRegistry.GetAll())
+            ScoreRegistry.SetScore(kv.Key, kv.Value);
+    }
 }
- */
