@@ -11,7 +11,6 @@ public class ScoreBannerEntry : MonoBehaviour
 
     [Header("Visuals")]
     [SerializeField] Color fallbackBG = Color.white;
-    [SerializeField, Range(0f, 1f)] float bgAlpha = 1f;
 
     [Header("Glow")]
     [SerializeField] private BannerGlowController glowBinder;

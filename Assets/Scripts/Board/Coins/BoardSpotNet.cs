@@ -68,13 +68,6 @@ public class BoardSpotsNet : NetworkBehaviour
         }
     }
 
-    static string GetHierarchyPath(Transform t)
-    {
-        var stack = new Stack<string>();
-        while (t != null) { stack.Push(t.name); t = t.parent; }
-        return string.Join("/", stack);
-    }
-
     static string GetHierarchyIndexKey(Transform t)
     {
         var stack = new Stack<int>();

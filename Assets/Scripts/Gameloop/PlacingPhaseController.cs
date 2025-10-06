@@ -8,6 +8,9 @@ public sealed class PlacingPhaseController : NetworkBehaviour
     [SerializeField, Min(1)] int gridRows = 16;
     [SerializeField] bool cardRowZeroIsBottom = true;
 
+    [Header("Scoring")]
+    [SerializeField, Min(0)] int pointsAtExact = 3;
+
     public static PlacingPhaseController Instance { get; private set; }
     void Awake() => Instance = this;
 
@@ -154,6 +157,7 @@ public sealed class PlacingPhaseController : NetworkBehaviour
             return;
         }
 
+        int awardedTotal = 0;
         foreach (var kv in board.occupancy)
         {
             int spotIndex = kv.Key;
@@ -164,10 +168,73 @@ public sealed class PlacingPhaseController : NetworkBehaviour
                 continue;
 
             int cellsAway = CellsAwayChebyshev(coinCol, coinRow, targetCol, targetRow);
+            int points = Mathf.Max(0, pointsAtExact - cellsAway);
 
-            Debug.Log($"[Scoring] Coin netId={coinNetId} at (col={(coinCol + 1)}, row={RowLetters(coinRow)}) → {cellsAway} cell(s) away.");
+            if (points > 0 && ServerTryResolvePlayerName(coinNetId, out string ownerName))
+            {
+                ScoreRegistry.AddScore(ownerName, points);
+                awardedTotal += points;
+                Debug.Log($"[Scoring] +{points} → {ownerName} (coin {coinNetId}) at (col={(coinCol + 1)}, row={RowLetters(coinRow)}) " +
+                        $"[{cellsAway} cell(s) away]");
+            }
+            else
+            {
+                Debug.Log($"[Scoring] Coin {coinNetId} at (col={(coinCol + 1)}, row={RowLetters(coinRow)}) → {cellsAway} cell(s) away → +0");
+            }
         }
+
+        Debug.Log($"[Scoring] Round total awarded: {awardedTotal} point(s).");
     }
+
+
+    bool ServerTryResolvePlayerName(uint coinNetId, out string ownerName)
+    {
+        ownerName = null;
+        if (!NetworkServer.spawned.TryGetValue(coinNetId, out var id) || id == null)
+            return false;
+
+        var go = id.gameObject;
+        var comp1 = go.GetComponent("PlayerNameTag");
+        if (comp1 != null)
+        {
+            var field = comp1.GetType().GetField("playerName");
+            if (field != null) { ownerName = field.GetValue(comp1) as string; if (!string.IsNullOrWhiteSpace(ownerName)) return true; }
+        }
+
+        var comp2 = go.GetComponent("RegistryNameProvider");
+        if (comp2 != null)
+        {
+            var prop = comp2.GetType().GetProperty("PlayerName");
+            if (prop != null) { ownerName = prop.GetValue(comp2) as string; if (!string.IsNullOrWhiteSpace(ownerName)) return true; }
+        }
+
+        Transform t = go.transform;
+        for (int i = 0; i < 4 && t != null; i++, t = t.parent)
+        {
+            var comps = t.GetComponents<Component>();
+            foreach (var c in comps)
+            {
+                if (c == null) continue;
+                var ty = c.GetType();
+                var f = ty.GetField("ownerName") ?? ty.GetField("playerName");
+                if (f != null)
+                {
+                    var v = f.GetValue(c) as string;
+                    if (!string.IsNullOrWhiteSpace(v)) { ownerName = v; return true; }
+                }
+                var p = ty.GetProperty("OwnerName") ?? ty.GetProperty("PlayerName");
+                if (p != null)
+                {
+                    var v = p.GetValue(c) as string;
+                    if (!string.IsNullOrWhiteSpace(v)) { ownerName = v; return true; }
+                }
+            }
+        }
+
+        ownerName = go.name;
+        return !string.IsNullOrWhiteSpace(ownerName);
+    }
+
 
     // Just in case I want to change the reverse order during runtime
     public void CmdSetReverseSecondCycle(bool value)
