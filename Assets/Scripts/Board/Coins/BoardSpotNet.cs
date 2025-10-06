@@ -53,17 +53,18 @@ public class BoardSpotsNet : NetworkBehaviour
         if (spots == null || spots.Count == 0)
         {
             spots = FindObjectsByType<ValidDropSpot>(FindObjectsInactive.Include, FindObjectsSortMode.None).ToList();
-            spots = spots.OrderBy(s => GetHierarchyPath(s.transform)).ToList();
+            spots = spots.OrderBy(s => GetHierarchyIndexKey(s.transform)).ToList();
         }
 
         _indexToSpot.Clear();
+
         int next = 0;
         foreach (var s in spots)
         {
             if (s == null) continue;
-            if (s.spotIndex < 0) s.spotIndex = next;
-            _indexToSpot[s.spotIndex] = s;
-            next = Mathf.Max(next, s.spotIndex + 1);
+            s.spotIndex = next;
+            _indexToSpot[next] = s;
+            next++;
         }
     }
 
@@ -72,6 +73,13 @@ public class BoardSpotsNet : NetworkBehaviour
         var stack = new Stack<string>();
         while (t != null) { stack.Push(t.name); t = t.parent; }
         return string.Join("/", stack);
+    }
+
+    static string GetHierarchyIndexKey(Transform t)
+    {
+        var stack = new Stack<int>();
+        while (t != null) { stack.Push(t.GetSiblingIndex()); t = t.parent; }
+        return string.Join(".", stack.Select(i => i.ToString("D6")));
     }
 
     void ApplyLocalSpot(int index, uint coinNetId)
