@@ -15,9 +15,6 @@ public class BoardSpotsNet : NetworkBehaviour
     [SerializeField, Min(1)] int gridRows = 16;
     [SerializeField] bool aStartsAtTop = true;
 
-    public int GridCols => gridCols;
-    public int GridRows => gridRows;
-    public bool AStartsAtTop => aStartsAtTop;
 
     public class SpotDict : SyncDictionary<int, uint> { }
     public readonly SpotDict occupancy = new SpotDict();
@@ -56,26 +53,25 @@ public class BoardSpotsNet : NetworkBehaviour
         if (spots == null || spots.Count == 0)
         {
             spots = FindObjectsByType<ValidDropSpot>(FindObjectsInactive.Include, FindObjectsSortMode.None).ToList();
-        }
-
-        foreach (var s in spots)
-        {
-            if (!s) continue;
-            if (TryGetIndexFromNameOrParents(s.transform, out int idx))
-                s.spotIndex = idx;
+            spots = spots.OrderBy(s => GetHierarchyPath(s.transform)).ToList();
         }
 
         _indexToSpot.Clear();
-        int maxIdx = -1;
+        int next = 0;
         foreach (var s in spots)
         {
-            if (!s) continue;
-            if (s.spotIndex < 0) continue;
+            if (s == null) continue;
+            if (s.spotIndex < 0) s.spotIndex = next;
             _indexToSpot[s.spotIndex] = s;
-            if (!occupancy.ContainsKey(s.spotIndex))
-                occupancy[s.spotIndex] = 0;
-            if (s.spotIndex > maxIdx) maxIdx = s.spotIndex;
+            next = Mathf.Max(next, s.spotIndex + 1);
         }
+    }
+
+    static string GetHierarchyPath(Transform t)
+    {
+        var stack = new Stack<string>();
+        while (t != null) { stack.Push(t.name); t = t.parent; }
+        return string.Join("/", stack);
     }
 
     void ApplyLocalSpot(int index, uint coinNetId)
@@ -206,48 +202,18 @@ public class BoardSpotsNet : NetworkBehaviour
     {
         col = row = -1;
 
-        if (!_indexToSpot.ContainsKey(spotIndex)) return false;
+        if (!TryGetSpot(spotIndex, out var _)) return false;
         if (gridCols <= 0 || gridRows <= 0) return false;
 
-        int rowTopZero = spotIndex / gridCols;
-        int c0 = spotIndex % gridCols;
+        int rowTopDown = spotIndex / gridCols;
+        int c = spotIndex % gridCols;
+        int r = aStartsAtTop ? rowTopDown : (gridRows - 1 - rowTopDown);
 
-        int r0 = aStartsAtTop ? rowTopZero : (gridRows - 1 - rowTopZero);
+        if (c < 0 || c >= gridCols || r < 0 || r >= gridRows) return false;
 
-        if (c0 < 0 || c0 >= gridCols || r0 < 0 || r0 >= gridRows) return false;
-
-        col = c0;
-        row = r0;
+        col = c;
+        row = r;
         return true;
-    }
-
-
-    static bool TryParseSlotRowCol(string name, out int col0, out int row0)
-    {
-        var m = System.Text.RegularExpressions.Regex.Match(name, "([A-P])(\\d+)$",
-                                                        System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-        if (!m.Success) { col0 = row0 = -1; return false; }
-
-        char rowCh = char.ToUpperInvariant(m.Groups[1].Value[0]);
-        int col1 = int.Parse(m.Groups[2].Value);
-        row0 = rowCh - 'A';
-        col0 = col1 - 1;
-        return true;
-    }
-
-    bool TryGetIndexFromNameOrParents(Transform t, out int index)
-    {
-        for (var p = t; p != null; p = p.parent)
-        {
-            if (TryParseSlotRowCol(p.name, out int c0, out int r0))
-            {
-                int rowTopZero = aStartsAtTop ? r0 : (gridRows - 1 - r0);
-                index = rowTopZero * gridCols + c0;
-                return true;
-            }
-        }
-        index = -1;
-        return false;
     }
 
 }

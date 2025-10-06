@@ -5,6 +5,8 @@ public sealed class PlacingPhaseController : NetworkBehaviour
 {
     [Header("Rules")]
     [SyncVar] public bool reverseSecondCycleEnabled = true;
+    [SerializeField, Min(1)] int gridRows = 16;
+    [SerializeField] bool cardRowZeroIsBottom = true;
 
     public static PlacingPhaseController Instance { get; private set; }
     void Awake() => Instance = this;
@@ -180,24 +182,24 @@ public sealed class PlacingPhaseController : NetworkBehaviour
     }
 
     [Command(requiresAuthority = false)]
-    public void CmdSetChosenTarget(int col, int row, Color color, NetworkConnectionToClient sender = null)
+    public void CmdSetChosenTarget(int colFromCard, int rowFromCard, Color color, NetworkConnectionToClient sender = null)
     {
         if (!IsConnectionClueGiver(sender)) return;
 
-        var board = BoardSpotsNet.Instance;
-        int fixedRow = row;
-        if (board)
-        {
-            if (!board.AStartsAtTop)
-                fixedRow = board.GridRows - 1 - row;
-        }
+        int normalizedRow = cardRowZeroIsBottom
+            ? (gridRows - 1 - rowFromCard)
+            : rowFromCard;
 
-        targetCol = col;
-        targetRow = fixedRow;
+        normalizedRow = Mathf.Clamp(normalizedRow, 0, gridRows - 1);
+
+        targetCol = colFromCard;
+        targetRow = normalizedRow;
         targetColor = color;
 
-        Debug.Log($"[Scoring] Target set → col={(col + 1)}, row={RowLetters(targetRow)} color={ColorToHex(color)}");
+        Debug.Log($"[Scoring] Target set → col={(targetCol + 1)}, row={RowLetters(targetRow)} " +
+                $"(raw card row={rowFromCard}) color={ColorToHex(targetColor)}");
     }
+
 
     static string RowLetters(int idx)
     {
@@ -206,13 +208,11 @@ public sealed class PlacingPhaseController : NetworkBehaviour
         while (idx >= 0) { int r = idx % 26; s = (char)('A' + r) + s; idx = idx / 26 - 1; }
         return s;
     }
-
     static string ColorToHex(Color c)
     {
         Color32 c32 = c;
         return $"#{c32.r:X2}{c32.g:X2}{c32.b:X2}{c32.a:X2}";
     }
-
     static int CellsAwayChebyshev(int colA, int rowA, int colB, int rowB)
         => Mathf.Max(Mathf.Abs(colA - colB), Mathf.Abs(rowA - rowB));
 

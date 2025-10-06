@@ -4,13 +4,13 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class ValidDropSpot : MonoBehaviour
 {
-    [Header("Index (unique across board)")]
+    [Header("Index")]
     public int spotIndex = -1;
 
     public bool enabledForPlacement = true;
     public bool useColliderCenter = true;
 
-    [Header("Occupancy (local mirror of server state)")]
+    [Header("Occupancy")]
     public bool isOccupied = false;
     public GameObject occupant;
 
