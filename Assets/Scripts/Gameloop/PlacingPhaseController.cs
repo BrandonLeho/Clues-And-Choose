@@ -11,6 +11,13 @@ public sealed class PlacingPhaseController : NetworkBehaviour
     [Header("Scoring")]
     [SerializeField, Min(0)] int pointsAtExact = 3;
 
+    [Header("Clue Giver Proximity Scoring")]
+    [SerializeField, Min(1)] int vicinitySize = 2;
+    [SerializeField, Min(0)] int pointsPerNearbyCoinManyPlayers = 1;
+    [SerializeField, Min(0)] int pointsPerNearbyCoinFewPlayers = 2;
+    [SerializeField, Min(1)] int fewPlayersThreshold = 3;
+
+
     public static PlacingPhaseController Instance { get; private set; }
     void Awake() => Instance = this;
 
@@ -148,8 +155,6 @@ public sealed class PlacingPhaseController : NetworkBehaviour
             return;
         }
 
-        Debug.Log($"[Scoring] Target → col={(targetCol + 1)}, row={RowLetters(targetRow)} color={ColorToHex(targetColor)}");
-
         var board = BoardSpotsNet.Instance;
         if (!board)
         {
@@ -157,7 +162,16 @@ public sealed class PlacingPhaseController : NetworkBehaviour
             return;
         }
 
+        string clueGiverName = RosterStore.CurrentClueGiverName;
+        int playerCount = (RosterStore.Instance != null && RosterStore.Instance.Names != null)
+            ? RosterStore.Instance.Names.Count : 0;
+        int perNearbyCoin = (playerCount <= fewPlayersThreshold)
+            ? pointsPerNearbyCoinFewPlayers : pointsPerNearbyCoinManyPlayers;
+
         int awardedTotal = 0;
+
+        int nearbyCountForClueGiver = 0;
+
         foreach (var kv in board.occupancy)
         {
             int spotIndex = kv.Key;
@@ -168,23 +182,48 @@ public sealed class PlacingPhaseController : NetworkBehaviour
                 continue;
 
             int cellsAway = CellsAwayChebyshev(coinCol, coinRow, targetCol, targetRow);
+
             int points = Mathf.Max(0, pointsAtExact - cellsAway);
 
-            if (points > 0 && ServerTryResolvePlayerName(coinNetId, out string ownerName))
+            string ownerName = null;
+            ServerTryResolvePlayerName(coinNetId, out ownerName);
+
+            if (points > 0 && !string.IsNullOrWhiteSpace(ownerName))
             {
                 ScoreRegistry.AddScore(ownerName, points);
                 awardedTotal += points;
-                Debug.Log($"[Scoring] +{points} → {ownerName} (coin {coinNetId}) at (col={(coinCol + 1)}, row={RowLetters(coinRow)}) " +
-                        $"[{cellsAway} cell(s) away]");
+                Debug.Log($"[Scoring] +{points} → {ownerName} [{cellsAway} away]");
             }
             else
             {
-                Debug.Log($"[Scoring] Coin {coinNetId} at (col={(coinCol + 1)}, row={RowLetters(coinRow)}) → {cellsAway} cell(s) away → +0");
+                Debug.Log($"[Scoring] +0 (no falloff points) [{cellsAway} away]");
             }
+
+            if (!string.IsNullOrWhiteSpace(clueGiverName) &&
+                !string.Equals(ownerName, clueGiverName) &&
+                cellsAway < vicinitySize)
+            {
+                nearbyCountForClueGiver++;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(clueGiverName) && nearbyCountForClueGiver > 0 && perNearbyCoin > 0)
+        {
+            int clueGiverBonus = nearbyCountForClueGiver * perNearbyCoin;
+            ScoreRegistry.AddScore(clueGiverName, clueGiverBonus);
+            Debug.Log($"[Scoring] Clue-giver bonus: +{clueGiverBonus} → {clueGiverName} " +
+                    $"({nearbyCountForClueGiver} nearby coin(s) × {perNearbyCoin} each; " +
+                    $"vicinitySize={vicinitySize}, playerCount={playerCount})");
+            awardedTotal += clueGiverBonus;
+        }
+        else
+        {
+            Debug.Log($"[Scoring] Clue-giver bonus: +0 (nearby={nearbyCountForClueGiver}, perCoin={perNearbyCoin}, name set={(!string.IsNullOrWhiteSpace(clueGiverName))})");
         }
 
         Debug.Log($"[Scoring] Round total awarded: {awardedTotal} point(s).");
     }
+
 
 
     bool ServerTryResolvePlayerName(uint coinNetId, out string ownerName)

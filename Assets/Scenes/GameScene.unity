@@ -13732,7 +13732,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 56.645786
+    x: 8.834526
     y: 0
     width: 10
     height: 10
@@ -39913,6 +39913,71 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 7613232968694909624, guid: 96c2c7455eef99f46961f53ff646d8a6, type: 3}
   m_PrefabInstance: {fileID: 644962464}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &647475330
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 647475333}
+  - component: {fileID: 647475332}
+  - component: {fileID: 647475331}
+  m_Layer: 0
+  m_Name: ScoreRegistry
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &647475331
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 647475330}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b91ecbcc199f4492b9a91e820070131, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Mirror::Mirror.NetworkIdentity
+  sceneId: 1752085333
+  _assetId: 0
+  serverOnly: 0
+  visibility: 0
+  hasSpawned: 0
+--- !u!114 &647475332
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 647475330}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 209d2ea64c2577b499716623989499cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ScoreRegistryNetBridge
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+--- !u!4 &647475333
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 647475330}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &651075915
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -57728,6 +57793,13 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0
   reverseSecondCycleEnabled: 1
+  gridRows: 16
+  cardRowZeroIsBottom: 1
+  pointsAtExact: 3
+  vicinitySize: 2
+  pointsPerNearbyCoinManyPlayers: 1
+  pointsPerNearbyCoinFewPlayers: 2
+  fewPlayersThreshold: 3
 --- !u!4 &968499496
 Transform:
   m_ObjectHideFlags: 0
@@ -130410,6 +130482,9 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0
   spots: []
+  gridCols: 30
+  gridRows: 16
+  aStartsAtTop: 1
 --- !u!4 &2081750415
 Transform:
   m_ObjectHideFlags: 0
@@ -135139,3 +135214,4 @@ SceneRoots:
   - {fileID: 968499496}
   - {fileID: 1151922452}
   - {fileID: 2047605433}
+  - {fileID: 647475333}
