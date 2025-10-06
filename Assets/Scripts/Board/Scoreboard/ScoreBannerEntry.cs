@@ -36,8 +36,7 @@ public class ScoreBannerEntry : MonoBehaviour
         UnsubscribeScore();
         ScoreRegistry.OnScoreChanged += HandleScoreChanged;
 
-        if (!string.IsNullOrEmpty(ownerName) && scoreText)
-            scoreText.text = ScoreRegistry.GetScore(ownerName).ToString();
+
     }
 
     void UnsubscribeScore()

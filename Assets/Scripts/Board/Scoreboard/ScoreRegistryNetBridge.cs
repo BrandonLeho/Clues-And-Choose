@@ -1,4 +1,4 @@
-using Mirror;
+/* using Mirror;
 using UnityEngine;
 
 public class ScoreRegistryNetBridge : NetworkBehaviour
@@ -29,3 +29,4 @@ public class ScoreRegistryNetBridge : NetworkBehaviour
         ScoreRegistry.SetScore(name, newScore);
     }
 }
+ */
