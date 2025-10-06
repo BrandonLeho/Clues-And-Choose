@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 public class RandomChildPaletteColor : MonoBehaviour
 {
-    [Header("Source Palette (ScriptableObject)")]
+    [Header("Source Palette")]
     [SerializeField] private PaletteGrid palette;
 
     [Header("Search")]
@@ -27,7 +27,6 @@ public class RandomChildPaletteColor : MonoBehaviour
     [ContextMenu("Apply Random Colors + Labels Now")]
     public void ApplyRandomColorsAndLabels()
     {
-        if (palette == null) { Debug.LogWarning("[RandomChildPaletteColor] No PaletteGrid assigned."); return; }
         if (root == null) root = transform;
 
         var targets = new List<(Image img, TMP_Text label, Transform t)>();

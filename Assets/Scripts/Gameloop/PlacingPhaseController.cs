@@ -139,14 +139,14 @@ public sealed class PlacingPhaseController : NetworkBehaviour
 
         if (targetCol < 0 || targetRow < 0)
         {
-            Debug.LogWarning("[Scoring] No target set yet. Did the clue giver select a card choice?");
+            Debug.LogWarning("[Scoring] No target set. Did the clue giver select a card choice?");
             return;
         }
 
-        Debug.Log($"[Scoring] Chosen target → col={(targetCol + 1)}, row={RowLetters(targetRow)} (0-based: c={targetCol}, r={targetRow}) color={ColorToHex(targetColor)}");
+        Debug.Log($"[Scoring] Target → col={(targetCol + 1)}, row={RowLetters(targetRow)} color={ColorToHex(targetColor)}");
 
         var board = BoardSpotsNet.Instance;
-        if (board == null)
+        if (!board)
         {
             Debug.LogWarning("[Scoring] BoardSpotsNet not found.");
             return;
@@ -161,21 +161,9 @@ public sealed class PlacingPhaseController : NetworkBehaviour
             if (!board.TryGetSpotCoord(spotIndex, out int coinCol, out int coinRow))
                 continue;
 
-            int dx = Mathf.Abs(coinCol - targetCol);
-            int dy = Mathf.Abs(coinRow - targetRow);
-            int manhattan = dx + dy;
-            float euclid = Mathf.Sqrt(dx * dx + dy * dy);
+            int cellsAway = CellsAwayChebyshev(coinCol, coinRow, targetCol, targetRow);
 
-            string rowLabel = RowLetters(coinRow);
-            string ownerStr = "";
-            if (NetworkServer.spawned.TryGetValue(coinNetId, out var id))
-            {
-                uint owner = id.connectionToClient?.identity ? id.connectionToClient.identity.netId : 0u;
-                ownerStr = owner != 0 ? $" owner={owner}" : "";
-            }
-
-            Debug.Log($"[Scoring] Coin netId={coinNetId}{ownerStr} at (col={(coinCol + 1)}, row={rowLabel}) " +
-                    $"→ dx={dx}, dy={dy}, manhattan={manhattan}, euclid={euclid:0.###}");
+            Debug.Log($"[Scoring] Coin netId={coinNetId} at (col={(coinCol + 1)}, row={RowLetters(coinRow)}) → {cellsAway} cell(s) away.");
         }
     }
 
@@ -195,11 +183,20 @@ public sealed class PlacingPhaseController : NetworkBehaviour
     public void CmdSetChosenTarget(int col, int row, Color color, NetworkConnectionToClient sender = null)
     {
         if (!IsConnectionClueGiver(sender)) return;
+
+        var board = BoardSpotsNet.Instance;
+        int fixedRow = row;
+        if (board)
+        {
+            if (!board.AStartsAtTop)
+                fixedRow = board.GridRows - 1 - row;
+        }
+
         targetCol = col;
-        targetRow = row;
+        targetRow = fixedRow;
         targetColor = color;
 
-        Debug.Log($"[Scoring] Target set by clue giver → col={(col + 1)}, row={RowLetters(row)} color={ColorToHex(color)}");
+        Debug.Log($"[Scoring] Target set → col={(col + 1)}, row={RowLetters(targetRow)} color={ColorToHex(color)}");
     }
 
     static string RowLetters(int idx)
@@ -209,10 +206,14 @@ public sealed class PlacingPhaseController : NetworkBehaviour
         while (idx >= 0) { int r = idx % 26; s = (char)('A' + r) + s; idx = idx / 26 - 1; }
         return s;
     }
+
     static string ColorToHex(Color c)
     {
         Color32 c32 = c;
         return $"#{c32.r:X2}{c32.g:X2}{c32.b:X2}{c32.a:X2}";
     }
+
+    static int CellsAwayChebyshev(int colA, int rowA, int colB, int rowB)
+        => Mathf.Max(Mathf.Abs(colA - colB), Mathf.Abs(rowA - rowB));
 
 }

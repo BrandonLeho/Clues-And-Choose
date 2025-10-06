@@ -10,6 +10,15 @@ public class BoardSpotsNet : NetworkBehaviour
     [Header("Assign OR leave empty to auto-collect at runtime")]
     [SerializeField] List<ValidDropSpot> spots = new List<ValidDropSpot>();
 
+    [Header("Grid mapping for coords")]
+    [SerializeField, Min(1)] int gridCols = 30;
+    [SerializeField, Min(1)] int gridRows = 16;
+    [SerializeField] bool aStartsAtTop = true;
+
+    public int GridCols => gridCols;
+    public int GridRows => gridRows;
+    public bool AStartsAtTop => aStartsAtTop;
+
     public class SpotDict : SyncDictionary<int, uint> { }
     public readonly SpotDict occupancy = new SpotDict();
 
@@ -47,25 +56,26 @@ public class BoardSpotsNet : NetworkBehaviour
         if (spots == null || spots.Count == 0)
         {
             spots = FindObjectsByType<ValidDropSpot>(FindObjectsInactive.Include, FindObjectsSortMode.None).ToList();
-            spots = spots.OrderBy(s => GetHierarchyPath(s.transform)).ToList();
+        }
+
+        foreach (var s in spots)
+        {
+            if (!s) continue;
+            if (TryGetIndexFromNameOrParents(s.transform, out int idx))
+                s.spotIndex = idx;
         }
 
         _indexToSpot.Clear();
-        int next = 0;
+        int maxIdx = -1;
         foreach (var s in spots)
         {
-            if (s == null) continue;
-            if (s.spotIndex < 0) s.spotIndex = next;
+            if (!s) continue;
+            if (s.spotIndex < 0) continue;
             _indexToSpot[s.spotIndex] = s;
-            next = Mathf.Max(next, s.spotIndex + 1);
+            if (!occupancy.ContainsKey(s.spotIndex))
+                occupancy[s.spotIndex] = 0;
+            if (s.spotIndex > maxIdx) maxIdx = s.spotIndex;
         }
-    }
-
-    static string GetHierarchyPath(Transform t)
-    {
-        var stack = new Stack<string>();
-        while (t != null) { stack.Push(t.name); t = t.parent; }
-        return string.Join("/", stack);
     }
 
     void ApplyLocalSpot(int index, uint coinNetId)
@@ -195,15 +205,49 @@ public class BoardSpotsNet : NetworkBehaviour
     public bool TryGetSpotCoord(int spotIndex, out int col, out int row)
     {
         col = row = -1;
-        if (!TryGetSpot(spotIndex, out var spot) || spot == null) return false;
 
-        var coord = spot.GetComponent<ChoiceGridCoord>()
-                    ?? spot.GetComponentInChildren<ChoiceGridCoord>(true)
-                    ?? spot.GetComponentInParent<ChoiceGridCoord>();
-        if (coord == null) return false;
+        if (!_indexToSpot.ContainsKey(spotIndex)) return false;
+        if (gridCols <= 0 || gridRows <= 0) return false;
 
-        col = coord.col;
-        row = coord.row;
+        int rowTopZero = spotIndex / gridCols;
+        int c0 = spotIndex % gridCols;
+
+        int r0 = aStartsAtTop ? rowTopZero : (gridRows - 1 - rowTopZero);
+
+        if (c0 < 0 || c0 >= gridCols || r0 < 0 || r0 >= gridRows) return false;
+
+        col = c0;
+        row = r0;
         return true;
     }
+
+
+    static bool TryParseSlotRowCol(string name, out int col0, out int row0)
+    {
+        var m = System.Text.RegularExpressions.Regex.Match(name, "([A-P])(\\d+)$",
+                                                        System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        if (!m.Success) { col0 = row0 = -1; return false; }
+
+        char rowCh = char.ToUpperInvariant(m.Groups[1].Value[0]);
+        int col1 = int.Parse(m.Groups[2].Value);
+        row0 = rowCh - 'A';
+        col0 = col1 - 1;
+        return true;
+    }
+
+    bool TryGetIndexFromNameOrParents(Transform t, out int index)
+    {
+        for (var p = t; p != null; p = p.parent)
+        {
+            if (TryParseSlotRowCol(p.name, out int c0, out int r0))
+            {
+                int rowTopZero = aStartsAtTop ? r0 : (gridRows - 1 - r0);
+                index = rowTopZero * gridCols + c0;
+                return true;
+            }
+        }
+        index = -1;
+        return false;
+    }
+
 }
