@@ -35,6 +35,9 @@ public sealed class TurnNotification : MonoBehaviour
     Canvas _canvas;
     Coroutine _animCR;
 
+    int _cycleIndex = -1;
+    bool _awaitingCycleStart = true;
+
     void Reset()
     {
         root = GetComponent<RectTransform>();
@@ -56,6 +59,9 @@ public sealed class TurnNotification : MonoBehaviour
     void OnEnable()
     {
         CoinPlacementTurnManager.OnPlacerChangedClient += HandlePlacerChanged;
+
+        _awaitingCycleStart = true;
+        _cycleIndex = -1;
     }
 
     void OnDisable()
@@ -63,15 +69,25 @@ public sealed class TurnNotification : MonoBehaviour
         CoinPlacementTurnManager.OnPlacerChangedClient -= HandlePlacerChanged;
     }
 
+
     public void SetFromRight(bool value) => fromRight = value;
 
     void HandlePlacerChanged(uint placerNetId)
     {
         if (placerNetId == 0)
         {
+            _awaitingCycleStart = true;
             StopAnimIfAny();
             SetInstantHidden();
             return;
+        }
+
+        if (_awaitingCycleStart)
+        {
+            _cycleIndex += 1;
+            _awaitingCycleStart = false;
+
+            fromRight = _cycleIndex >= 1;
         }
 
         if (!showForEveryone && !CoinPlacementTurnManager.IsLocalPlayersTurn())
@@ -81,19 +97,9 @@ public sealed class TurnNotification : MonoBehaviour
             return;
         }
 
-        string display = BuildDisplayString(placerNetId);
+        string display = $"{ResolvePlayerNameClient(placerNetId) ?? $"Player {placerNetId}"}'s Turn";
+
         ShowTurn(display);
-    }
-
-    string BuildDisplayString(uint placerNetId)
-    {
-        if (CoinPlacementTurnManager.IsLocalPlayersTurn())
-            return "Your Turn!";
-
-        string name = ResolvePlayerNameClient(placerNetId);
-        if (string.IsNullOrWhiteSpace(name))
-            name = $"Player {placerNetId}";
-        return $"{name}'s Turn";
     }
 
     string ResolvePlayerNameClient(uint netId)
@@ -226,4 +232,11 @@ public sealed class TurnNotification : MonoBehaviour
         float halfSelf = root ? Mathf.Abs(root.rect.width) * 0.5f : 200f;
         return dir * (halfCanvas + halfSelf + edgeMargin);
     }
+
+    public void ResetCycle()
+    {
+        _cycleIndex = -1;
+        _awaitingCycleStart = true;
+    }
+
 }
