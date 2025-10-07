@@ -35,9 +35,6 @@ public sealed class TurnNotification : MonoBehaviour
     Canvas _canvas;
     Coroutine _animCR;
 
-    int _cycleIndex = -1;
-    bool _awaitingCycleStart = true;
-
     void Reset()
     {
         root = GetComponent<RectTransform>();
@@ -59,16 +56,14 @@ public sealed class TurnNotification : MonoBehaviour
     void OnEnable()
     {
         CoinPlacementTurnManager.OnPlacerChangedClient += HandlePlacerChanged;
-
-        _awaitingCycleStart = true;
-        _cycleIndex = -1;
+        PlacingPhaseController.OnClientCycleStarted += HandleCycleStarted;
     }
 
     void OnDisable()
     {
         CoinPlacementTurnManager.OnPlacerChangedClient -= HandlePlacerChanged;
+        PlacingPhaseController.OnClientCycleStarted -= HandleCycleStarted;
     }
-
 
     public void SetFromRight(bool value) => fromRight = value;
 
@@ -76,18 +71,9 @@ public sealed class TurnNotification : MonoBehaviour
     {
         if (placerNetId == 0)
         {
-            _awaitingCycleStart = true;
             StopAnimIfAny();
             SetInstantHidden();
             return;
-        }
-
-        if (_awaitingCycleStart)
-        {
-            _cycleIndex += 1;
-            _awaitingCycleStart = false;
-
-            fromRight = _cycleIndex >= 1;
         }
 
         if (!showForEveryone && !CoinPlacementTurnManager.IsLocalPlayersTurn())
@@ -97,9 +83,16 @@ public sealed class TurnNotification : MonoBehaviour
             return;
         }
 
-        string display = $"{ResolvePlayerNameClient(placerNetId) ?? $"Player {placerNetId}"}'s Turn";
-
+        string display = BuildDisplayString(placerNetId);
         ShowTurn(display);
+    }
+
+    string BuildDisplayString(uint placerNetId)
+    {
+        string name = ResolvePlayerNameClient(placerNetId);
+        if (string.IsNullOrWhiteSpace(name))
+            name = $"Player {placerNetId}";
+        return $"{name}'s Turn";
     }
 
     string ResolvePlayerNameClient(uint netId)
@@ -233,10 +226,8 @@ public sealed class TurnNotification : MonoBehaviour
         return dir * (halfCanvas + halfSelf + edgeMargin);
     }
 
-    public void ResetCycle()
+    void HandleCycleStarted(bool reversed)
     {
-        _cycleIndex = -1;
-        _awaitingCycleStart = true;
+        SetFromRight(reversed);
     }
-
 }

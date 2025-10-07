@@ -13733,7 +13733,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 6.792457
+    x: 1.1239855
     y: 0
     width: 10
     height: 10
@@ -48803,7 +48803,7 @@ MonoBehaviour:
   driftDuration: 0.75
   enterSpeed: 14000
   driftSpeedFactor: 0.15
-  edgeMargin: 80
+  edgeMargin: 0
   centerX: 0
   textCenterOffset: 0
   showForEveryone: 1
