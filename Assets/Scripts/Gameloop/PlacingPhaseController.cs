@@ -228,62 +228,37 @@ public sealed class PlacingPhaseController : NetworkBehaviour
     {
         ownerName = null;
 
-        if (!NetworkServer.spawned.TryGetValue(coinNetId, out var coinIdentity) || coinIdentity == null)
+        if (!NetworkServer.spawned.TryGetValue(coinNetId, out var coinIdentity) || !coinIdentity)
             return false;
 
         var coinGO = coinIdentity.gameObject;
-
         var coin = coinGO.GetComponent<NetworkCoin>();
-        if (coin && coin.ownerNetId != 0)
+        if (!coin || coin.ownerNetId == 0)
         {
-            if (NetworkServer.spawned.TryGetValue(coin.ownerNetId, out var ownerIdentity) && ownerIdentity != null)
-            {
-                var ownerGO = ownerIdentity.gameObject;
-                var goName = ownerGO.name;
-                if (!string.IsNullOrWhiteSpace(goName))
-                {
-                    ownerName = goName;
-                    return true;
-                }
-
-
-                var comp2 = ownerGO.GetComponent("RegistryNameProvider");
-                if (comp2 != null)
-                {
-                    var prop = comp2.GetType().GetProperty("PlayerName");
-                    if (prop != null)
-                    {
-                        var v = prop.GetValue(comp2) as string;
-                        if (!string.IsNullOrWhiteSpace(v)) { ownerName = v; return true; }
-                    }
-                }
-
-                Transform t = ownerGO.transform;
-                for (int i = 0; i < 4 && t != null; i++, t = t.parent)
-                {
-                    var comps = t.GetComponents<Component>();
-                    foreach (var c in comps)
-                    {
-                        if (!c) continue;
-                        var ty = c.GetType();
-                        var f = ty.GetField("ownerName") ?? ty.GetField("playerName");
-                        if (f != null)
-                        {
-                            var v = f.GetValue(c) as string;
-                            if (!string.IsNullOrWhiteSpace(v)) { ownerName = v; return true; }
-                        }
-                        var p = ty.GetProperty("OwnerName") ?? ty.GetProperty("PlayerName");
-                        if (p != null)
-                        {
-                            var v = p.GetValue(c) as string;
-                            if (!string.IsNullOrWhiteSpace(v)) { ownerName = v; return true; }
-                        }
-                    }
-                }
-            }
+            ownerName = coinGO.name;
+            return !string.IsNullOrWhiteSpace(ownerName);
         }
 
-        ownerName = coinGO.name;
+        if (!NetworkServer.spawned.TryGetValue(coin.ownerNetId, out var ownerIdentity) || !ownerIdentity)
+            return false;
+
+        var ownerGO = ownerIdentity.gameObject;
+
+        var pns = ownerGO.GetComponent<PlayerNameSync>();
+        if (pns != null && !string.IsNullOrWhiteSpace(pns.DisplayName))
+        {
+            ownerName = pns.DisplayName.Trim();
+            return true;
+        }
+
+        var chat = ownerGO.GetComponent<NetworkChat>();
+        if (chat != null && !string.IsNullOrWhiteSpace(chat.DisplayName))
+        {
+            ownerName = chat.DisplayName.Trim();
+            return true;
+        }
+
+        ownerName = ownerGO.name;
         return !string.IsNullOrWhiteSpace(ownerName);
     }
 
