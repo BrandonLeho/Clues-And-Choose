@@ -1,4 +1,3 @@
-// SelectionController.cs  (additions)
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
@@ -22,7 +21,6 @@ public class SelectionController : MonoBehaviour
     public UnityEvent onCancelLockRequested = new UnityEvent();
 
     [Header("Multiplayer")]
-    [Tooltip("When true, Confirm only requests a lock from server; actual lock is applied from network callbacks.")]
     public bool networkAuthoritative = true;
 
     ColorSwatch _current;

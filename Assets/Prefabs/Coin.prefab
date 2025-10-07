@@ -182,7 +182,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NetworkCoin
   syncDirection: 1
   syncMode: 0
-  syncInterval: 0
+  syncInterval: 0.05
   ownerNetId: 0
   netColor:
     serializedVersion: 2
@@ -321,7 +321,6 @@ MonoBehaviour:
   ringStartAlpha: 0.01
   colorGridName: ColorGridMask
   autoAddRectMask2DIfMissing: 0
-  landingTriggerDistance: 1
   scaleTarget: {fileID: 6774418222398975553}
   pinDuringSquash: 1
   forceFinalSnapAfterSquash: 1

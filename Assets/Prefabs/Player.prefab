@@ -199,7 +199,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Mirror.Components::Mirror.NetworkTransformReliable
   syncDirection: 1
   syncMode: 0
-  syncInterval: 0
+  syncInterval: 0.05
   target: {fileID: 8557248352407098068}
   syncPosition: 1
   syncRotation: 1
@@ -233,7 +233,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NetworkChat
   syncDirection: 0
   syncMode: 0
-  syncInterval: 0
+  syncInterval: 0.1
   DisplayName: 
 --- !u!114 &7321503784007075703
 MonoBehaviour:
@@ -265,7 +265,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerNameSync
   syncDirection: 0
   syncMode: 0
-  syncInterval: 0
+  syncInterval: 0.1
   DisplayName: 
 --- !u!114 &4236259784190010632
 MonoBehaviour:
@@ -296,5 +296,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerChoiceNotifier
   syncDirection: 0
   syncMode: 0
-  syncInterval: 0
+  syncInterval: 0.1
   isClueGiver: 1

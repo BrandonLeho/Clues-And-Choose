@@ -189,7 +189,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerLobbyHandler
   syncDirection: 0
   syncMode: 0
-  syncInterval: 0
+  syncInterval: 0.1
   isReady: 0
   readyButton: {fileID: 8370912422005383900}
   nameText: {fileID: 8689178799550972272}

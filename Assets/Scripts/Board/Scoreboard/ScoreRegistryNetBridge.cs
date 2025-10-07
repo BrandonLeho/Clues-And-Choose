@@ -1,3 +1,4 @@
+using UnityEngine;
 using Mirror;
 
 public class ScoreRegistryNetBridge : NetworkBehaviour
@@ -16,7 +17,7 @@ public class ScoreRegistryNetBridge : NetworkBehaviour
     void HandleServerScoreChanged(string name, int newScore)
     {
         if (ScoreRegistry.IsNetworkApplying) return;
-
+        Debug.Log("Player [" + name + "] is awarded: " + newScore + " points");
         RpcPushScore(name, newScore);
     }
 
