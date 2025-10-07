@@ -31,25 +31,32 @@ public class BannerGlowController : MonoBehaviour
 
     Material _topMat;
     Material _outlineMat;
+    bool _ownsTop;
+    bool _ownsOutline;
 
     void Awake()
     {
-        CacheMats();
+        EnsureInstanceMaterials();
         MakeBackgroundTransparent();
         ApplyAll();
     }
 
     void OnEnable()
     {
-        CacheMats();
+        EnsureInstanceMaterials();
         MakeBackgroundTransparent();
         ApplyAll();
     }
 
     void OnValidate()
     {
-        CacheMats();
+        EnsureInstanceMaterials();
         ApplyAll();
+    }
+
+    void OnDestroy()
+    {
+        ReleaseInstanceMaterials();
     }
 
     void Update()
@@ -60,10 +67,80 @@ public class BannerGlowController : MonoBehaviour
 #endif
     }
 
-    void CacheMats()
+    void EnsureInstanceMaterials()
     {
-        _topMat = topLightImage ? topLightImage.material : null;
-        _outlineMat = outlineGlowImage ? outlineGlowImage.material : null;
+        if (topLightImage)
+        {
+            var src = topLightImage.material;
+            if (!_ownsTop || _topMat == null || _topMat.shader != (src ? src.shader : null))
+            {
+                Release(ref _topMat, ref _ownsTop);
+                if (src != null)
+                {
+                    _topMat = new Material(src) { name = src.name + " (BannerInst)" };
+                    _ownsTop = true;
+                    topLightImage.material = _topMat;
+                }
+                else
+                {
+                    _topMat = null;
+                    _ownsTop = false;
+                }
+            }
+            else
+            {
+                _topMat = topLightImage.material;
+            }
+        }
+        else
+        {
+            Release(ref _topMat, ref _ownsTop);
+        }
+
+        if (outlineGlowImage)
+        {
+            var src = outlineGlowImage.material;
+            if (!_ownsOutline || _outlineMat == null || _outlineMat.shader != (src ? src.shader : null))
+            {
+                Release(ref _outlineMat, ref _ownsOutline);
+                if (src != null)
+                {
+                    _outlineMat = new Material(src) { name = src.name + " (BannerInst)" };
+                    _ownsOutline = true;
+                    outlineGlowImage.material = _outlineMat;
+                }
+                else
+                {
+                    _outlineMat = null;
+                    _ownsOutline = false;
+                }
+            }
+            else
+            {
+                _outlineMat = outlineGlowImage.material;
+            }
+        }
+        else
+        {
+            Release(ref _outlineMat, ref _ownsOutline);
+        }
+    }
+
+    void ReleaseInstanceMaterials()
+    {
+        Release(ref _topMat, ref _ownsTop);
+        Release(ref _outlineMat, ref _ownsOutline);
+    }
+
+    static void Release(ref Material m, ref bool owned)
+    {
+        if (owned && m != null)
+        {
+            if (Application.isPlaying) Destroy(m);
+            else DestroyImmediate(m);
+        }
+        m = null;
+        owned = false;
     }
 
     void MakeBackgroundTransparent()
