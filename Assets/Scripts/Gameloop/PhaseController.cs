@@ -219,7 +219,10 @@ public sealed class PhaseController : NetworkBehaviour
         }
 
         Debug.Log($"[Scoring] Round total awarded: {awardedTotal} point(s).");
-        RpcPostScoringSlideOut();
+
+        var cgConn = GetClueGiverConnection();
+        if (cgConn != null)
+            TargetClueGiverSlideOutCardAndRespawn(cgConn);
 
         if (RoundManager.Instance)
             RoundManager.Instance.ServerAdvanceRound();
@@ -264,6 +267,12 @@ public sealed class PhaseController : NetworkBehaviour
         return !string.IsNullOrWhiteSpace(ownerName);
     }
 
+    [TargetRpc]
+    void TargetClueGiverSlideOutCardAndRespawn(NetworkConnection target)
+    {
+        var anim = FindFirstObjectByType<CardStackFlyInAnimator>();
+        if (anim) anim.PlaySlideOutAndRespawn();
+    }
 
     // Just in case I want to change the reverse order during runtime
     public void CmdSetReverseSecondCycle(bool value)
@@ -311,14 +320,5 @@ public sealed class PhaseController : NetworkBehaviour
     }
     static int CellsAwayChebyshev(int colA, int rowA, int colB, int rowB)
         => Mathf.Max(Mathf.Abs(colA - colB), Mathf.Abs(rowA - rowB));
-
-    [ClientRpc]
-    void RpcPostScoringSlideOut()
-    {
-        var anim = FindFirstObjectByType<CardStackFlyInAnimator>();
-        if (!anim) return;
-
-        anim.SlideTopCardOutAndRespawn();
-    }
 
 }
