@@ -169,7 +169,6 @@ public sealed class PlacingPhaseController : NetworkBehaviour
             ? pointsPerNearbyCoinFewPlayers : pointsPerNearbyCoinManyPlayers;
 
         int awardedTotal = 0;
-
         int nearbyCountForClueGiver = 0;
 
         foreach (var kv in board.occupancy)
@@ -182,7 +181,6 @@ public sealed class PlacingPhaseController : NetworkBehaviour
                 continue;
 
             int cellsAway = CellsAwayChebyshev(coinCol, coinRow, targetCol, targetRow);
-
             int points = Mathf.Max(0, pointsAtExact - cellsAway);
 
             string ownerName = null;
@@ -222,7 +220,11 @@ public sealed class PlacingPhaseController : NetworkBehaviour
         }
 
         Debug.Log($"[Scoring] Round total awarded: {awardedTotal} point(s).");
+
+        if (RoundManager.Instance)
+            RoundManager.Instance.ServerAdvanceRound();
     }
+
 
     bool ServerTryResolvePlayerName(uint coinNetId, out string ownerName)
     {
