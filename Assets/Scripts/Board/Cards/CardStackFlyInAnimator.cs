@@ -29,6 +29,7 @@ public class CardStackFlyInAnimator : MonoBehaviour
     [Min(1f)][SerializeField] float slideOutPixelsPerSecond = 1600f;
     [Min(0f)][SerializeField] float slideOutDistanceExtra = 250f;
     [Range(0, 1)][SerializeField] float slideOutEndAlpha = 0f;
+    [SerializeField] bool slideOutUsesLocalLeft = true;
 
     [Header("Appearance")]
     [SerializeField] float startRotationZ = 20f;
@@ -255,7 +256,17 @@ public class CardStackFlyInAnimator : MonoBehaviour
         if (!parent) parent = stackAnchor;
 
         Vector2 endPos = stackAnchor.anchoredPosition;
-        Vector2 dirOut = DirFromAngle(incomingAngleDeg).normalized;
+
+        Vector2 dirOut;
+        if (slideOutUsesLocalLeft)
+        {
+            dirOut = LocalLeftInParentSpace(card, parent);
+        }
+        else
+        {
+            dirOut = -DirFromAngle(incomingAngleDeg).normalized;
+        }
+
         Vector2 normal = new Vector2(-dirOut.y, dirOut.x);
 
         float dist = parent.rect.width + parent.rect.height + slideOutDistanceExtra;
@@ -287,4 +298,14 @@ public class CardStackFlyInAnimator : MonoBehaviour
 
         _run = null;
     }
+
+    Vector2 LocalLeftInParentSpace(RectTransform child, RectTransform parent)
+    {
+        Vector3 worldLeft = child.TransformDirection(Vector3.left);
+        Vector3 parentDir = parent.InverseTransformDirection(worldLeft);
+        Vector2 d = new Vector2(parentDir.x, parentDir.y);
+        if (d.sqrMagnitude < 0.000001f) d = Vector2.left;
+        return d.normalized;
+    }
+
 }
