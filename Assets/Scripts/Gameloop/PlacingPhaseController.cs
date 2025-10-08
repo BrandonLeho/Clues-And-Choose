@@ -47,6 +47,7 @@ public sealed class PlacingPhaseController : NetworkBehaviour
             CoinPlacementTurnManager.Instance.ServerBeginCycleAtFirst(false);
 
         RpcAnnounceCycleStart(false);
+        CoinPlacementTurnManager.Instance.ServerBeginCycleAtFirst(false);
         RpcEnablePerTurnLocks();
     }
 
@@ -88,6 +89,7 @@ public sealed class PlacingPhaseController : NetworkBehaviour
                 CoinPlacementTurnManager.Instance.ServerBeginCycleAtFirst(reverseSecondCycleEnabled);
 
             RpcAnnounceCycleStart(reverseSecondCycleEnabled);
+            CoinPlacementTurnManager.Instance.ServerBeginCycleAtFirst(reverseSecondCycleEnabled);
             RpcEnablePerTurnLocks();
         }
     }
@@ -317,6 +319,5 @@ public sealed class PlacingPhaseController : NetworkBehaviour
     void RpcAnnounceCycleStart(bool reversed)
     {
         OnClientCycleStarted?.Invoke(reversed);
-        Debug.Log($"[Phase] Cycle started (reversed={reversed})");
     }
 }

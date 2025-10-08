@@ -34,6 +34,7 @@ public sealed class TurnNotification : MonoBehaviour
 
     Canvas _canvas;
     Coroutine _animCR;
+    bool _sawCycleEvent = false;
 
     void Reset()
     {
@@ -57,6 +58,12 @@ public sealed class TurnNotification : MonoBehaviour
     {
         CoinPlacementTurnManager.OnPlacerChangedClient += HandlePlacerChanged;
         PlacingPhaseController.OnClientCycleStarted += HandleCycleStarted;
+
+        if (CoinPlacementTurnManager.Instance)
+        {
+            if (!_sawCycleEvent) SetFromRight(false);
+            HandlePlacerChanged(CoinPlacementTurnManager.Instance.currentPlacerNetId);
+        }
     }
 
     void OnDisable()
@@ -69,6 +76,8 @@ public sealed class TurnNotification : MonoBehaviour
 
     void HandlePlacerChanged(uint placerNetId)
     {
+        if (!_sawCycleEvent) SetFromRight(false);
+
         if (placerNetId == 0)
         {
             StopAnimIfAny();
@@ -228,6 +237,7 @@ public sealed class TurnNotification : MonoBehaviour
 
     void HandleCycleStarted(bool reversed)
     {
+        _sawCycleEvent = true;
         SetFromRight(reversed);
     }
 }
