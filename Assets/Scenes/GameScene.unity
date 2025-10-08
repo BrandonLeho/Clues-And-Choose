@@ -7150,9 +7150,14 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  slideOutPixelsPerSecond: 1600
-  slideOutDistance: 800
-  slideOutEase:
+  slideOutPixelsPerSecond: 3000
+  slideOutDistanceExtra: 700
+  slideOutEndAlpha: 1
+  slideOutUsesLocalLeft: 1
+  slideOutTiltDeg: -12
+  tiltBlend: 1
+  tiltOverDuration: 1
+  slideOutEaseCurve:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
@@ -7189,7 +7194,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 120796078}
         m_TargetAssemblyTypeName: CardHover, Assembly-CSharp
-        m_MethodName: LockHover
+        m_MethodName: LockHoverKeepPose
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -13759,7 +13764,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 53.125103
+    x: 3.1065638
     y: 0
     width: 10
     height: 10

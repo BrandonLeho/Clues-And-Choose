@@ -30,6 +30,12 @@ public class CardStackFlyInAnimator : MonoBehaviour
     [Min(0f)][SerializeField] float slideOutDistanceExtra = 250f;
     [Range(0, 1)][SerializeField] float slideOutEndAlpha = 0f;
     [SerializeField] bool slideOutUsesLocalLeft = true;
+    [SerializeField] float slideOutTiltDeg = -12f;
+    [Range(0f, 1f)][SerializeField] float tiltBlend = 1f;
+    [SerializeField] bool tiltOverDuration = true;
+    [SerializeField] AnimationCurve slideOutEaseCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+    [SerializeField] int respawnSiblingIndex = 1;
+
 
     [Header("Appearance")]
     [SerializeField] float startRotationZ = 20f;
@@ -238,7 +244,7 @@ public class CardStackFlyInAnimator : MonoBehaviour
 
     IEnumerator Co_SlideOutAndRespawn()
     {
-        if (_landed.Count == 0 || !stackAnchor)
+        if (_landed == null || _landed.Count == 0 || !stackAnchor)
         {
             _run = null;
             yield break;
@@ -252,52 +258,63 @@ public class CardStackFlyInAnimator : MonoBehaviour
             yield break;
         }
 
-        var parent = spawnParent ? spawnParent : stackAnchor.parent as RectTransform;
+        var parent = spawnParent ? spawnParent : (stackAnchor.parent as RectTransform);
         if (!parent) parent = stackAnchor;
 
         Vector2 endPos = stackAnchor.anchoredPosition;
-
-        Vector2 dirOut;
-        if (slideOutUsesLocalLeft)
-        {
-            dirOut = LocalLeftInParentSpace(card, parent);
-        }
-        else
-        {
-            dirOut = -DirFromAngle(incomingAngleDeg).normalized;
-        }
-
-        Vector2 normal = new Vector2(-dirOut.y, dirOut.x);
+        Vector2 dirOut = slideOutUsesLocalLeft ? LocalLeftInParentSpace(card, parent) : Vector2.left;
 
         float dist = parent.rect.width + parent.rect.height + slideOutDistanceExtra;
         Vector2 target = endPos + dirOut * dist;
 
-        float length = dist;
-        float dur = Mathf.Max(0.0001f, length / Mathf.Max(1f, slideOutPixelsPerSecond));
+        float dur = Mathf.Max(0.0001f, dist / Mathf.Max(1f, slideOutPixelsPerSecond));
+
+        float startZ = card.localEulerAngles.z;
+        float targetZ = Mathf.LerpAngle(startZ, slideOutTiltDeg, Mathf.Clamp01(tiltBlend));
 
         float t = 0f;
         while (t < 1f)
         {
             t += Delta() / dur;
-            float u = easeCurve.Evaluate(Mathf.Clamp01(t));
+            float rawU = Mathf.Clamp01(t);
+            float u = slideOutEaseCurve.Evaluate(rawU);
 
             card.anchoredPosition = Vector2.Lerp(endPos, target, u);
 
-            float al = Mathf.Lerp(endAlpha, slideOutEndAlpha, u);
-            SetAlphaRecursive(card, al);
+            float a = Mathf.Lerp(endAlpha, slideOutEndAlpha, u);
+            SetAlphaRecursive(card, a);
+
+            float z = tiltOverDuration ? Mathf.LerpAngle(startZ, targetZ, u) : targetZ;
+            card.localRotation = Quaternion.Euler(0f, 0f, z);
 
             yield return null;
         }
 
         if (card) Destroy(card.gameObject);
 
-        Vector2 start = endPos + dirOut * dist;
-        Vector2 control = Vector2.Lerp(start, endPos, 0.5f) + normal * arcHeight;
+        RectTransform newCard = Instantiate(cardPrefab, parent);
 
-        yield return Co_SpawnAndFly(parent, start, control, endPos, null);
+        if (!newCard.gameObject.activeSelf)
+            newCard.gameObject.SetActive(true);
 
+        newCard.anchorMin = stackAnchor.anchorMin;
+        newCard.anchorMax = stackAnchor.anchorMax;
+        newCard.pivot = stackAnchor.pivot;
+        newCard.anchoredPosition = stackAnchor.anchoredPosition;
+        newCard.localRotation = stackAnchor.localRotation;
+        newCard.localScale = stackAnchor.localScale;
+
+        int desired = Mathf.Clamp(respawnSiblingIndex, 0, Mathf.Max(0, parent.childCount - 1));
+        newCard.SetSiblingIndex(desired);
+
+        SetAlphaRecursive(newCard, endAlpha);
+
+        if (_landed != null) _landed.Add(newCard);
+
+        OnSequenceFinished.Invoke();
         _run = null;
     }
+
 
     Vector2 LocalLeftInParentSpace(RectTransform child, RectTransform parent)
     {
@@ -307,5 +324,4 @@ public class CardStackFlyInAnimator : MonoBehaviour
         if (d.sqrMagnitude < 0.000001f) d = Vector2.left;
         return d.normalized;
     }
-
 }

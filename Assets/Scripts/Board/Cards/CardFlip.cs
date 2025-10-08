@@ -27,7 +27,7 @@ public class CardFlip : MonoBehaviour
     Quaternion _baseRot;
     Vector3 _baseScale;
 
-    FrontCardHover3D frontHover;
+    FrontCardHoverTilt frontHover;
 
     public RectTransform CurrentFlipCenter => _flipRig;
 
@@ -36,7 +36,7 @@ public class CardFlip : MonoBehaviour
     void Awake()
     {
         if (!stackParent) stackParent = transform as RectTransform;
-        frontHover = GetComponent<FrontCardHover3D>();
+        frontHover = GetComponent<FrontCardHoverTilt>();
     }
 
     public void FlipTopCard()

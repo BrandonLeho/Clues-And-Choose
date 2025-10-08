@@ -1,9 +1,9 @@
 using UnityEngine;
 
 [DisallowMultipleComponent]
-public class FrontCardHover3D : MonoBehaviour
+public class FrontCardHoverTilt : MonoBehaviour
 {
-    [Header("Targets (auto if left blank)")]
+    [Header("Targets")]
     public RectTransform flipCenter;
     public Canvas worldCanvas;
 
