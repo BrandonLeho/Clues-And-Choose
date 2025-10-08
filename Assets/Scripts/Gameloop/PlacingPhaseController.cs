@@ -26,7 +26,6 @@ public sealed class PlacingPhaseController : NetworkBehaviour
     [SyncVar] int targetRow = -1;
     [SyncVar] Color targetColor = Color.white;
 
-    public static event System.Action<bool> OnClientCycleStarted;
 
     public override void OnStartServer()
     {
@@ -46,8 +45,6 @@ public sealed class PlacingPhaseController : NetworkBehaviour
         if (CoinPlacementTurnManager.Instance)
             CoinPlacementTurnManager.Instance.ServerBeginCycleAtFirst(false);
 
-        RpcAnnounceCycleStart(false);
-        CoinPlacementTurnManager.Instance.ServerBeginCycleAtFirst(false);
         RpcEnablePerTurnLocks();
     }
 
@@ -88,8 +85,6 @@ public sealed class PlacingPhaseController : NetworkBehaviour
             if (CoinPlacementTurnManager.Instance)
                 CoinPlacementTurnManager.Instance.ServerBeginCycleAtFirst(reverseSecondCycleEnabled);
 
-            RpcAnnounceCycleStart(reverseSecondCycleEnabled);
-            CoinPlacementTurnManager.Instance.ServerBeginCycleAtFirst(reverseSecondCycleEnabled);
             RpcEnablePerTurnLocks();
         }
     }
@@ -315,9 +310,4 @@ public sealed class PlacingPhaseController : NetworkBehaviour
     static int CellsAwayChebyshev(int colA, int rowA, int colB, int rowB)
         => Mathf.Max(Mathf.Abs(colA - colB), Mathf.Abs(rowA - rowB));
 
-    [ClientRpc]
-    void RpcAnnounceCycleStart(bool reversed)
-    {
-        OnClientCycleStarted?.Invoke(reversed);
-    }
 }
