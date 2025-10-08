@@ -190,7 +190,7 @@ public class CardChoiceSelectController : MonoBehaviour
 
         var payload = new ChoicePayload { col = col, row = row, color = color, label = "" };
         onChoiceSelected?.Invoke(payload);
-        var phase = PlacingPhaseController.Instance;
+        var phase = PhaseController.Instance;
         if (phase) phase.CmdSetChosenTarget(col, row, color);
 
         if (disableFurtherInputOnSelect)

@@ -25,6 +25,11 @@ public class CardStackFlyInAnimator : MonoBehaviour
     [Min(0f)][SerializeField] float arcHeight = 60f;
     [SerializeField] AnimationCurve easeCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
+    [Header("Slide-Out")]
+    [Min(1f)][SerializeField] float slideOutPixelsPerSecond = 1600f;
+    [Min(0f)][SerializeField] float slideOutDistance = 800f;
+    [SerializeField] AnimationCurve slideOutEase = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
     [Header("Appearance")]
     [SerializeField] float startRotationZ = 20f;
     [SerializeField] float endRotationZ = 0f;
@@ -223,4 +228,70 @@ public class CardStackFlyInAnimator : MonoBehaviour
             graphics[i].color = col;
         }
     }
+
+    public void SlideTopCardOutAndRespawn()
+    {
+        if (_landed.Count == 0) return;
+
+        var card = _landed[_landed.Count - 1];
+        if (!card) { _landed.RemoveAt(_landed.Count - 1); return; }
+
+        Vector2 dirOut = DirFromAngle(incomingAngleDeg).normalized;
+        Vector2 start = card.anchoredPosition;
+        Vector2 end = start + dirOut * slideOutDistance;
+
+        StartCoroutine(Co_SlideOutThenRespawn(card, start, end));
+    }
+
+    IEnumerator Co_SlideOutThenRespawn(RectTransform card, Vector2 start, Vector2 end)
+    {
+        float length = Vector2.Distance(start, end);
+        float dur = Mathf.Max(0.0001f, length / Mathf.Max(1f, slideOutPixelsPerSecond));
+
+        float t = 0f;
+        float startRot = card.localRotation.eulerAngles.z;
+        float endRot = endRotationZ;
+        float startSc = card.localScale.x;
+        float endSc = endScale;
+
+        while (t < 1f)
+        {
+            t += (useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime) / dur;
+            float u = slideOutEase.Evaluate(Mathf.Clamp01(t));
+
+            card.anchoredPosition = Vector2.LerpUnclamped(start, end, u);
+            float rot = Mathf.LerpAngle(startRot, endRot, u);
+            card.localRotation = Quaternion.Euler(0, 0, rot);
+
+            float sc = Mathf.Lerp(startSc, endSc, u);
+            card.localScale = new Vector3(sc, sc, 1f);
+
+            yield return null;
+        }
+
+        _landed.Remove(card);
+        if (card) Destroy(card.gameObject);
+
+        SpawnOneAtAnchorNoAnim();
+    }
+
+    void SpawnOneAtAnchorNoAnim()
+    {
+        var parent = spawnParent ? spawnParent : stackAnchor.parent as RectTransform;
+        if (!parent) parent = stackAnchor;
+
+        RectTransform newCard = Instantiate(cardPrefab, parent);
+        newCard.gameObject.SetActive(true);
+        newCard.SetAsLastSibling();
+
+        newCard.anchoredPosition = stackAnchor.anchoredPosition;
+        newCard.localRotation = Quaternion.Euler(0, 0, endRotationZ);
+        newCard.localScale = Vector3.one * endScale;
+        SetAlphaRecursive(newCard, endAlpha);
+
+        _landed.Add(newCard);
+        PruneStack();
+    }
+
+
 }

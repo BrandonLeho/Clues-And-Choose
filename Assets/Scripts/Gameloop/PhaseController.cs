@@ -1,7 +1,7 @@
 using Mirror;
 using UnityEngine;
 
-public sealed class PlacingPhaseController : NetworkBehaviour
+public sealed class PhaseController : NetworkBehaviour
 {
     [Header("Rules")]
     [SyncVar] public bool reverseSecondCycleEnabled = true;
@@ -17,8 +17,7 @@ public sealed class PlacingPhaseController : NetworkBehaviour
     [SerializeField, Min(0)] int pointsPerNearbyCoinFewPlayers = 2;
     [SerializeField, Min(1)] int fewPlayersThreshold = 3;
 
-
-    public static PlacingPhaseController Instance { get; private set; }
+    public static PhaseController Instance { get; private set; }
     void Awake() => Instance = this;
 
     [SyncVar] int cyclesCompleted = 0;
@@ -220,6 +219,7 @@ public sealed class PlacingPhaseController : NetworkBehaviour
         }
 
         Debug.Log($"[Scoring] Round total awarded: {awardedTotal} point(s).");
+        RpcPostScoringSlideOut();
 
         if (RoundManager.Instance)
             RoundManager.Instance.ServerAdvanceRound();
@@ -311,5 +311,14 @@ public sealed class PlacingPhaseController : NetworkBehaviour
     }
     static int CellsAwayChebyshev(int colA, int rowA, int colB, int rowB)
         => Mathf.Max(Mathf.Abs(colA - colB), Mathf.Abs(rowA - rowB));
+
+    [ClientRpc]
+    void RpcPostScoringSlideOut()
+    {
+        var anim = FindFirstObjectByType<CardStackFlyInAnimator>();
+        if (!anim) return;
+
+        anim.SlideTopCardOutAndRespawn();
+    }
 
 }

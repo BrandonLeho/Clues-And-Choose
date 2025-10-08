@@ -22,7 +22,7 @@ public class ChoiceToPlacingPhaseBridge : MonoBehaviour
 
     void OnChoiceSelected(CardChoiceSelectController.ChoicePayload _)
     {
-        var phase = PlacingPhaseController.Instance;
+        var phase = PhaseController.Instance;
         if (phase) phase.CmdStartPlacingPhase();
     }
 }

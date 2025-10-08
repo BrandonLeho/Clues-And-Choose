@@ -7,9 +7,54 @@ public sealed class PlayerChoiceNotifier : NetworkBehaviour
 
     public static PlayerChoiceNotifier Local { get; private set; }
 
+    static bool _serverHookedToRoundManager;
+
     public override void OnStartAuthority()
     {
         Local = this;
+    }
+
+    public override void OnStartServer()
+    {
+        base.OnStartServer();
+
+        var rm = RoundManager.Instance;
+        if (rm != null)
+        {
+            uint currentClueGiver = rm.CurrentClueGiverNetId;
+            isClueGiver = netId == currentClueGiver;
+        }
+
+        if (!_serverHookedToRoundManager && rm != null)
+        {
+            RoundManager.OnServerClueGiverChanged += Server_OnClueGiverChanged;
+            _serverHookedToRoundManager = true;
+        }
+    }
+
+    public override void OnStopServer()
+    {
+        if (_serverHookedToRoundManager)
+        {
+            RoundManager.OnServerClueGiverChanged -= Server_OnClueGiverChanged;
+            _serverHookedToRoundManager = false;
+        }
+        base.OnStopServer();
+    }
+
+    [Server]
+    static void Server_OnClueGiverChanged(uint newClueGiverNetId)
+    {
+        foreach (var kv in NetworkServer.spawned)
+        {
+            var identity = kv.Value;
+            if (!identity) continue;
+
+            var notifier = identity.GetComponent<PlayerChoiceNotifier>();
+            if (!notifier) continue;
+
+            notifier.isClueGiver = (identity.netId == newClueGiverNetId);
+        }
     }
 
     public void NotifyChoiceSelected()
