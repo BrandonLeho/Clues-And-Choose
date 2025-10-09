@@ -110,7 +110,6 @@ public class RoundManager : NetworkBehaviour
     public void ServerAdvanceRound()
     {
         if (_roster.Count == 0) return;
-
         if (_fullCyclesCompleted >= maxFullCycles)
         {
             Debug.Log("[Round] Clue-giver cycles finished; not advancing.");
@@ -139,7 +138,6 @@ public class RoundManager : NetworkBehaviour
         }
 
         SetClueGiverByRosterIndex(_clueGiverRosterIndex);
-        RosterStore.SetCurrentClueGiverByIndex(_clueGiverRosterIndex);
         RpcApplyCardHoverForNewClueGiver(_clueGiverNetId);
         RpcNotifyRoundStarted(_roundIndex, _clueGiverNetId);
     }
