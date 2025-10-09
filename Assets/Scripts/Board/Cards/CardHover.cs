@@ -68,14 +68,40 @@ public class CardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
             StartCoroutine(CoAutoUnlock(autoUnlockAfter));
 
         SnapToBase();
+
         RosterStore.OnClueGiverChanged -= HandleClueGiverChanged;
         RosterStore.OnClueGiverChanged += HandleClueGiverChanged;
+
+        if (RoundManager.Instance)
+        {
+            RoundManager.Instance.onClueGiverChangedClient.RemoveListener(HandleClueGiverChanged_RoundManager);
+            RoundManager.Instance.onClueGiverChangedClient.AddListener(HandleClueGiverChanged_RoundManager);
+        }
     }
 
     void OnDisable()
     {
         if (_anim != null) StopCoroutine(_anim);
         RosterStore.OnClueGiverChanged -= HandleClueGiverChanged;
+
+        if (RoundManager.Instance)
+            RoundManager.Instance.onClueGiverChangedClient.RemoveListener(HandleClueGiverChanged_RoundManager);
+    }
+
+    void HandleClueGiverChanged_RoundManager(uint _newCgNetId)
+    {
+        if (!hoverPivot) RebindTopCard();
+        Debug.Log("aoiusghas");
+        if (IsLocalClueGiver())
+        {
+            Play(toHovered: true);
+            if (hoverPivot) hoverPivot.SetAsLastSibling();
+        }
+        else
+        {
+            SnapToBase();
+            StartCoroutine(CoRejectShake());
+        }
     }
 
     public void RebindTopCard()

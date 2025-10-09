@@ -1,6 +1,5 @@
 using Mirror;
 using UnityEngine;
-using UnityEngine.Events;
 
 public sealed class PhaseController : NetworkBehaviour
 {
@@ -31,13 +30,10 @@ public sealed class PhaseController : NetworkBehaviour
     {
         base.OnStartServer();
         CoinPlacementTurnManager.OnServerFirstCycleCompleted += HandleServerCycleCompleted;
-        RoundManager.OnServerClueGiverChanged += HandleServerClueGiverChanged;
     }
-
     public override void OnStopServer()
     {
         CoinPlacementTurnManager.OnServerFirstCycleCompleted -= HandleServerCycleCompleted;
-        RoundManager.OnServerClueGiverChanged -= HandleServerClueGiverChanged;
         base.OnStopServer();
     }
 
@@ -224,6 +220,10 @@ public sealed class PhaseController : NetworkBehaviour
 
         Debug.Log($"[Scoring] Round total awarded: {awardedTotal} point(s).");
 
+        var cgConn = GetClueGiverConnection();
+        if (cgConn != null)
+            TargetClueGiverSlideOutCardAndRespawn(cgConn);
+
         if (RoundManager.Instance)
             RoundManager.Instance.ServerAdvanceRound();
     }
@@ -270,54 +270,8 @@ public sealed class PhaseController : NetworkBehaviour
     [TargetRpc]
     void TargetClueGiverSlideOutCardAndRespawn(NetworkConnection target)
     {
-        var anim = GameObject.FindFirstObjectByType<CardStackFlyInAnimator>();
-        if (!anim) return;
-
-        UnityAction notify = null;
-        notify = () =>
-        {
-            anim.OnSequenceFinished.RemoveListener(notify);
-            CmdNotifySlideOutFinished();
-        };
-        anim.OnSequenceFinished.AddListener(notify);
-
-        anim.PlaySlideOutAndRespawn();
-    }
-
-    [Command(requiresAuthority = false)]
-    void CmdNotifySlideOutFinished()
-    {
-        RpcSoftResetCards();
-    }
-
-    [ClientRpc]
-    void RpcSoftResetCards()
-    {
-        var hovers = FindObjectsByType<CardHover>(FindObjectsSortMode.None);
-        for (int i = 0; i < hovers.Length; i++)
-        {
-            if (!hovers[i]) continue;
-            hovers[i].RebindTopCard();
-            hovers[i].UnlockHover();
-        }
-
-        var flips = FindObjectsByType<CardFlip>(FindObjectsSortMode.None);
-        for (int i = 0; i < flips.Length; i++)
-        {
-            flips[i].GetBaseTRS(out var p, out var r, out var s);
-            var rig = flips[i].CurrentFlipCenter;
-            if (rig)
-            {
-                rig.localEulerAngles = new Vector3(rig.localEulerAngles.x, 0f, rig.localEulerAngles.z);
-            }
-        }
-
-        var tilts = FindObjectsByType<FrontCardHoverTilt>(FindObjectsSortMode.None);
-        for (int i = 0; i < tilts.Length; i++)
-        {
-            tilts[i].SetFlipping(false);
-            tilts[i].SetFrontFacing(false);
-        }
+        var anim = FindFirstObjectByType<CardStackFlyInAnimator>();
+        if (anim) anim.PlaySlideOutAndRespawn();
     }
 
     // Just in case I want to change the reverse order during runtime
@@ -366,15 +320,5 @@ public sealed class PhaseController : NetworkBehaviour
     }
     static int CellsAwayChebyshev(int colA, int rowA, int colB, int rowB)
         => Mathf.Max(Mathf.Abs(colA - colB), Mathf.Abs(rowA - rowB));
-
-    [Server]
-    void HandleServerClueGiverChanged(uint newCgNetId)
-    {
-        if (newCgNetId == 0) return;
-        if (!NetworkServer.spawned.TryGetValue(newCgNetId, out var id) || id == null) return;
-        var conn = id.connectionToClient;
-        if (conn != null)
-            TargetClueGiverSlideOutCardAndRespawn(conn);
-    }
 
 }

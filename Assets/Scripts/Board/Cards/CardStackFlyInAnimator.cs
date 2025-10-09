@@ -311,7 +311,6 @@ public class CardStackFlyInAnimator : MonoBehaviour
 
         if (_landed != null) _landed.Add(newCard);
 
-        OnSequenceFinished.Invoke();
         _run = null;
     }
 
