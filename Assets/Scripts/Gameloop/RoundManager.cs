@@ -15,8 +15,8 @@ public class RoundManager : NetworkBehaviour
     public UnityEvent<int, uint> onRoundChangedClient;
     public UnityEvent<uint> onClueGiverChangedClient;
 
-    public static event System.Action<int, int> OnServerFullCycleCompleted;
-    public static event System.Action OnServerClueGiverCyclesFinished;
+    public static event Action<int, int> OnServerFullCycleCompleted;
+    public static event Action OnServerClueGiverCyclesFinished;
 
     readonly SyncList<uint> _roster = new SyncList<uint>();
 
@@ -139,6 +139,7 @@ public class RoundManager : NetworkBehaviour
         }
 
         SetClueGiverByRosterIndex(_clueGiverRosterIndex);
+        RosterStore.SetCurrentClueGiverByIndex(_clueGiverRosterIndex);
         RpcApplyCardHoverForNewClueGiver(_clueGiverNetId);
         RpcNotifyRoundStarted(_roundIndex, _clueGiverNetId);
     }
@@ -211,5 +212,4 @@ public class RoundManager : NetworkBehaviour
             hover.RejectHoverForNonClueGiver();
         }
     }
-
 }

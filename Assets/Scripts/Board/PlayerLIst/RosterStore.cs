@@ -36,4 +36,14 @@ public class RosterStore : MonoBehaviour
         CurrentClueGiverName = name;
         OnClueGiverChanged?.Invoke(name);
     }
+
+    public static void SetCurrentClueGiverByIndex(int rosterIndex)
+    {
+        if (Instance == null) new GameObject("RosterStore").AddComponent<RosterStore>();
+        if (rosterIndex < 0 || rosterIndex >= Instance.Names.Count) return;
+
+        var name = Instance.Names[rosterIndex];
+        SetCurrentClueGiver(name);
+    }
+
 }

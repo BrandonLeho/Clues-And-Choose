@@ -169,7 +169,7 @@ public class CardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
     public void OnPointerClick(PointerEventData eventData)
     {
         if (!interactable || !_unlocked) return;
-
+        Debug.Log(IsLocalClueGiver());
         if (!IsLocalClueGiver())
         {
             if (_anim != null) StopCoroutine(_anim);
