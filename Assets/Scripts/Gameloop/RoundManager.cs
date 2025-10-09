@@ -139,6 +139,7 @@ public class RoundManager : NetworkBehaviour
         }
 
         SetClueGiverByRosterIndex(_clueGiverRosterIndex);
+        RpcApplyCardHoverForNewClueGiver(_clueGiverNetId);
         RpcNotifyRoundStarted(_roundIndex, _clueGiverNetId);
     }
 
@@ -190,4 +191,25 @@ public class RoundManager : NetworkBehaviour
 
     [Server] public List<uint> ServerGetRosterSnapshot() => new List<uint>(_roster);
     [Server] public uint ServerGetClueGiverNetIdUnsafe() => _clueGiverNetId;
+
+    [ClientRpc]
+    void RpcApplyCardHoverForNewClueGiver(uint clueGiverNetId)
+    {
+        var hover = FindFirstObjectByType<CardHover>();
+        if (!hover) return;
+
+        uint localId = 0;
+        if (NetworkClient.localPlayer != null)
+            localId = NetworkClient.localPlayer.netId;
+
+        if (localId == clueGiverNetId)
+        {
+            hover.ApplyClueGiverAutoHover();
+        }
+        else
+        {
+            hover.RejectHoverForNonClueGiver();
+        }
+    }
+
 }
