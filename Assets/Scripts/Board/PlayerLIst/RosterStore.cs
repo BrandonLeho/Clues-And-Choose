@@ -11,36 +11,6 @@ public class RosterStore : MonoBehaviour
     public static string CurrentClueGiverName { get; private set; } = null;
     public static string LocalPlayerName { get; private set; } = null;
 
-    public static event System.Action<uint> OnClueGiverIdChanged;
-    public static uint CurrentClueGiverId { get; private set; } = 0;
-
-    public static System.Func<uint, string> ResolveNameFromId;
-
-    void OnEnable()
-    {
-        TryBindRoundManager();
-    }
-
-    System.Collections.IEnumerator Start()
-    {
-        yield return null;
-        TryBindRoundManager();
-    }
-
-    void TryBindRoundManager()
-    {
-        var rm = RoundManager.Instance ?? FindFirstObjectByType<RoundManager>();
-        if (rm == null) return;
-
-        rm.onClueGiverChangedClient.RemoveListener(OnClueGiverChangedFromRoundManager);
-        rm.onClueGiverChangedClient.AddListener(OnClueGiverChangedFromRoundManager);
-    }
-
-    void OnClueGiverChangedFromRoundManager(uint newNetId)
-    {
-        SetCurrentClueGiverById(newNetId);
-    }
-
     void Awake()
     {
         if (Instance != null) { Destroy(gameObject); return; }
@@ -69,21 +39,17 @@ public class RosterStore : MonoBehaviour
         OnClueGiverChanged?.Invoke(name);
     }
 
-    public static void SetCurrentClueGiverById(uint netId)
+    public static void SetCurrentClueGiverByIndex(int rosterIndex)
     {
         if (Instance == null) new GameObject("RosterStore").AddComponent<RosterStore>();
-
-        CurrentClueGiverId = netId;
-        OnClueGiverIdChanged?.Invoke(netId);
-
-        if (ResolveNameFromId != null)
+        if (rosterIndex < 0 || rosterIndex >= Instance.Names.Count) return;
+        Debug.Log(rosterIndex);
+        var name = Instance.Names[rosterIndex];
+        for (int i = 0; i < Instance.Names.Count; i++)
         {
-            var name = ResolveNameFromId(netId);
-            if (!string.IsNullOrEmpty(name))
-            {
-                CurrentClueGiverName = name;
-                OnClueGiverChanged?.Invoke(name);
-            }
+            Debug.Log(Instance.Names[i]);
         }
+        SetCurrentClueGiver(name);
     }
+
 }

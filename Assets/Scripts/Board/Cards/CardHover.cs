@@ -308,7 +308,7 @@ public class CardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
         if (!onlyClueGiverCanInteract) return true;
         if (string.IsNullOrEmpty(RosterStore.LocalPlayerName)) return false;
         if (string.IsNullOrEmpty(RosterStore.CurrentClueGiverName)) return false;
-        Debug.Log(RosterStore.CurrentClueGiverName);
+        //Debug.Log(RosterStore.CurrentClueGiverName);
         return string.Equals(RosterStore.LocalPlayerName, RosterStore.CurrentClueGiverName,
                             System.StringComparison.Ordinal);
     }

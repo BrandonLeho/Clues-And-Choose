@@ -201,6 +201,9 @@ public class RoundManager : NetworkBehaviour
         if (NetworkClient.localPlayer != null)
             localId = NetworkClient.localPlayer.netId;
 
+        Debug.Log("[Round Manager] localId: " + localId);
+        Debug.Log("[Round Manager] clueGiverNetId: " + clueGiverNetId);
+
         if (localId == clueGiverNetId)
         {
             hover.ApplyClueGiverAutoHover();
