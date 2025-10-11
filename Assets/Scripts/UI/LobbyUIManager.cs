@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using System.Collections;
 using Steamworks;
 using System.Linq;
+using System;
 
 namespace SteamLobbySpace
 {
@@ -85,26 +86,51 @@ namespace SteamLobbySpace
 
         public void OnPlayButtonClicked()
         {
-            if (NetworkServer.active)
+            if (!NetworkServer.active) return;
+
+            var netIds = new List<uint>();
+            var names = new List<string>();
+
+            foreach (var kvp in NetworkServer.connections)
             {
-                var names = CurrentPlayerNames.ToArray();
-                RpcReceiveRoster(names);
-                CustomNetworkManager.singleton.ServerChangeScene("GameScene");
+                var conn = kvp.Value;
+                if (conn == null || conn.identity == null) continue;
+
+                var id = conn.identity;
+                var pns = id.GetComponent<PlayerNameSync>();
+
+                string displayName = (pns != null && !string.IsNullOrWhiteSpace(pns.DisplayName))
+                    ? pns.DisplayName.Trim()
+                    : null;
+
+                if (string.IsNullOrEmpty(displayName))
+                {
+                    int idx = netIds.Count;
+                    if (idx < CurrentPlayerNames.Count)
+                        displayName = CurrentPlayerNames[idx];
+                    else
+                        displayName = id.gameObject.name;
+                }
+
+                netIds.Add(id.netId);
+                names.Add(displayName);
             }
+
+            RpcReceiveRoster(netIds.ToArray(), names.ToArray());
+            CustomNetworkManager.singleton.ServerChangeScene("GameScene");
         }
 
         [ClientRpc]
-        void RpcReceiveRoster(string[] names)
+        void RpcReceiveRoster(uint[] netIds, string[] names)
         {
-            RosterStore.SaveNames(names);
+            RosterStore.SaveRoster(netIds, names);
         }
 
         [TargetRpc]
-        void TargetReceiveRoster(NetworkConnectionToClient conn, string[] names)
+        void TargetReceiveRoster(NetworkConnectionToClient conn, uint[] netIds, string[] names)
         {
-            RosterStore.SaveNames(names);
+            RosterStore.SaveRoster(netIds, names);
         }
-
 
         public void RegisterPlayer(PlayerLobbyHandler player)
         {
