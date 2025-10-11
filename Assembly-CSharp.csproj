@@ -81,6 +81,7 @@
     <Compile Include="Assets\Scripts\Controller\CursorController\CursorControllerModule.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreRegistryNetBridge.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\Lock\CoinLockIconAnimator.cs" />
+    <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerNameSync.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\PaletteGrid.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerListBinder.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ClassicScoreboard\ScoreboardAttachToBoard.cs" />
@@ -95,7 +96,6 @@
     <Compile Include="Assets\Scripts\Controller\CursorController\CursorSpriteAligner.cs" />
     <Compile Include="Assets\Scripts\Board\GameChat\ChatUI.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardFrontHoverTilt.cs" />
-    <Compile Include="Assets\Scripts\Board\ColorChooser\PlayerNameSync.cs" />
     <Compile Include="Assets\Scripts\Board\EndRoundPrompt\EndRoundPromptChoiceBridge.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardChoiceSelectController.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinVisual.cs" />

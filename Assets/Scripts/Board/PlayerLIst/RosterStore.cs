@@ -25,17 +25,10 @@ public class RosterStore : MonoBehaviour
         if (Instance == null) new GameObject("RosterStore").AddComponent<RosterStore>();
     }
 
-    public static void SaveNames(IReadOnlyList<string> names)
-    {
-        EnsureInstance();
-        Instance.Names = names != null ? new List<string>(names) : new List<string>();
-    }
-
     public static void SaveRoster(IReadOnlyList<uint> netIds, IReadOnlyList<string> names)
     {
         EnsureInstance();
         _idToName.Clear();
-
         if (names != null) Instance.Names = new List<string>(names);
         if (netIds == null || names == null) return;
 
@@ -47,23 +40,37 @@ public class RosterStore : MonoBehaviour
     public static void SaveOrUpdateName(uint netId, string name)
     {
         EnsureInstance();
+        if (string.IsNullOrWhiteSpace(name)) return;
         _idToName[netId] = name;
-        if (!Instance.Names.Contains(name))
-            Instance.Names.Add(name);
+        if (!Instance.Names.Contains(name)) Instance.Names.Add(name);
     }
 
-    static bool TryResolveIdentity(uint netId, out NetworkIdentity identity)
+    static bool TryResolveIdentity(uint netId, out NetworkIdentity id)
     {
-        identity = null;
-
+        id = null;
         if (NetworkClient.active && NetworkClient.spawned != null &&
-            NetworkClient.spawned.TryGetValue(netId, out identity) && identity)
-            return true;
+            NetworkClient.spawned.TryGetValue(netId, out id) && id) return true;
 
         if (NetworkServer.active && NetworkServer.spawned != null &&
-            NetworkServer.spawned.TryGetValue(netId, out identity) && identity)
-            return true;
+            NetworkServer.spawned.TryGetValue(netId, out id) && id) return true;
 
+        return false;
+    }
+
+    static bool TryGetDisplayNameFromIdentity(NetworkIdentity id, out string name)
+    {
+        name = null;
+        if (!id) return false;
+
+        var pns = id.GetComponent<PlayerNameSync>()
+               ?? id.GetComponentInChildren<PlayerNameSync>(true)
+               ?? id.GetComponentInParent<PlayerNameSync>(true);
+
+        if (pns != null && !string.IsNullOrWhiteSpace(pns.DisplayName))
+        {
+            name = pns.DisplayName.Trim();
+            return true;
+        }
         return false;
     }
 
@@ -72,9 +79,16 @@ public class RosterStore : MonoBehaviour
         if (_idToName.TryGetValue(netId, out name))
             return true;
 
-        if (TryResolveIdentity(netId, out var identity) && identity && identity.gameObject)
+        if (TryResolveIdentity(netId, out var id))
         {
-            name = identity.gameObject.name;
+            if (TryGetDisplayNameFromIdentity(id, out name))
+            {
+                _idToName[netId] = name;
+                if (!Instance.Names.Contains(name)) Instance.Names.Add(name);
+                return true;
+            }
+
+            name = id.gameObject.name;
             return true;
         }
 
@@ -90,7 +104,6 @@ public class RosterStore : MonoBehaviour
 
     public static void SetCurrentClueGiver(string name)
     {
-        Debug.Log("Roster Clue Giver: " + name);
         EnsureInstance();
         CurrentClueGiverName = name;
         OnClueGiverChanged?.Invoke(name);
@@ -99,16 +112,8 @@ public class RosterStore : MonoBehaviour
     public static void SetCurrentClueGiverByNetId(uint netId)
     {
         EnsureInstance();
-
-        if (netId == 0)
-        {
-            SetCurrentClueGiver(null);
-            return;
-        }
-
-        if (!TryGetNameByNetId(netId, out var name))
-            name = $"NetId:{netId}";
-
+        if (netId == 0) { SetCurrentClueGiver(null); return; }
+        if (!TryGetNameByNetId(netId, out var name)) name = $"NetId:{netId}";
         SetCurrentClueGiver(name);
     }
 }
