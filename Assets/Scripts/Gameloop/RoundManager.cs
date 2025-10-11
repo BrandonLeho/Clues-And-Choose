@@ -138,6 +138,7 @@ public class RoundManager : NetworkBehaviour
         }
 
         SetClueGiverByRosterIndex(_clueGiverRosterIndex);
+        RosterStore.SetCurrentClueGiverByNetId(_clueGiverNetId);
         RpcApplyCardHoverForNewClueGiver(_clueGiverNetId);
         RpcNotifyRoundStarted(_roundIndex, _clueGiverNetId);
     }
