@@ -311,6 +311,13 @@ public class CardStackFlyInAnimator : MonoBehaviour
 
         if (_landed != null) _landed.Add(newCard);
 
+        var hover = FindFirstObjectByType<CardHover>();
+        if (hover && (hover.stackParent == parent || hover.stackParent == null))
+        {
+            hover.RebindTopCard();
+            hover.RejectHoverForNonClueGiver();
+        }
+
         _run = null;
     }
 

@@ -83,7 +83,14 @@ public class CardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
         hoverPivot = FindTopCard();
 
         CacheBaseTransform();
+
+        if (hoverPivot)
+        {
+            var g = hoverPivot.GetComponentInChildren<UnityEngine.UI.Graphic>(true);
+            if (g) g.raycastTarget = true;
+        }
     }
+
 
     RectTransform FindTopCard()
     {
@@ -128,24 +135,37 @@ public class CardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
     IEnumerator CoWatchChildren()
     {
         int lastCount = stackParent ? stackParent.childCount : 0;
+        int lastTopId = hoverPivot ? hoverPivot.GetInstanceID() : -1;
+
         while (enabled)
         {
-            if (stackParent && stackParent.childCount != lastCount)
+            if (stackParent)
             {
-                lastCount = stackParent.childCount;
-                var prev = hoverPivot;
-                RebindTopCard();
+                bool countChanged = stackParent.childCount != lastCount;
+                var currentTop = FindTopCard();
 
-                if (prev && prev != hoverPivot)
+                bool topChanged = (currentTop ? currentTop.GetInstanceID() : -1) != lastTopId;
+
+                if (countChanged || topChanged)
                 {
-                    prev.anchoredPosition3D = _basePos;
-                    prev.localRotation = _baseRot;
-                    prev.localScale = _baseScale;
+                    lastCount = stackParent.childCount;
+                    lastTopId = currentTop ? currentTop.GetInstanceID() : -1;
+
+                    var prev = hoverPivot;
+                    RebindTopCard();
+
+                    if (prev && prev != hoverPivot)
+                    {
+                        prev.anchoredPosition3D = _basePos;
+                        prev.localRotation = _baseRot;
+                        prev.localScale = _baseScale;
+                    }
                 }
             }
             yield return null;
         }
     }
+
 
     public void OnPointerEnter(PointerEventData eventData)
     {
@@ -161,6 +181,8 @@ public class CardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
     public void OnPointerExit(PointerEventData eventData)
     {
         if (!interactable || !_unlocked || !hoverPivot) return;
+        if (!hoverPivot) RebindTopCard();
+        if (!hoverPivot) return;
         if (!IsLocalClueGiver()) return;
 
         Play(toHovered: false);
@@ -169,6 +191,9 @@ public class CardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
     public void OnPointerClick(PointerEventData eventData)
     {
         if (!interactable || !_unlocked) return;
+        if (!hoverPivot) RebindTopCard();
+        if (!hoverPivot) return;
+
         Debug.Log(IsLocalClueGiver());
         if (!IsLocalClueGiver())
         {
@@ -308,7 +333,6 @@ public class CardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
         if (!onlyClueGiverCanInteract) return true;
         if (string.IsNullOrEmpty(RosterStore.LocalPlayerName)) return false;
         if (string.IsNullOrEmpty(RosterStore.CurrentClueGiverName)) return false;
-        //Debug.Log(RosterStore.CurrentClueGiverName);
         return string.Equals(RosterStore.LocalPlayerName, RosterStore.CurrentClueGiverName,
                             System.StringComparison.Ordinal);
     }
@@ -325,8 +349,6 @@ public class CardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
         if (!hoverPivot) return;
 
         UnlockHover();
-
-        Play(toHovered: true);
 
         hoverPivot.SetAsLastSibling();
     }

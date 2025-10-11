@@ -114,6 +114,7 @@ public class RosterStore : MonoBehaviour
         EnsureInstance();
         if (netId == 0) { SetCurrentClueGiver(null); return; }
         if (!TryGetNameByNetId(netId, out var name)) name = $"NetId:{netId}";
+        Debug.Log(name);
         SetCurrentClueGiver(name);
     }
 }
