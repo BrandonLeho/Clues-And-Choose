@@ -148,6 +148,8 @@ public class CardStackFlyInAnimator : MonoBehaviour
         PruneStack();
 
         _inFlight--;
+
+        ToggleRaycastTargets(card, true);
     }
 
     IEnumerator MoveCard(RectTransform card, Vector2 a, Vector2 c, Vector2 b, float dur)
@@ -310,7 +312,7 @@ public class CardStackFlyInAnimator : MonoBehaviour
         newCard.SetSiblingIndex(desired);
 
         SetAlphaRecursive(newCard, endAlpha);
-        ToggleRaycastTargets(card, false);
+        ToggleRaycastTargets(card, true);
 
         var hover = parent.GetComponent<CardHover>();
         if (hover) hover.RebindTopCard();
