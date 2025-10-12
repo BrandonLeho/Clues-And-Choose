@@ -83,14 +83,7 @@ public class CardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
         hoverPivot = FindTopCard();
 
         CacheBaseTransform();
-
-        if (hoverPivot)
-        {
-            var g = hoverPivot.GetComponentInChildren<UnityEngine.UI.Graphic>(true);
-            if (g) g.raycastTarget = true;
-        }
     }
-
 
     RectTransform FindTopCard()
     {
@@ -135,31 +128,38 @@ public class CardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
     IEnumerator CoWatchChildren()
     {
         int lastCount = stackParent ? stackParent.childCount : 0;
-        int lastTopId = hoverPivot ? hoverPivot.GetInstanceID() : -1;
+        RectTransform lastTop = hoverPivot;
 
         while (enabled)
         {
+            bool needsRebind = false;
+
             if (stackParent)
             {
-                bool countChanged = stackParent.childCount != lastCount;
-                var currentTop = FindTopCard();
-
-                bool topChanged = (currentTop ? currentTop.GetInstanceID() : -1) != lastTopId;
-
-                if (countChanged || topChanged)
+                if (stackParent.childCount != lastCount)
                 {
                     lastCount = stackParent.childCount;
-                    lastTopId = currentTop ? currentTop.GetInstanceID() : -1;
+                    needsRebind = true;
+                }
+                else
+                {
+                    var currentTop = FindTopCard();
+                    if (currentTop != lastTop || !hoverPivot || !hoverPivot.gameObject.activeInHierarchy)
+                        needsRebind = true;
+                }
+            }
 
-                    var prev = hoverPivot;
-                    RebindTopCard();
+            if (needsRebind)
+            {
+                var prev = hoverPivot;
+                RebindTopCard();
+                lastTop = hoverPivot;
 
-                    if (prev && prev != hoverPivot)
-                    {
-                        prev.anchoredPosition3D = _basePos;
-                        prev.localRotation = _baseRot;
-                        prev.localScale = _baseScale;
-                    }
+                if (prev && prev != hoverPivot)
+                {
+                    prev.anchoredPosition3D = _basePos;
+                    prev.localRotation = _baseRot;
+                    prev.localScale = _baseScale;
                 }
             }
             yield return null;
@@ -181,8 +181,6 @@ public class CardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
     public void OnPointerExit(PointerEventData eventData)
     {
         if (!interactable || !_unlocked || !hoverPivot) return;
-        if (!hoverPivot) RebindTopCard();
-        if (!hoverPivot) return;
         if (!IsLocalClueGiver()) return;
 
         Play(toHovered: false);
@@ -190,11 +188,11 @@ public class CardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        if (!interactable || !_unlocked) return;
+        if (!interactable) return;
+
         if (!hoverPivot) RebindTopCard();
         if (!hoverPivot) return;
 
-        Debug.Log(IsLocalClueGiver());
         if (!IsLocalClueGiver())
         {
             if (_anim != null) StopCoroutine(_anim);
@@ -202,9 +200,12 @@ public class CardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
             return;
         }
 
+        if (!_unlocked) return;
+
         LockHoverKeepPose();
         onClick?.Invoke();
     }
+
 
     void Play(bool toHovered)
     {
@@ -333,13 +334,16 @@ public class CardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandle
         if (!onlyClueGiverCanInteract) return true;
         if (string.IsNullOrEmpty(RosterStore.LocalPlayerName)) return false;
         if (string.IsNullOrEmpty(RosterStore.CurrentClueGiverName)) return false;
+        //Debug.Log(RosterStore.CurrentClueGiverName);
         return string.Equals(RosterStore.LocalPlayerName, RosterStore.CurrentClueGiverName,
                             System.StringComparison.Ordinal);
     }
 
     void HandleClueGiverChanged(string _)
     {
+        RebindTopCard();
         if (!IsLocalClueGiver()) SnapToBase();
+        else UnlockHover();
     }
 
     public void ApplyClueGiverAutoHover()

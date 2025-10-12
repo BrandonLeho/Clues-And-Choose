@@ -126,6 +126,8 @@ public class CardStackFlyInAnimator : MonoBehaviour
         card.localScale = Vector3.one * startScale;
         SetAlphaRecursive(card, startAlpha);
 
+        ToggleRaycastTargets(card, false);
+
         if (sprite != null)
         {
             var img = card.GetComponentInChildren<Image>(true);
@@ -308,19 +310,15 @@ public class CardStackFlyInAnimator : MonoBehaviour
         newCard.SetSiblingIndex(desired);
 
         SetAlphaRecursive(newCard, endAlpha);
+        ToggleRaycastTargets(card, false);
+
+        var hover = parent.GetComponent<CardHover>();
+        if (hover) hover.RebindTopCard();
 
         if (_landed != null) _landed.Add(newCard);
 
-        var hover = FindFirstObjectByType<CardHover>();
-        if (hover && (hover.stackParent == parent || hover.stackParent == null))
-        {
-            hover.RebindTopCard();
-            hover.RejectHoverForNonClueGiver();
-        }
-
         _run = null;
     }
-
 
     Vector2 LocalLeftInParentSpace(RectTransform child, RectTransform parent)
     {
@@ -329,5 +327,12 @@ public class CardStackFlyInAnimator : MonoBehaviour
         Vector2 d = new Vector2(parentDir.x, parentDir.y);
         if (d.sqrMagnitude < 0.000001f) d = Vector2.left;
         return d.normalized;
+    }
+
+    static void ToggleRaycastTargets(RectTransform root, bool enabled)
+    {
+        var graphics = root.GetComponentsInChildren<Graphic>(true);
+        for (int i = 0; i < graphics.Length; i++)
+            graphics[i].raycastTarget = enabled;
     }
 }
