@@ -151,6 +151,12 @@ public class CoinNetworkSpawner : NetworkBehaviour
 
                 NetworkServer.Spawn(go);
 
+                if (netCoin)
+                {
+                    Vector3 home = targetPos;
+                    netCoin.RpcSetHome(home, alsoSetZ: true);
+                }
+
                 if (useSlideIn)
                 {
                     var gate = go.GetComponent<CoinInteractionGate>();

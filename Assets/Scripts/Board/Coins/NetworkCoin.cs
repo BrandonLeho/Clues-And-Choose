@@ -34,4 +34,18 @@ public class NetworkCoin : NetworkBehaviour
         var me = NetworkClient.connection?.identity;
         return me && me.netId == ownerNetId;
     }
+
+    [ClientRpc]
+    public void RpcSetHome(Vector3 worldPos, bool alsoSetZ)
+    {
+        var snap = GetComponent<CoinDropSnap>();
+        if (snap) snap.SetHome(worldPos, alsoSetZ);
+    }
+
+    [TargetRpc]
+    public void TargetReturnCoinHome(NetworkConnection target, bool tween)
+    {
+        var snap = GetComponent<CoinDropSnap>();
+        if (snap) snap.SnapToHome(tween, releaseSpot: true);
+    }
 }

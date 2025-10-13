@@ -76,6 +76,8 @@ public class CoinDropSnap : MonoBehaviour
 
     public bool IsLanding => _snapRoutine != null || _landingFxRunning;
 
+    Vector3 _homeWorldPos;
+    bool _hasHome;
 
     void Awake()
     {
@@ -442,7 +444,10 @@ public class CoinDropSnap : MonoBehaviour
     {
         _lastValidWorldPos = worldPos;
         if (alsoSetZ) _spawnZ = worldPos.z;
+        _homeWorldPos = worldPos;
+        _hasHome = true;
     }
+
 
     public void ReleasePlacementLockAndSpot()
     {
@@ -512,5 +517,24 @@ public class CoinDropSnap : MonoBehaviour
     public bool CanBeginDrag()
     {
         return _snapRoutine == null && !_landingFxRunning;
+    }
+
+    public void SnapToHome(bool tween, bool releaseSpot)
+    {
+        if (!_hasHome) return;
+
+        if (releaseSpot)
+            ReleasePlacementLockAndSpot();
+
+        Vector3 target = _homeWorldPos;
+        if (!keepCurrentZ) target.z = _spawnZ;
+
+        if (tween)
+            StartSnapTween(target, updateLastValid: false);
+        else
+        {
+            if (_sync != null) _sync.OwnerSnapTo(target, (scaleTarget ? scaleTarget.localScale : transform.localScale));
+            transform.position = target;
+        }
     }
 }

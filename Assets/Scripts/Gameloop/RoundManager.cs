@@ -172,6 +172,7 @@ public class RoundManager : NetworkBehaviour
         SetClueGiverByRosterIndex(_clueGiverRosterIndex);
         RosterStore.SetCurrentClueGiverByNetId(_clueGiverNetId);
         RpcApplyCardHoverForNewClueGiver(_clueGiverNetId);
+        ServerResetAllCoinsToHome(tween: true);
         RpcNotifyRoundStarted(_roundIndex, _clueGiverNetId);
     }
 
@@ -245,6 +246,28 @@ public class RoundManager : NetworkBehaviour
         else
         {
             hover.RejectHoverForNonClueGiver();
+        }
+    }
+
+    [Server]
+    void ServerResetAllCoinsToHome(bool tween = true)
+    {
+        foreach (var kv in NetworkServer.spawned)
+        {
+            var id = kv.Value;
+            if (!id) continue;
+
+            var coin = id.GetComponent<NetworkCoin>();
+            if (!coin || coin.ownerNetId == 0) continue;
+
+            if (!NetworkServer.spawned.TryGetValue(coin.ownerNetId, out var ownerIdentity) || !ownerIdentity)
+                continue;
+
+            var conn = ownerIdentity.connectionToClient;
+            if (conn != null)
+            {
+                coin.TargetReturnCoinHome(conn, tween: tween);
+            }
         }
     }
 
