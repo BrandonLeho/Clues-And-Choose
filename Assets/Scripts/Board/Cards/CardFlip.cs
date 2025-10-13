@@ -31,12 +31,37 @@ public class CardFlip : MonoBehaviour
 
     public RectTransform CurrentFlipCenter => _flipRig;
 
+    RectTransform _lastBoundPivot;
+
     void Reset() => stackParent = transform as RectTransform;
 
     void Awake()
     {
         if (!stackParent) stackParent = transform as RectTransform;
         frontHover = GetComponent<FrontCardHoverTilt>();
+    }
+
+    void OnEnable()
+    {
+        if (!stackParent) stackParent = transform as RectTransform;
+        if (!frontHover) frontHover = GetComponent<FrontCardHoverTilt>();
+        RosterStore.OnClueGiverChanged -= HandleClueGiverChanged;
+        RosterStore.OnClueGiverChanged += HandleClueGiverChanged;
+    }
+
+    void OnDisable()
+    {
+        RosterStore.OnClueGiverChanged -= HandleClueGiverChanged;
+    }
+
+    void HandleClueGiverChanged(string _)
+    {
+        _frontFace = null;
+        _backFace = null;
+        _flipRig = null;
+        _hoverPivot = null;
+        _lastBoundPivot = null;
+        _isFrontUp = false;
     }
 
     public void FlipTopCard()
@@ -71,23 +96,19 @@ public class CardFlip : MonoBehaviour
                 if (hp) foundPivot = hp;
             }
         }
-
         if (!foundPivot) return false;
 
+        var pivotChanged = (_hoverPivot != foundPivot);
         _hoverPivot = foundPivot;
 
         var ch = GetComponent<CardHover>();
-        if (ch != null)
-        {
-            ch.GetBaseTRS(out _basePos, out _baseRot, out _baseScale);
-        }
+        if (ch != null) ch.GetBaseTRS(out _basePos, out _baseRot, out _baseScale);
         else
         {
             _basePos = _hoverPivot.anchoredPosition3D;
             _baseRot = _hoverPivot.localRotation;
             _baseScale = _hoverPivot.localScale;
         }
-
 
         _flipRig = _hoverPivot.Find("FlipCenter") as RectTransform;
         if (!_flipRig)
@@ -104,8 +125,6 @@ public class CardFlip : MonoBehaviour
             _flipRig.localRotation = Quaternion.identity;
             _flipRig.anchoredPosition3D = Vector3.zero;
 
-            if (frontHover) frontHover.SetFlipCenter(_flipRig);
-
             var toMove = new System.Collections.Generic.List<RectTransform>();
             for (int i = 0; i < _hoverPivot.childCount; i++)
             {
@@ -116,34 +135,51 @@ public class CardFlip : MonoBehaviour
             foreach (var c in toMove) c.SetParent(_flipRig, true);
         }
 
+        if (frontHover) frontHover.SetFlipCenter(_flipRig);
+
         _backFace = FindFirstActiveGraphic(_flipRig);
 
-        if (!_frontFace)
+        if (!_frontFace || _frontFace.parent != _flipRig)
         {
-            if (!frontFacePrefab)
+            if (!_frontFace)
             {
-                Debug.LogWarning("[CardFlip] Missing frontFacePrefab.");
-                return false;
+                if (!frontFacePrefab)
+                {
+                    Debug.LogWarning("[CardFlip] Missing frontFacePrefab.");
+                    return false;
+                }
+                _frontFace = Instantiate(frontFacePrefab, _flipRig);
+                _frontFace.name = "FrontFace";
             }
-            _frontFace = Instantiate(frontFacePrefab, _flipRig);
-            _frontFace.name = "FrontFace";
+            else
+            {
+                _frontFace.SetParent(_flipRig, false);
+            }
+
             _frontFace.anchorMin = Vector2.zero;
             _frontFace.anchorMax = Vector2.one;
             _frontFace.offsetMin = Vector2.zero;
             _frontFace.offsetMax = Vector2.zero;
             _frontFace.pivot = new Vector2(0.5f, 0.5f);
-            _frontFace.localRotation = Quaternion.Euler(0f, 180f, 0f);
             _frontFace.localScale = Vector3.one;
-
-            ToggleRaycast(_frontFace, false);
-            ToggleRaycast(_backFace, true);
+            _frontFace.localRotation = Quaternion.Euler(0f, 180f, 0f);
         }
 
-        /* _hoverPivot.anchoredPosition3D = _basePos;
-        _hoverPivot.localRotation = _baseRot;
-        _hoverPivot.localScale = _baseScale; */
-        _hoverPivot.SetAsLastSibling();
+        if (pivotChanged)
+        {
+            _isFrontUp = false;
+            SetFlipRigY(0f);
+            ToggleRaycast(_frontFace, false);
+            ToggleRaycast(_backFace, true);
+            if (frontHover)
+            {
+                frontHover.SetFrontFacing(false);
+                frontHover.SetFlipping(false);
+            }
+        }
 
+        _hoverPivot.SetAsLastSibling();
+        _lastBoundPivot = _hoverPivot;
         return true;
     }
 
