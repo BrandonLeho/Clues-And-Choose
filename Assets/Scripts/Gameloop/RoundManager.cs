@@ -84,6 +84,38 @@ public class RoundManager : NetworkBehaviour
         }
     }
 
+    void OnDestroy()
+    {
+        onClueGiverChangedClient?.RemoveListener(HandleClientClueGiverChanged);
+        onRoundChangedClient?.RemoveListener(HandleClientRoundChanged);
+    }
+
+    public override void OnStartClient()
+    {
+        base.OnStartClient();
+
+        onClueGiverChangedClient?.RemoveListener(HandleClientClueGiverChanged);
+        onClueGiverChangedClient?.AddListener(HandleClientClueGiverChanged);
+
+        onRoundChangedClient?.RemoveListener(HandleClientRoundChanged);
+        onRoundChangedClient?.AddListener(HandleClientRoundChanged);
+
+        if (_clueGiverNetId != 0)
+            HandleClientClueGiverChanged(_clueGiverNetId);
+    }
+
+    void HandleClientClueGiverChanged(uint netId)
+    {
+        RosterStore.SetCurrentClueGiverByNetId(netId);
+    }
+
+    void HandleClientRoundChanged(int _, uint clueGiverNetId)
+    {
+        if (clueGiverNetId != 0)
+            RosterStore.SetCurrentClueGiverByNetId(clueGiverNetId);
+    }
+
+
     void OnRosterChanged(SyncList<uint>.Operation op, int index, uint oldItem, uint newItem)
     {
         OnServerRosterChanged?.Invoke();
@@ -180,6 +212,7 @@ public class RoundManager : NetworkBehaviour
     void OnClueGiverNetIdChanged(uint _, uint newNetId)
     {
         onClueGiverChangedClient?.Invoke(newNetId);
+        RosterStore.SetCurrentClueGiverByNetId(newNetId);
     }
 
     [ClientRpc]
@@ -214,4 +247,5 @@ public class RoundManager : NetworkBehaviour
             hover.RejectHoverForNonClueGiver();
         }
     }
+
 }
