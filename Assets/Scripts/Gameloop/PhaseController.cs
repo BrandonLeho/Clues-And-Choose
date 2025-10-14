@@ -25,8 +25,8 @@ public sealed class PhaseController : NetworkBehaviour
     [SyncVar] int targetRow = -1;
     [SyncVar] Color targetColor = Color.white;
 
-    public static event System.Action OnClientTargetChosen;
-
+    public static event System.Action<int, int, Color> OnClientTargetChosen;
+    public bool ClientHasTarget => targetCol >= 0 && targetRow >= 0;
 
     public override void OnStartServer()
     {
@@ -306,7 +306,7 @@ public sealed class PhaseController : NetworkBehaviour
         Debug.Log($"[Scoring] Target set → col={(targetCol + 1)}, row={RowLetters(targetRow)} " +
                 $"(raw card row={rowFromCard}) color={ColorToHex(targetColor)}");
 
-        RpcOnClientTargetChosen();
+        RpcNotifyTargetChosen(targetCol, targetRow, targetColor);
     }
 
 
@@ -326,8 +326,8 @@ public sealed class PhaseController : NetworkBehaviour
         => Mathf.Max(Mathf.Abs(colA - colB), Mathf.Abs(rowA - rowB));
 
     [ClientRpc]
-    void RpcOnClientTargetChosen()
+    void RpcNotifyTargetChosen(int col, int row, Color color)
     {
-        OnClientTargetChosen?.Invoke();
+        OnClientTargetChosen?.Invoke(col, row, color);
     }
 }

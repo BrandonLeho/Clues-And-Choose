@@ -32,12 +32,13 @@ public sealed class TurnNotification : MonoBehaviour
     [Header("Behavior")]
     [SerializeField] bool onlyShowForLocalTurn = false;
     [SerializeField] string textPrefix = "Now Placing:";
+    [SerializeField] bool requireCardChoice = true;
+
+    bool _targetChosen;
+    uint _pendingPlacerId;
 
     Coroutine _playCo;
     Vector2 _startPos;
-
-    bool _targetChosenThisRound = false;
-
 
     void Reset()
     {
@@ -56,9 +57,8 @@ public sealed class TurnNotification : MonoBehaviour
     void OnEnable()
     {
         CoinPlacementTurnManager.OnPlacerChangedClient += HandlePlacerChanged;
-        PhaseController.OnClientTargetChosen += ArmForThisRound;              // NEW
-        RoundManager.Instance?.onRoundChangedClient.AddListener(OnRoundChangedClient_Reset); // NEW
-
+        PhaseController.OnClientTargetChosen += HandleTargetChosen;
+        _targetChosen = PhaseController.Instance && PhaseController.Instance.ClientHasTarget;
         if (CoinPlacementTurnManager.Instance)
             HandlePlacerChanged(CoinPlacementTurnManager.Instance.currentPlacerNetId);
     }
@@ -66,14 +66,17 @@ public sealed class TurnNotification : MonoBehaviour
     void OnDisable()
     {
         CoinPlacementTurnManager.OnPlacerChangedClient -= HandlePlacerChanged;
-        PhaseController.OnClientTargetChosen -= ArmForThisRound;              // NEW
-        if (RoundManager.Instance)
-            RoundManager.Instance.onRoundChangedClient.RemoveListener(OnRoundChangedClient_Reset); // NEW
+        PhaseController.OnClientTargetChosen -= HandleTargetChosen;
     }
 
     void HandlePlacerChanged(uint placerNetId)
     {
-        if (!_targetChosenThisRound) { InstantHide(); return; }
+        if (requireCardChoice && !_targetChosen)
+        {
+            _pendingPlacerId = placerNetId;
+            InstantHide();
+            return;
+        }
 
         if (onlyShowForLocalTurn)
         {
@@ -219,11 +222,14 @@ public sealed class TurnNotification : MonoBehaviour
         return "Player";
     }
 
-    void ArmForThisRound() => _targetChosenThisRound = true;
-
-    void OnRoundChangedClient_Reset(int _, uint __)
+    void HandleTargetChosen(int col, int row, Color color)
     {
-        _targetChosenThisRound = false;
-        InstantHide();
+        _targetChosen = true;
+        if (_pendingPlacerId != 0)
+        {
+            var id = _pendingPlacerId;
+            _pendingPlacerId = 0;
+            HandlePlacerChanged(id);
+        }
     }
 }
