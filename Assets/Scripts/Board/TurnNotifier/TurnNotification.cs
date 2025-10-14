@@ -17,6 +17,18 @@ public sealed class TurnNotification : MonoBehaviour
 
     [Header("Stagger")]
     [SerializeField, Min(0f)] float textOffset = 0.2f;
+    [SerializeField, Min(0f)] float entryLagPixels = 140f;
+    [SerializeField, Min(0f)] float exitLeadPixels = 0f;
+    [SerializeField]
+    AnimationCurve entryLagDecay = new AnimationCurve(
+        new Keyframe(0f, 0f, 0f, 0f),
+        new Keyframe(1f, 1f, 0f, 0f)
+    );
+    [SerializeField]
+    AnimationCurve exitLeadGrowth = new AnimationCurve(
+        new Keyframe(0f, 0f, 0f, 0f),
+        new Keyframe(1f, 1f, 0f, 0f)
+    );
 
     [Header("Motion")]
     [SerializeField] float offscreenPadding = 200f;
@@ -142,15 +154,21 @@ public sealed class TurnNotification : MonoBehaviour
         backgroundRect.anchoredPosition = new Vector2(leftX, _startPos.y);
         textRect.anchoredPosition = new Vector2(leftX, _startPos.y);
 
+        float leadPx = (exitLeadPixels > 0f ? exitLeadPixels : entryLagPixels);
+
         float t = 0f;
         while (t < dur1)
         {
             t += Time.deltaTime;
-            float uBG = Mathf.Clamp01(t / dur1);
-            float uTX = Mathf.Clamp01((t - textOffset) / (dur1 - textOffset + 1e-6f));
+            float u = Mathf.Clamp01(t / dur1);
 
-            float xBG = Mathf.Lerp(leftX, zoneLeft, enterEase.Evaluate(uBG));
-            float xTX = Mathf.Lerp(leftX, zoneLeft, enterEase.Evaluate(uTX));
+            float xBG = Mathf.Lerp(leftX, zoneLeft, enterEase.Evaluate(u));
+
+            float lag01 = Mathf.Clamp01(entryLagDecay.Evaluate(u));
+            float lagPx = Mathf.Lerp(entryLagPixels, 0f, lag01);
+            float xTX = xBG - lagPx;
+
+            if (xTX < leftX) xTX = leftX;
 
             backgroundRect.anchoredPosition = new Vector2(xBG, _startPos.y);
             textRect.anchoredPosition = new Vector2(xTX, _startPos.y);
@@ -169,16 +187,19 @@ public sealed class TurnNotification : MonoBehaviour
             yield return null;
         }
 
-        float exitElapsed = 0f;
-        while (exitElapsed < (dur3 + textOffset))
+        float te = 0f;
+        while (te < dur3)
         {
-            exitElapsed += Time.deltaTime;
+            te += Time.deltaTime;
+            float u = Mathf.Clamp01(te / dur3);
 
-            float uTX = Mathf.Clamp01((exitElapsed + textOffset) / dur3);
-            float uBG = Mathf.Clamp01(exitElapsed / dur3);
+            float xBG = Mathf.Lerp(zoneRight, rightX, exitEase.Evaluate(u));
 
-            float xTX = Mathf.Lerp(zoneRight, rightX, exitEase.Evaluate(uTX));
-            float xBG = Mathf.Lerp(zoneRight, rightX, exitEase.Evaluate(uBG));
+            float lead01 = Mathf.Clamp01(exitLeadGrowth.Evaluate(u));
+            float lead = Mathf.Lerp(0f, leadPx, lead01);
+            float xTX = xBG + lead;
+
+            if (xTX > rightX) xTX = rightX;
 
             textRect.anchoredPosition = new Vector2(xTX, _startPos.y);
             backgroundRect.anchoredPosition = new Vector2(xBG, _startPos.y);
@@ -187,7 +208,6 @@ public sealed class TurnNotification : MonoBehaviour
 
         if (cg) cg.alpha = 0f;
     }
-
 
     static float CanvasHalfWidth(Canvas c, RectTransform rt)
     {
@@ -249,5 +269,4 @@ public sealed class TurnNotification : MonoBehaviour
 
         InstantHide();
     }
-
 }
