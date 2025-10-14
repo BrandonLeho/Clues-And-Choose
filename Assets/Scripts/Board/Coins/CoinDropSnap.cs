@@ -442,12 +442,10 @@ public class CoinDropSnap : MonoBehaviour
 
     public void SetHome(Vector3 worldPos, bool alsoSetZ = true)
     {
-        if (!_hasHome)
-        {
-            _homeWorldPos = worldPos;
-            if (alsoSetZ) _spawnZ = worldPos.z;
-            _hasHome = true;
-        }
+        _lastValidWorldPos = worldPos;
+        if (alsoSetZ) _spawnZ = worldPos.z;
+        _homeWorldPos = worldPos;
+        _hasHome = true;
     }
 
 
@@ -528,15 +526,19 @@ public class CoinDropSnap : MonoBehaviour
         if (releaseSpot)
             ReleasePlacementLockAndSpot();
 
+        _occupiedSpot = null;
+        _lastValidWorldPos = _homeWorldPos;
+
         Vector3 target = _homeWorldPos;
         if (!keepCurrentZ) target.z = _spawnZ;
 
         if (tween)
-            StartSnapTween(target, updateLastValid: false);
+            StartSnapTween(target, updateLastValid: true);
         else
         {
-            if (_sync != null) _sync.OwnerSnapTo(target, (scaleTarget ? scaleTarget.localScale : transform.localScale));
             transform.position = target;
+            if (_sync != null)
+                _sync.OwnerSnapTo(target, (scaleTarget ? scaleTarget.localScale : transform.localScale));
         }
     }
 }
