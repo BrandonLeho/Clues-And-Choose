@@ -11,6 +11,13 @@ public sealed class TurnNotification : MonoBehaviour
     [SerializeField] TMP_Text label;
     [SerializeField] CanvasGroup cg;
 
+    [Header("Children")]
+    [SerializeField] RectTransform backgroundRect;
+    [SerializeField] RectTransform textRect;
+
+    [Header("Stagger")]
+    [SerializeField, Min(0f)] float textOffset = 0.2f;
+
     [Header("Motion")]
     [SerializeField] float offscreenPadding = 200f;
     [SerializeField, Min(0.05f)] float enterDuration = 0.65f;
@@ -29,6 +36,9 @@ public sealed class TurnNotification : MonoBehaviour
     Coroutine _playCo;
     Vector2 _startPos;
 
+    bool _targetChosenThisRound = false;
+
+
     void Reset()
     {
         root = GetComponent<RectTransform>();
@@ -46,6 +56,9 @@ public sealed class TurnNotification : MonoBehaviour
     void OnEnable()
     {
         CoinPlacementTurnManager.OnPlacerChangedClient += HandlePlacerChanged;
+        PhaseController.OnClientTargetChosen += ArmForThisRound;              // NEW
+        RoundManager.Instance?.onRoundChangedClient.AddListener(OnRoundChangedClient_Reset); // NEW
+
         if (CoinPlacementTurnManager.Instance)
             HandlePlacerChanged(CoinPlacementTurnManager.Instance.currentPlacerNetId);
     }
@@ -53,11 +66,15 @@ public sealed class TurnNotification : MonoBehaviour
     void OnDisable()
     {
         CoinPlacementTurnManager.OnPlacerChangedClient -= HandlePlacerChanged;
-        StopRunning();
+        PhaseController.OnClientTargetChosen -= ArmForThisRound;              // NEW
+        if (RoundManager.Instance)
+            RoundManager.Instance.onRoundChangedClient.RemoveListener(OnRoundChangedClient_Reset); // NEW
     }
 
     void HandlePlacerChanged(uint placerNetId)
     {
+        if (!_targetChosenThisRound) { InstantHide(); return; }
+
         if (onlyShowForLocalTurn)
         {
             var me = NetworkClient.connection?.identity;
@@ -100,46 +117,69 @@ public sealed class TurnNotification : MonoBehaviour
         float leftX = -halfW - offscreenPadding;
         float rightX = +halfW + offscreenPadding;
 
+        if (!backgroundRect) backgroundRect = root.GetComponentInChildren<Image>(true)?.rectTransform ?? root;
+        if (!textRect && label) textRect = label.rectTransform;
+        if (!textRect) textRect = root.GetComponentInChildren<RectTransform>(true);
+
         if (cg) cg.alpha = 1f;
 
-        root.anchoredPosition = new Vector2(leftX, _startPos.y);
+        float dur1 = Mathf.Max(0.05f, enterDuration);
+        float dur2 = Mathf.Max(0.1f, slowZoneDuration);
+        float dur3 = (exitDuration > 0f ? exitDuration : enterDuration);
 
         float zoneLeft = centerX - (slowZoneWidth * 0.5f);
-        float t = 0f; float dur1 = Mathf.Max(0.05f, enterDuration);
+        float zoneRight = centerX + (slowZoneWidth * 0.5f);
+
+        root.anchoredPosition = new Vector2(0f, _startPos.y);
+        backgroundRect.anchoredPosition = new Vector2(leftX, _startPos.y);
+        textRect.anchoredPosition = new Vector2(leftX, _startPos.y);
+
+        float t = 0f;
         while (t < dur1)
         {
             t += Time.deltaTime;
-            float u = Mathf.Clamp01(t / dur1);
-            float eased = enterEase.Evaluate(u);
-            float x = Mathf.Lerp(leftX, zoneLeft, eased);
-            root.anchoredPosition = new Vector2(x, _startPos.y);
+            float uBG = Mathf.Clamp01(t / dur1);
+            float uTX = Mathf.Clamp01((t - textOffset) / (dur1 - textOffset + 1e-6f));
+
+            float xBG = Mathf.Lerp(leftX, zoneLeft, enterEase.Evaluate(uBG));
+            float xTX = Mathf.Lerp(leftX, zoneLeft, enterEase.Evaluate(uTX));
+
+            backgroundRect.anchoredPosition = new Vector2(xBG, _startPos.y);
+            textRect.anchoredPosition = new Vector2(xTX, _startPos.y);
             yield return null;
         }
 
-        float zoneRight = centerX + (slowZoneWidth * 0.5f);
-        t = 0f; float dur2 = Mathf.Max(0.1f, slowZoneDuration);
+        t = 0f;
         while (t < dur2)
         {
             t += Time.deltaTime;
             float u = Mathf.Clamp01(t / dur2);
             float x = Mathf.Lerp(zoneLeft, zoneRight, u);
-            root.anchoredPosition = new Vector2(x, _startPos.y);
+
+            backgroundRect.anchoredPosition = new Vector2(x, _startPos.y);
+            textRect.anchoredPosition = new Vector2(x, _startPos.y);
             yield return null;
         }
 
-        t = 0f; float dur3 = exitDuration > 0f ? exitDuration : enterDuration;
-        while (t < dur3)
+        float exitElapsed = 0f;
+        while (exitElapsed < (dur3 + textOffset))
         {
-            t += Time.deltaTime;
-            float u = Mathf.Clamp01(t / dur3);
-            float eased = exitEase.Evaluate(u);
-            float x = Mathf.Lerp(zoneRight, rightX, eased);
-            root.anchoredPosition = new Vector2(x, _startPos.y);
+            exitElapsed += Time.deltaTime;
+
+            float uTX = Mathf.Clamp01((exitElapsed + textOffset) / dur3);
+            float uBG = Mathf.Clamp01(exitElapsed / dur3);
+
+            float xTX = Mathf.Lerp(zoneRight, rightX, exitEase.Evaluate(uTX));
+            float xBG = Mathf.Lerp(zoneRight, rightX, exitEase.Evaluate(uBG));
+
+            textRect.anchoredPosition = new Vector2(xTX, _startPos.y);
+            backgroundRect.anchoredPosition = new Vector2(xBG, _startPos.y);
             yield return null;
         }
 
         if (cg) cg.alpha = 0f;
     }
+
 
     static float CanvasHalfWidth(Canvas c, RectTransform rt)
     {
@@ -177,5 +217,13 @@ public sealed class TurnNotification : MonoBehaviour
             return go.name;
         }
         return "Player";
+    }
+
+    void ArmForThisRound() => _targetChosenThisRound = true;
+
+    void OnRoundChangedClient_Reset(int _, uint __)
+    {
+        _targetChosenThisRound = false;
+        InstantHide();
     }
 }

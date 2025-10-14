@@ -25,6 +25,8 @@ public sealed class PhaseController : NetworkBehaviour
     [SyncVar] int targetRow = -1;
     [SyncVar] Color targetColor = Color.white;
 
+    public static event System.Action OnClientTargetChosen;
+
 
     public override void OnStartServer()
     {
@@ -303,6 +305,8 @@ public sealed class PhaseController : NetworkBehaviour
 
         Debug.Log($"[Scoring] Target set → col={(targetCol + 1)}, row={RowLetters(targetRow)} " +
                 $"(raw card row={rowFromCard}) color={ColorToHex(targetColor)}");
+
+        RpcOnClientTargetChosen();
     }
 
 
@@ -321,4 +325,9 @@ public sealed class PhaseController : NetworkBehaviour
     static int CellsAwayChebyshev(int colA, int rowA, int colB, int rowB)
         => Mathf.Max(Mathf.Abs(colA - colB), Mathf.Abs(rowA - rowB));
 
+    [ClientRpc]
+    void RpcOnClientTargetChosen()
+    {
+        OnClientTargetChosen?.Invoke();
+    }
 }

@@ -13765,7 +13765,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 42.36191
+    x: 14.004272
     y: 0
     width: 10
     height: 10
@@ -48841,12 +48841,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TurnNotification
   root: {fileID: 814815026}
   label: {fileID: 939066818}
-  cg: {fileID: 814815027}
-  offscreenPadding: 200
-  enterDuration: 0.65
+  cg: {fileID: 0}
+  backgroundRect: {fileID: 563375763}
+  textRect: {fileID: 939066817}
+  textOffset: 0.2
+  offscreenPadding: 2000
+  enterDuration: 2
   slowZoneWidth: 420
   slowZoneDuration: 1.2
-  exitDuration: 0
+  exitDuration: 2
   enterEase:
     serializedVersion: 2
     m_Curve:
@@ -58120,7 +58123,7 @@ GameObject:
   - component: {fileID: 968499495}
   - component: {fileID: 968499494}
   m_Layer: 0
-  m_Name: PlacingPhaseController
+  m_Name: PhaseController
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
