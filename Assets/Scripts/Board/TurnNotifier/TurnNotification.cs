@@ -59,6 +59,9 @@ public sealed class TurnNotification : MonoBehaviour
         CoinPlacementTurnManager.OnPlacerChangedClient += HandlePlacerChanged;
         PhaseController.OnClientTargetChosen += HandleTargetChosen;
         _targetChosen = PhaseController.Instance && PhaseController.Instance.ClientHasTarget;
+        RoundManager.Instance?.onRoundChangedClient?.RemoveListener(HandleClientRoundChanged);
+        RoundManager.Instance?.onRoundChangedClient?.AddListener(HandleClientRoundChanged);
+
         if (CoinPlacementTurnManager.Instance)
             HandlePlacerChanged(CoinPlacementTurnManager.Instance.currentPlacerNetId);
     }
@@ -67,6 +70,8 @@ public sealed class TurnNotification : MonoBehaviour
     {
         CoinPlacementTurnManager.OnPlacerChangedClient -= HandlePlacerChanged;
         PhaseController.OnClientTargetChosen -= HandleTargetChosen;
+        RoundManager.Instance?.onRoundChangedClient?.RemoveListener(HandleClientRoundChanged);
+
     }
 
     void HandlePlacerChanged(uint placerNetId)
@@ -232,4 +237,17 @@ public sealed class TurnNotification : MonoBehaviour
             HandlePlacerChanged(id);
         }
     }
+
+    void HandleClientRoundChanged(int _, uint __)
+    {
+        if (requireCardChoice)
+            _targetChosen = false;
+
+        _pendingPlacerId = CoinPlacementTurnManager.Instance
+            ? CoinPlacementTurnManager.Instance.currentPlacerNetId
+            : 0u;
+
+        InstantHide();
+    }
+
 }
