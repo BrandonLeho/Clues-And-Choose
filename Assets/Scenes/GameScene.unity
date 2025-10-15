@@ -13765,7 +13765,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 0.3075061
+    x: 3.1508741
     y: 0
     width: 10
     height: 10
@@ -34296,7 +34296,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 3000, y: 300}
+  m_SizeDelta: {x: 3700, y: 300}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &563375764
 MonoBehaviour:
@@ -48844,12 +48844,64 @@ MonoBehaviour:
   cg: {fileID: 0}
   backgroundRect: {fileID: 563375763}
   textRect: {fileID: 939066817}
-  textOffset: 0.2
-  offscreenPadding: 2000
-  enterDuration: 0.45
-  slowZoneWidth: 420
-  slowZoneDuration: 1.2
-  exitDuration: 0.45
+  textEntryDelay: 0.2
+  symmetricExitAdvance: 1
+  textExitAdvance: 0.2
+  entryLagPixels: 5000
+  exitLeadPixels: 0
+  entryLagDecay:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  exitLeadGrowth:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  offscreenPadding: 2500
+  enterDuration: 2
+  slowZoneWidth: 1000
+  slowZoneDuration: 4
+  exitDuration: 2
   enterEase:
     serializedVersion: 2
     m_Curve:
