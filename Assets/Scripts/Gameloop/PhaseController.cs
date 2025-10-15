@@ -28,6 +28,9 @@ public sealed class PhaseController : NetworkBehaviour
     public static event System.Action<int, int, Color> OnClientTargetChosen;
     public bool ClientHasTarget => targetCol >= 0 && targetRow >= 0;
 
+    bool _waitingForScoringBanner;
+    bool _coinsReturnedThisRound;
+
     public override void OnStartServer()
     {
         base.OnStartServer();
@@ -150,6 +153,10 @@ public sealed class PhaseController : NetworkBehaviour
     {
         Debug.Log("[Phase] Begin SCORING");
 
+        _waitingForScoringBanner = true;
+        _coinsReturnedThisRound = false;
+        RpcShowScoringBanner();
+
         if (targetCol < 0 || targetRow < 0)
         {
             Debug.LogWarning("[Scoring] No target set. Did the clue giver select a card choice?");
@@ -211,8 +218,8 @@ public sealed class PhaseController : NetworkBehaviour
             int clueGiverBonus = nearbyCountForClueGiver * perNearbyCoin;
             ScoreRegistry.AddScore(clueGiverName, clueGiverBonus);
             Debug.Log($"[Scoring] Clue-giver bonus: +{clueGiverBonus} → {clueGiverName} " +
-                    $"({nearbyCountForClueGiver} nearby coin(s) × {perNearbyCoin} each; " +
-                    $"vicinitySize={vicinitySize}, playerCount={playerCount})");
+                      $"({nearbyCountForClueGiver} nearby coin(s) × {perNearbyCoin} each; " +
+                      $"vicinitySize={vicinitySize}, playerCount={playerCount})");
             awardedTotal += clueGiverBonus;
         }
         else
@@ -225,6 +232,26 @@ public sealed class PhaseController : NetworkBehaviour
         var cgConn = GetClueGiverConnection();
         if (cgConn != null)
             TargetClueGiverSlideOutCardAndRespawn(cgConn);
+    }
+
+    [ClientRpc]
+    void RpcShowScoringBanner()
+    {
+        var tn = FindFirstObjectByType<TurnNotification>();
+        if (tn) tn.PlaySystemMessage("SCORING");
+    }
+
+    [Command(requiresAuthority = false)]
+    public void CmdNotifyScoringBannerFinished()
+    {
+        if (!_waitingForScoringBanner) return;
+        _waitingForScoringBanner = false;
+
+        if (!_coinsReturnedThisRound && RoundManager.Instance != null)
+        {
+            RoundManager.Instance.ServerResetAllCoinsToHome(tween: true);
+            _coinsReturnedThisRound = true;
+        }
 
         if (RoundManager.Instance)
             RoundManager.Instance.ServerAdvanceRound();

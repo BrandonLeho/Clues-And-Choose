@@ -13765,7 +13765,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 3.1508741
+    x: 92.754364
     y: 0
     width: 10
     height: 10
@@ -48844,11 +48844,8 @@ MonoBehaviour:
   cg: {fileID: 0}
   backgroundRect: {fileID: 563375763}
   textRect: {fileID: 939066817}
-  textEntryDelay: 0.2
-  symmetricExitAdvance: 1
-  textExitAdvance: 0.2
-  entryLagPixels: 5000
-  exitLeadPixels: 0
+  entryLagPixels: 1000
+  exitLeadPixels: 1000
   entryLagDecay:
     serializedVersion: 2
     m_Curve:
@@ -48898,10 +48895,10 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   offscreenPadding: 2500
-  enterDuration: 2
-  slowZoneWidth: 1000
-  slowZoneDuration: 4
-  exitDuration: 2
+  enterDuration: 0.45
+  slowZoneWidth: 750
+  slowZoneDuration: 1
+  exitDuration: 0.45
   enterEase:
     serializedVersion: 2
     m_Curve:
@@ -48953,6 +48950,9 @@ MonoBehaviour:
   onlyShowForLocalTurn: 0
   textPrefix: 
   requireCardChoice: 1
+  testPlayInGame: 0
+  testDisplayName: Test Player
+  testBypassGates: 1
 --- !u!224 &821937377 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 3337803732932086652, guid: 96c2c7455eef99f46961f53ff646d8a6, type: 3}

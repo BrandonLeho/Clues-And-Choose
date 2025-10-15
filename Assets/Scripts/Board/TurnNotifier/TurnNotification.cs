@@ -45,11 +45,20 @@ public sealed class TurnNotification : MonoBehaviour
     [SerializeField] string textPrefix = "Now Placing:";
     [SerializeField] bool requireCardChoice = true;
 
+    [Header("Test (Play Mode)")]
+    [SerializeField] bool testPlayInGame = false;
+    [SerializeField] string testDisplayName = "Test Player";
+    [SerializeField] bool testBypassGates = true;
+
+
     bool _targetChosen;
     uint _pendingPlacerId;
 
     Coroutine _playCo;
     Vector2 _startPos;
+
+    bool _testPrev;
+    bool _playingSystemMessage;
 
     void Reset()
     {
@@ -82,8 +91,26 @@ public sealed class TurnNotification : MonoBehaviour
         CoinPlacementTurnManager.OnPlacerChangedClient -= HandlePlacerChanged;
         PhaseController.OnClientTargetChosen -= HandleTargetChosen;
         RoundManager.Instance?.onRoundChangedClient?.RemoveListener(HandleClientRoundChanged);
-
     }
+
+    void Update()
+    {
+        if (testPlayInGame && !_testPrev)
+        {
+            _testPrev = true;
+
+            if (testBypassGates) _targetChosen = true;
+            if (label) label.text = $"{textPrefix} {(!string.IsNullOrWhiteSpace(testDisplayName) ? testDisplayName : "Player")}";
+
+            RestartPlay();
+            testPlayInGame = false;
+        }
+        else if (!testPlayInGame && _testPrev)
+        {
+            _testPrev = false;
+        }
+    }
+
 
     void HandlePlacerChanged(uint placerNetId)
     {
@@ -128,6 +155,16 @@ public sealed class TurnNotification : MonoBehaviour
         root.anchoredPosition = new Vector2(+halfW + offscreenPadding, _startPos.y);
     }
 
+    public void PlaySystemMessage(string text)
+    {
+        _playingSystemMessage = true;
+
+        if (label) label.text = text;
+        if (cg) cg.alpha = 1f;
+
+        RestartPlay();
+    }
+
     IEnumerator Co_Play()
     {
         var canvas = root.GetComponentInParent<Canvas>();
@@ -144,7 +181,7 @@ public sealed class TurnNotification : MonoBehaviour
 
         float dur1 = Mathf.Max(0.05f, enterDuration);
         float dur2 = Mathf.Max(0.1f, slowZoneDuration);
-        float dur3 = (exitDuration > 0f ? exitDuration : enterDuration);
+        float dur3 = exitDuration > 0f ? exitDuration : enterDuration;
 
         float zoneLeft = centerX - (slowZoneWidth * 0.5f);
         float zoneRight = centerX + (slowZoneWidth * 0.5f);
@@ -153,7 +190,7 @@ public sealed class TurnNotification : MonoBehaviour
         backgroundRect.anchoredPosition = new Vector2(leftX, _startPos.y);
         textRect.anchoredPosition = new Vector2(leftX, _startPos.y);
 
-        float leadPx = (exitLeadPixels > 0f ? exitLeadPixels : entryLagPixels);
+        float leadPx = exitLeadPixels > 0f ? exitLeadPixels : entryLagPixels;
 
         float t = 0f;
         while (t < dur1)
@@ -206,6 +243,16 @@ public sealed class TurnNotification : MonoBehaviour
         }
 
         if (cg) cg.alpha = 0f;
+
+        if (_playingSystemMessage)
+        {
+            _playingSystemMessage = false;
+            var phase = PhaseController.Instance;
+            if (phase)
+            {
+                phase.CmdNotifyScoringBannerFinished();
+            }
+        }
     }
 
     static float CanvasHalfWidth(Canvas c, RectTransform rt)
@@ -268,4 +315,13 @@ public sealed class TurnNotification : MonoBehaviour
 
         InstantHide();
     }
+
+    [ContextMenu("Play Test Animation")]
+    void ContextPlayTest()
+    {
+        if (testBypassGates) _targetChosen = true;
+        if (label) label.text = $"{textPrefix} {(!string.IsNullOrWhiteSpace(testDisplayName) ? testDisplayName : "Player")}";
+        RestartPlay();
+    }
+
 }

@@ -172,7 +172,6 @@ public class RoundManager : NetworkBehaviour
         SetClueGiverByRosterIndex(_clueGiverRosterIndex);
         RosterStore.SetCurrentClueGiverByNetId(_clueGiverNetId);
         RpcApplyCardHoverForNewClueGiver(_clueGiverNetId);
-        ServerResetAllCoinsToHome(tween: true);
         RpcNotifyRoundStarted(_roundIndex, _clueGiverNetId);
     }
 
@@ -250,7 +249,7 @@ public class RoundManager : NetworkBehaviour
     }
 
     [Server]
-    void ServerResetAllCoinsToHome(bool tween = true)
+    public void ServerResetAllCoinsToHome(bool tween = true)
     {
         foreach (var kv in NetworkServer.spawned)
         {
@@ -270,5 +269,4 @@ public class RoundManager : NetworkBehaviour
             }
         }
     }
-
 }
