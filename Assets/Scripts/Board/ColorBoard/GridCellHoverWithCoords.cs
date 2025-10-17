@@ -78,6 +78,8 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     Transform _homeParent;
     int _fixedGridIndex = -1;
 
+    public bool IsFloating => _isFloating;
+
     void Awake()
     {
         _rt = (RectTransform)transform;
@@ -475,5 +477,69 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     bool IgnorePointerNow()
     {
         return CoinPlacementProbe.ProbeMode && !_bypassProbeGate;
+    }
+
+    public void FloatWithoutHover()
+    {
+        if (_isFloating) return;
+        _origParent = _rt.parent;
+        _origSiblingIndex = _rt.GetSiblingIndex();
+
+        if (floatingLayer)
+        {
+            if (_placeholder == null)
+            {
+                var go = new GameObject("[Placeholder]", typeof(RectTransform), typeof(LayoutElement));
+                var prt = go.GetComponent<RectTransform>();
+                prt.SetParent(_origParent, false);
+                prt.SetSiblingIndex(_origSiblingIndex);
+                prt.anchorMin = _rt.anchorMin;
+                prt.anchorMax = _rt.anchorMax;
+                prt.pivot = _rt.pivot;
+                prt.sizeDelta = _rt.sizeDelta;
+                _placeholder = go.GetComponent<LayoutElement>();
+                var size = _rt.rect.size;
+                _placeholder.minWidth = _placeholder.preferredWidth = size.x;
+                _placeholder.minHeight = _placeholder.preferredHeight = size.y;
+            }
+            else
+            {
+                _placeholder.transform.SetParent(_origParent, false);
+                ((RectTransform)_placeholder.transform).SetSiblingIndex(_origSiblingIndex);
+                _placeholder.ignoreLayout = false;
+            }
+            _isFloating = true;
+            _rt.SetParent(floatingLayer, true);
+            _rt.SetAsLastSibling();
+        }
+        else
+        {
+            if (!_tempCanvas) _tempCanvas = gameObject.AddComponent<Canvas>();
+            _tempCanvas.overrideSorting = true;
+            _tempCanvas.sortingOrder = hoverSortingOrder;
+            if (!gameObject.GetComponent<GraphicRaycaster>()) gameObject.AddComponent<GraphicRaycaster>();
+        }
+    }
+
+    public void UnfloatIfFloating()
+    {
+        if (!_isFloating && _tempCanvas == null) return;
+
+        if (_isFloating)
+        {
+            _rt.SetParent(_origParent, true);
+            if (_origSiblingIndex >= 0) _rt.SetSiblingIndex(_origSiblingIndex);
+            if (_placeholder)
+            {
+                Destroy(_placeholder.gameObject);
+                _placeholder = null;
+            }
+            _isFloating = false;
+        }
+        else if (_tempCanvas)
+        {
+            _tempCanvas.overrideSorting = false;
+            _tempCanvas.sortingOrder = 0;
+        }
     }
 }

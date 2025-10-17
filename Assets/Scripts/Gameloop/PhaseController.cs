@@ -239,6 +239,8 @@ public sealed class PhaseController : NetworkBehaviour
     {
         var tn = FindFirstObjectByType<TurnNotification>();
         if (tn) tn.PlaySystemMessage("SCORING");
+        GridDimmerOverlay.Instance?.FadeInDuringScoring();
+        Debug.Log(GridDimmerOverlay.Instance);
     }
 
     [Command(requiresAuthority = false)]

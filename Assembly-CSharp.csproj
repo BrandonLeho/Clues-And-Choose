@@ -55,7 +55,6 @@
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardBuilder.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorPickMirrorBinder.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\NeonRectBorderBinder.cs" />
-    <Compile Include="Assets\Scripts\Board\Scoreboard\ClassicScoreboard\ScoreboardLabels.cs" />
     <Compile Include="Assets\Scripts\UI\Panel.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\RosterStore.cs" />
     <Compile Include="Assets\Scripts\Controller\CursorController\ChangeCursor.cs" />
@@ -84,7 +83,6 @@
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerNameSync.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\PaletteGrid.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerListBinder.cs" />
-    <Compile Include="Assets\Scripts\Board\Scoreboard\ClassicScoreboard\ScoreboardAttachToBoard.cs" />
     <Compile Include="Assets\Scripts\GameNetworking\NetworkChat.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinPlacementGuard.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\NetworkCoin.cs" />
@@ -103,7 +101,6 @@
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorChoosingPhaseController.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\BoardSpotNet.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceClickRelay.cs" />
-    <Compile Include="Assets\Scripts\Board\Scoreboard\ClassicScoreboard\ScoreboardFitter.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceGridCoord.cs" />
     <Compile Include="Assets\Scripts\Gameloop\CoinPlacementTurnManager.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\Arrow\CoinPlacementProbe.cs" />
@@ -111,10 +108,8 @@
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceHoverScale.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinSlideInIntro.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceToPlacingPhaseBridge.cs" />
-    <Compile Include="Assets\Scripts\Board\Scoreboard\ClassicScoreboard\ScoreboardGridPainter.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\PerimeterGlowEntry.cs" />
     <Compile Include="Assets\Scripts\UI\LobbyUIManager.cs" />
-    <Compile Include="Assets\Scripts\Board\ColorBoard\EnableHoverAfterFlyIn.cs" />
     <Compile Include="Assets\Scripts\Animation\ImpactPulse.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\BannerGlowController.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\Lock\CoinLockedState.cs" />
@@ -132,11 +127,13 @@
     <Compile Include="Assets\Scripts\Board\ColorBoard\GridPalettePainter.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\Arrow\ArrowProbeHoverRouter.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceSelectUnlockAll.cs" />
+    <Compile Include="Assets\Scripts\Board\ColorBoard\GridRingRevealer.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverRoulette\RouletteNetSync.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\GameGroupEntryAnimator.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinDragSync.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandlerGame.cs" />
     <Compile Include="Assets\Scripts\Board\TurnNotifier\TurnNotification.cs" />
+    <Compile Include="Assets\Scripts\Board\Scoreboard\GridDimmerOverlay.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerRow.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinDragHandler.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinInteractionGate.cs" />
@@ -153,8 +150,8 @@
     <Compile Include="Assets\Scripts\Board\PlayerLIst\GameScenePlayerList.cs" />
     <Compile Include="Assets\Scripts\UI\PanelSwapper.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardChoiceToGridHover.cs" />
+    <Compile Include="Assets\Scripts\Board\ColorBoard\EnableAllCellsHoverAfterFlyIn.cs" />
     <Compile Include="Assets\Scripts\Gameloop\PlayerRoundRegistrant.cs" />
-    <Compile Include="Assets\Scripts\Board\Scoreboard\ClassicScoreboard\ScoreboardGenerator.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\ColorGridAnimator.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinSpawnAfterRouletteNetwork.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ButtonSwapFlash.cs" />

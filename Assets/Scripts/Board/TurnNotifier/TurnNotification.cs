@@ -247,6 +247,7 @@ public sealed class TurnNotification : MonoBehaviour
         if (_playingSystemMessage)
         {
             _playingSystemMessage = false;
+            GridDimmerOverlay.Instance?.OnScoringBannerFinished();
             var phase = PhaseController.Instance;
             if (phase)
             {
