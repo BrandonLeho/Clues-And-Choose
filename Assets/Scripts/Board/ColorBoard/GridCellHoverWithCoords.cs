@@ -19,12 +19,12 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     [SerializeField] string coordinateFormat = "{C} {R}";
     [SerializeField, Range(0f, 1f)] float maxLabelAlpha = 1f;
 
-    [Header("Grid Sizing (Auto unless overridden)")]
+    [Header("Grid Sizing")]
     [SerializeField] bool autoDetectGrid = true;
     [Min(1)] public int colsOverride = 30;
     [Min(1)] public int rowsOverride = 16;
 
-    [Header("Orientation (A at top?)")]
+    [Header("Orientation")]
     [SerializeField] bool aStartsAtTop = true;
 
     [Header("Optional Links")]
@@ -79,6 +79,9 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     int _fixedGridIndex = -1;
 
     public bool IsFloating => _isFloating;
+
+    bool _hoverLocked;
+    public bool IsHoverLocked => _hoverLocked;
 
     void Awake()
     {
@@ -476,6 +479,7 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
 
     bool IgnorePointerNow()
     {
+        if (_hoverLocked && !_bypassProbeGate) return true;
         return CoinPlacementProbe.ProbeMode && !_bypassProbeGate;
     }
 
@@ -540,6 +544,25 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
         {
             _tempCanvas.overrideSorting = false;
             _tempCanvas.sortingOrder = 0;
+        }
+    }
+
+    public void SetHoverLock(bool locked, bool keepShown = true)
+    {
+        _hoverLocked = locked;
+
+        if (locked && keepShown)
+        {
+            if (_anim != null) StopCoroutine(_anim);
+            _progress01 = 1f;
+            Apply(_progress01);
+
+            if (label && deactivateLabelWhenHidden)
+                label.gameObject.SetActive(true);
+        }
+        else if (!locked)
+        {
+            // TODO something
         }
     }
 }

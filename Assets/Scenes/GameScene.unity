@@ -12831,7 +12831,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 0.20996095
+    x: 0.46692997
     y: 0
     width: 10
     height: 10
@@ -33119,7 +33119,7 @@ MonoBehaviour:
   flipRowForMapping: 1
   includeDiagonals: 1
   firstRingDelaySeconds: 2
-  ringDelaySeconds: 1
+  ringDelaySeconds: 1.5
   maxRings: 2
 --- !u!1001 &592759318
 PrefabInstance:

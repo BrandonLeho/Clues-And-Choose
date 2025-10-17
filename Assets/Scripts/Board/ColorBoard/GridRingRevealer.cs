@@ -30,6 +30,8 @@ public sealed class GridRingRevealer : MonoBehaviour
 
     Coroutine _co;
 
+    GridCellHoverWithCoords _currentChosen;
+
     void Awake()
     {
         Instance = this;
@@ -80,30 +82,36 @@ public sealed class GridRingRevealer : MonoBehaviour
     public void Begin(int chosenCol, int chosenRowUI, bool keepOnlyChosenHoverEnabled)
     {
         var chosen = GetCellComponent(chosenCol, chosenRowUI);
-
-        ApplyExclusiveHover(chosen);
-
-        ForceChosenHoverNow(chosen);
-
-        if (chosen && !chosen.IsFloating) chosen.FloatWithoutHover();
+        _currentChosen = chosen;
 
         if (_co != null) StopCoroutine(_co);
-        _co = StartCoroutine(CoRings(chosenCol, chosenRowUI));
+        _co = StartCoroutine(CoRings(chosenCol, chosenRowUI, chosen));
     }
 
-    void ForceChosenHoverNow(GridCellHoverWithCoords chosen)
+    public void ChosenOnTopIfFloating()
     {
-        if (!chosen) return;
-        chosen.SetHoverEnabled(true);
-        chosen.ProbeEnter();
+        if (_currentChosen && _currentChosen.IsFloating)
+        {
+            var rt = (RectTransform)_currentChosen.transform;
+            rt.SetAsLastSibling();
+        }
     }
 
-
-
-    IEnumerator CoRings(int c0, int r0)
+    IEnumerator CoRings(int c0, int r0, GridCellHoverWithCoords chosen)
     {
         float t = 0f;
         while (t < firstRingDelaySeconds) { t += Time.deltaTime; yield return null; }
+
+        if (chosen)
+        {
+            chosen.SetHoverLock(true);
+            chosen.SetHoverEnabled(true);
+            chosen.ProbeEnter();
+            ChosenOnTopIfFloating();
+        }
+
+        t = 0f;
+        while (t < ringDelaySeconds) { t += Time.deltaTime; yield return null; }
 
         for (int ring = 1; ring <= maxRings; ring++)
         {
@@ -128,6 +136,8 @@ public sealed class GridRingRevealer : MonoBehaviour
 
                     if (!cell.IsFloating) cell.FloatWithoutHover();
                     floatedAny = true;
+
+                    ChosenOnTopIfFloating();
                 }
             }
 
@@ -150,24 +160,4 @@ public sealed class GridRingRevealer : MonoBehaviour
 
         return _indexToCell[idx];
     }
-
-    void ApplyExclusiveHover(GridCellHoverWithCoords chosen)
-    {
-        // Grab every GridCellHoverWithCoords in the scene (active or inactive)
-        var all = FindObjectsByType<GridCellHoverWithCoords>(
-            FindObjectsInactive.Include,
-            FindObjectsSortMode.None
-        );
-
-        for (int i = 0; i < all.Length; i++)
-        {
-            var h = all[i];
-            if (!h) continue;
-
-            bool enable = (h == chosen);
-            // Only write when needed to avoid extra work
-            if (h.enabled != enable) h.SetHoverEnabled(enable);
-        }
-    }
-
 }
