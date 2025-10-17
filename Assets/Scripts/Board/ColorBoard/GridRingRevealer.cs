@@ -24,6 +24,12 @@ public sealed class GridRingRevealer : MonoBehaviour
     [Min(0f)] public float ringDelaySeconds = 1.0f;
     [Min(0)] public int maxRings = 8;
 
+    [Header("Ring Float Fade")]
+    public bool ringCellsFadeOnReveal = true;
+    [Range(0f, 1f)] public float ringFadeStartAlpha = 0.35f;
+    [Min(0f)] public float ringFadeSeconds = 0.18f;
+    public AnimationCurve ringFadeEase = null;
+
     List<GridCellHoverWithCoords> _cells = new List<GridCellHoverWithCoords>();
     GridCellHoverWithCoords[] _indexToCell;
     bool _cacheBuilt;
@@ -134,7 +140,13 @@ public sealed class GridRingRevealer : MonoBehaviour
                     var cell = GetCellComponent(cc, rr);
                     if (!cell) continue;
 
-                    if (!cell.IsFloating) cell.FloatWithoutHover();
+                    if (!cell.IsFloating)
+                    {
+                        if (ringCellsFadeOnReveal)
+                            cell.FloatWithoutHoverFade(ringFadeSeconds, ringFadeEase ?? AnimationCurve.EaseInOut(0, 0, 1, 1), true, ringFadeStartAlpha);
+                        else
+                            cell.FloatWithoutHover();
+                    }
                     floatedAny = true;
 
                     ChosenOnTopIfFloating();

@@ -83,6 +83,8 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     bool _hoverLocked;
     public bool IsHoverLocked => _hoverLocked;
 
+    Coroutine _fadeCo;
+
     void Awake()
     {
         _rt = (RectTransform)transform;
@@ -528,6 +530,8 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
     public void UnfloatIfFloating()
     {
         if (!_isFloating && _tempCanvas == null) return;
+        var cg = GetComponent<CanvasGroup>();
+        if (cg) cg.alpha = 1f;
 
         if (_isFloating)
         {
@@ -564,5 +568,46 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
         {
             // TODO something
         }
+    }
+
+    public void FloatWithoutHoverFade(float seconds, AnimationCurve curve = null, bool blockRaycastsDuringFade = true, float startAlpha = 0f)
+    {
+        var cg = GetComponent<CanvasGroup>();
+        if (!cg) cg = gameObject.AddComponent<CanvasGroup>();
+
+        float a0 = Mathf.Clamp01(startAlpha);
+        cg.alpha = a0;
+
+        cg.blocksRaycasts = !blockRaycastsDuringFade;
+        cg.interactable = false;
+
+        FloatWithoutHover();
+
+        if (_fadeCo != null) StopCoroutine(_fadeCo);
+        _fadeCo = StartCoroutine(CoFadeInFloating(cg, Mathf.Max(0f, seconds), curve ?? AnimationCurve.EaseInOut(0, 0, 1, 1), a0));
+    }
+
+    IEnumerator CoFadeInFloating(CanvasGroup cg, float seconds, AnimationCurve ease, float startAlpha)
+    {
+        if (seconds <= 0f)
+        {
+            cg.alpha = 1f;
+            cg.blocksRaycasts = true;
+            cg.interactable = true;
+            yield break;
+        }
+
+        float t = 0f;
+        while (t < seconds)
+        {
+            t += Time.unscaledDeltaTime;
+            float p = Mathf.Clamp01(t / seconds);
+            cg.alpha = Mathf.Lerp(startAlpha, 1f, ease.Evaluate(p));
+            yield return null;
+        }
+
+        cg.alpha = 1f;
+        cg.blocksRaycasts = true;
+        cg.interactable = true;
     }
 }
