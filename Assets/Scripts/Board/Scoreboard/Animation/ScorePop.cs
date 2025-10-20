@@ -63,14 +63,20 @@ public sealed class ScorePop : MonoBehaviour
             {
                 if (board.TryGetSpotCoord(kv.Key, out int c, out int r) && c == col && r == row)
                 {
-                    spotIndex = kv.Key;
-                    coinNetId = kv.Value;
-                    break;
+                    int rUI = board.AStartsAtTop ? (board.GridRows - 1 - r) : r;
+
+                    if (c == col && rUI == row)
+                    {
+                        spotIndex = kv.Key;
+                        coinNetId = kv.Value;
+                        break;
+                    }
                 }
             }
         }
-        Debug.Log(coinNetId);
+        Debug.Log(coinNetId + " " + spotIndex);
         if (coinNetId == 0) return;
+
 
         int cellsAway = Mathf.Max(Mathf.Abs(col - inst._targetCol), Mathf.Abs(row - inst._targetRow));
         int points = Mathf.Max(0, inst._pointsAtExact - cellsAway);
