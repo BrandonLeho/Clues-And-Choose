@@ -555,7 +555,6 @@ MonoBehaviour:
   scoreText: {fileID: 2182197174281042056}
   bannerBG: {fileID: 1248027586943008691}
   fallbackBG: {r: 1, g: 1, b: 1, a: 1}
-  bgAlpha: 1
   glowBinder: {fileID: 2295254407087023068}
 --- !u!114 &2295254407087023068
 MonoBehaviour:
@@ -583,5 +582,3 @@ MonoBehaviour:
   outlineIntensity: 2
   computeInnerUVFromRects: 0
   manualInnerUV: {x: 0.08, y: 0.06, z: 0.92, w: 0.94}
-  alwaysInsetPx: {x: 8, y: 8}
-  minInsetPxIfFlush: {x: 6, y: 6}

@@ -147,6 +147,7 @@ public sealed class GridRingRevealer : MonoBehaviour
                         else
                             cell.FloatWithoutHover();
                     }
+                    ScorePop.TrySpawnForCell(cc, rr, (RectTransform)cell.transform);
                     floatedAny = true;
 
                     ChosenOnTopIfFloating();

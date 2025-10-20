@@ -50,7 +50,6 @@ public class BannerGlowController : MonoBehaviour
 
     void OnValidate()
     {
-        EnsureInstanceMaterials();
         ApplyAll();
     }
 

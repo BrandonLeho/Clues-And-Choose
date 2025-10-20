@@ -31,6 +31,8 @@ public sealed class PhaseController : NetworkBehaviour
     bool _waitingForScoringBanner;
     bool _coinsReturnedThisRound;
 
+    public int PointsAtExact => pointsAtExact;
+
     public override void OnStartServer()
     {
         base.OnStartServer();
@@ -240,7 +242,7 @@ public sealed class PhaseController : NetworkBehaviour
         var tn = FindFirstObjectByType<TurnNotification>();
         if (tn) tn.PlaySystemMessage("SCORING");
         GridDimmerOverlay.Instance?.FadeInDuringScoring();
-        Debug.Log(GridDimmerOverlay.Instance);
+        if (ScorePop.Instance) ScorePop.Instance.ConfigureFromPhase(PointsAtExact);
     }
 
     [Command(requiresAuthority = false)]
