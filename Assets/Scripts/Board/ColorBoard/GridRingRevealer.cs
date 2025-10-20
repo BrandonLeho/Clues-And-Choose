@@ -154,11 +154,17 @@ public sealed class GridRingRevealer : MonoBehaviour
                 }
             }
 
-            if (!floatedAny) yield break;
+            if (!floatedAny)
+            {
+                if (PhaseController.Instance) PhaseController.Instance.CmdNotifyRingsRevealFinished();
+                yield break;
+            }
 
             t = 0f;
             while (t < ringDelaySeconds) { t += Time.deltaTime; yield return null; }
         }
+
+        if (PhaseController.Instance) PhaseController.Instance.CmdNotifyRingsRevealFinished();
     }
 
     GridCellHoverWithCoords GetCellComponent(int col, int rowUI)
@@ -166,7 +172,7 @@ public sealed class GridRingRevealer : MonoBehaviour
         if (!_cacheBuilt || _indexToCell == null || _indexToCell.Length == 0) return null;
 
         int uiRow = rowUI;
-        if (flipRowForMapping) uiRow = Mathf.Clamp(rows - 1 - rowUI, 0, rows - 1); // flip here only if caller sends bottom-origin
+        if (flipRowForMapping) uiRow = Mathf.Clamp(rows - 1 - rowUI, 0, rows - 1);
 
         int idx = uiRow * cols + col;
         if (idx < 0 || idx >= _indexToCell.Length) return null;

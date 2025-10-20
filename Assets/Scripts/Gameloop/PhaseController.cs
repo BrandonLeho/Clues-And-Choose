@@ -30,6 +30,7 @@ public sealed class PhaseController : NetworkBehaviour
 
     bool _waitingForScoringBanner;
     bool _coinsReturnedThisRound;
+    bool _ringsRevealFinished;
 
     public int PointsAtExact => pointsAtExact;
 
@@ -157,6 +158,7 @@ public sealed class PhaseController : NetworkBehaviour
 
         _waitingForScoringBanner = true;
         _coinsReturnedThisRound = false;
+        _ringsRevealFinished = false;
         RpcShowScoringBanner();
 
         if (targetCol < 0 || targetRow < 0)
@@ -251,6 +253,15 @@ public sealed class PhaseController : NetworkBehaviour
         if (!_waitingForScoringBanner) return;
         _waitingForScoringBanner = false;
 
+        TryFinalizeScoringAndAdvance();
+    }
+
+    [Server]
+    void TryFinalizeScoringAndAdvance()
+    {
+        if (_waitingForScoringBanner) return;
+        if (!_ringsRevealFinished) return;
+
         if (!_coinsReturnedThisRound && RoundManager.Instance != null)
         {
             RoundManager.Instance.ServerResetAllCoinsToHome(tween: true);
@@ -261,6 +272,12 @@ public sealed class PhaseController : NetworkBehaviour
             RoundManager.Instance.ServerAdvanceRound();
     }
 
+    [Command(requiresAuthority = false)]
+    public void CmdNotifyRingsRevealFinished()
+    {
+        _ringsRevealFinished = true;
+        TryFinalizeScoringAndAdvance();
+    }
 
     bool ServerTryResolvePlayerName(uint coinNetId, out string ownerName)
     {

@@ -69,7 +69,7 @@ public sealed class ScorePop : MonoBehaviour
                 }
             }
         }
-
+        Debug.Log(coinNetId);
         if (coinNetId == 0) return;
 
         int cellsAway = Mathf.Max(Mathf.Abs(col - inst._targetCol), Mathf.Abs(row - inst._targetRow));
