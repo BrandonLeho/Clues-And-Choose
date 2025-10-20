@@ -12831,7 +12831,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 52.856262
+    x: 0.9289433
     y: 0
     width: 10
     height: 10
@@ -15266,6 +15266,7 @@ GameObject:
   - component: {fileID: 313719347}
   - component: {fileID: 313719350}
   - component: {fileID: 313719351}
+  - component: {fileID: 313719352}
   m_Layer: 5
   m_Name: Scoreboard
   m_TagString: Untagged
@@ -15334,6 +15335,48 @@ MonoBehaviour:
   bannerEntryPrefab: {fileID: 7305315926120879016, guid: c0e0e523e297cc44790e4b9f58c8c0e4, type: 3}
   clearOnBuild: 1
   useRosterStore: 1
+--- !u!114 &313719352
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 313719346}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 208742324eee81d428c24c868da1348c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ScorePop
+  uiParent: {fileID: 1936569665}
+  scoreTextPrefab: {fileID: 2605645989221080303, guid: fd254b576b530b04992d09b87d7b9d70, type: 3}
+  lifetime: 0.9
+  rise: {x: 0, y: 40}
+  ease:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  startScale: 0.7
+  endScale: 1.2
 --- !u!1001 &314994250
 PrefabInstance:
   m_ObjectHideFlags: 0
