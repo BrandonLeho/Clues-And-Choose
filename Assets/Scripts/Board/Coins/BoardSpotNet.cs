@@ -24,8 +24,8 @@ public class BoardSpotsNet : NetworkBehaviour
 
     Dictionary<int, ValidDropSpot> _indexToSpot = new Dictionary<int, ValidDropSpot>();
 
-    public int GridRows => gridRows;
     public bool AStartsAtTop => aStartsAtTop;
+    public int GridRows => gridRows;
 
     void Awake()
     {

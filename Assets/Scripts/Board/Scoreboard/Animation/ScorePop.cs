@@ -61,11 +61,11 @@ public sealed class ScorePop : MonoBehaviour
         {
             foreach (var kv in board.occupancy)
             {
-                if (board.TryGetSpotCoord(kv.Key, out int c, out int r) && c == col && r == row)
+                if (board.TryGetSpotCoord(kv.Key, out int c, out int r))
                 {
-                    int rUI = board.AStartsAtTop ? (board.GridRows - 1 - r) : r;
+                    int rowForCompare = board.AStartsAtTop ? (board.GridRows - 1 - row) : row;
 
-                    if (c == col && rUI == row)
+                    if (c == col && r == rowForCompare)
                     {
                         spotIndex = kv.Key;
                         coinNetId = kv.Value;
@@ -74,12 +74,13 @@ public sealed class ScorePop : MonoBehaviour
                 }
             }
         }
-        Debug.Log(coinNetId + " " + spotIndex);
-        if (coinNetId == 0) return;
 
+        if (coinNetId == 0) return;
+        Debug.Log(coinNetId + " " + spotIndex);
 
         int cellsAway = Mathf.Max(Mathf.Abs(col - inst._targetCol), Mathf.Abs(row - inst._targetRow));
         int points = Mathf.Max(0, inst._pointsAtExact - cellsAway);
+        Debug.Log("Points: " + points);
         if (points <= 0) return;
 
         string ownerName = null;
