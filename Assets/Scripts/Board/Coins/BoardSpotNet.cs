@@ -217,17 +217,4 @@ public class BoardSpotsNet : NetworkBehaviour
         return true;
     }
 
-    public bool TryGetSpotIndexAt(int col, int row, out int spotIndex)
-    {
-        spotIndex = -1;
-        if (gridCols <= 0 || gridRows <= 0) return false;
-        if (col < 0 || col >= gridCols || row < 0 || row >= gridRows) return false;
-
-        int rowTopDown = aStartsAtTop ? row : (gridRows - 1 - row);
-        int idx = rowTopDown * gridCols + col;
-        if (!_indexToSpot.ContainsKey(idx)) return false;
-
-        spotIndex = idx;
-        return true;
-    }
 }

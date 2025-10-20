@@ -59,7 +59,6 @@
     <Compile Include="Assets\Scripts\Board\PlayerLIst\RosterStore.cs" />
     <Compile Include="Assets\Scripts\Controller\CursorController\ChangeCursor.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerInteractionHandler.cs" />
-    <Compile Include="Assets\Scripts\Board\Scoreboard\Animation\ScoreFloatPopper.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinPulseController.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\ColorBoard2D.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverRoulette\RouletteText.cs" />
@@ -79,7 +78,6 @@
     <Compile Include="Assets\Scripts\Gameloop\PhaseController.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\ValidDropSpot.cs" />
     <Compile Include="Assets\Scripts\Controller\CursorController\CursorControllerModule.cs" />
-    <Compile Include="Assets\Scripts\Board\Scoreboard\Animation\ScoreFloatText.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreRegistryNetBridge.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\Lock\CoinLockIconAnimator.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerNameSync.cs" />

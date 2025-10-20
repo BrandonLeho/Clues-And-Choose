@@ -24,29 +24,19 @@ public class ScoreBannerEntry : MonoBehaviour
         if (nameText) nameText.text = ownerName;
         if (scoreText) scoreText.text = initialScore.ToString();
 
-        if (!string.IsNullOrWhiteSpace(ownerName) && scoreText)
-        {
-            var rt = scoreText.rectTransform;
-            _scoreAnchors[ownerName] = rt;
-        }
-
         RefreshColor();
         SubscribeScore();
     }
 
     void OnEnable() => SubscribeScore();
-    void OnDisable()
-    {
-        if (!string.IsNullOrWhiteSpace(ownerName))
-            _scoreAnchors.Remove(ownerName);
-
-        UnsubscribeScore();
-    }
+    void OnDisable() => UnsubscribeScore();
 
     void SubscribeScore()
     {
         UnsubscribeScore();
         ScoreRegistry.OnScoreChanged += HandleScoreChanged;
+
+
     }
 
     void UnsubscribeScore()
@@ -80,14 +70,4 @@ public class ScoreBannerEntry : MonoBehaviour
             if (glowBinder) glowBinder.SetPlayerGlowColor(fallbackBG);
         }
     }
-
-    static readonly System.Collections.Generic.Dictionary<string, RectTransform> _scoreAnchors = new System.Collections.Generic.Dictionary<string, RectTransform>();
-
-    public static RectTransform TryGetScoreAnchor(string name)
-    {
-        if (string.IsNullOrWhiteSpace(name)) return null;
-        _scoreAnchors.TryGetValue(name, out var r);
-        return r;
-    }
-
 }

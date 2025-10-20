@@ -38,8 +38,6 @@ public sealed class GridRingRevealer : MonoBehaviour
 
     GridCellHoverWithCoords _currentChosen;
 
-    public static System.Action<int, int, int, Transform> OnCellRevealed;
-
     void Awake()
     {
         Instance = this;
@@ -115,10 +113,6 @@ public sealed class GridRingRevealer : MonoBehaviour
             chosen.SetHoverLock(true);
             chosen.SetHoverEnabled(true);
             chosen.ProbeEnter();
-            var rt = (RectTransform)chosen.transform;
-            int colChosen = c0;
-            int rowChosen = r0;
-            OnCellRevealed?.Invoke(colChosen, rowChosen, 0, rt);
             ChosenOnTopIfFloating();
         }
 
@@ -153,8 +147,6 @@ public sealed class GridRingRevealer : MonoBehaviour
                         else
                             cell.FloatWithoutHover();
                     }
-                    OnCellRevealed?.Invoke(cc, rr, ring, cell.transform);
-
                     floatedAny = true;
 
                     ChosenOnTopIfFloating();
