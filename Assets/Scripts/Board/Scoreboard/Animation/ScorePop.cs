@@ -59,13 +59,13 @@ public sealed class ScorePop : MonoBehaviour
         var board = BoardSpotsNet.Instance;
         if (board != null)
         {
+            int rowBoard = NormalizeRowToBoard(row, board);
+
             foreach (var kv in board.occupancy)
             {
                 if (board.TryGetSpotCoord(kv.Key, out int c, out int r))
                 {
-                    int rowForCompare = board.AStartsAtTop ? (board.GridRows - 1 - row) : row;
-
-                    if (c == col && r == rowForCompare)
+                    if (c == col && r == rowBoard)
                     {
                         spotIndex = kv.Key;
                         coinNetId = kv.Value;
@@ -78,8 +78,10 @@ public sealed class ScorePop : MonoBehaviour
         if (coinNetId == 0) return;
         Debug.Log(coinNetId + " " + spotIndex);
 
-        int cellsAway = Mathf.Max(Mathf.Abs(col - inst._targetCol), Mathf.Abs(row - inst._targetRow));
-        int points = Mathf.Max(0, inst._pointsAtExact - cellsAway);
+        int targetRowBoard = NormalizeRowToBoard(Instance._targetRow, board);
+        int cellsAway = Mathf.Max(Mathf.Abs(col - Instance._targetCol), Mathf.Abs(targetRowBoard - targetRowBoard));
+        int points = Mathf.Max(0, Instance._pointsAtExact - cellsAway);
+        Debug.Log("Cells Away: " + cellsAway);
         Debug.Log("Points: " + points);
         if (points <= 0) return;
 
@@ -133,5 +135,10 @@ public sealed class ScorePop : MonoBehaviour
         }
 
         if (t) Destroy(t.gameObject);
+    }
+
+    public static int NormalizeRowToBoard(int rawRowBottomOrigin, BoardSpotsNet b)
+    {
+        return b.AStartsAtTop ? (b.GridRows - 1 - rawRowBottomOrigin) : rawRowBottomOrigin;
     }
 }
