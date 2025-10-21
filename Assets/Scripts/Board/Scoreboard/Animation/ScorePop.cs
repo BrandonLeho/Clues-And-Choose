@@ -81,8 +81,6 @@ public sealed class ScorePop : MonoBehaviour
         int targetRowBoard = NormalizeRowToBoard(Instance._targetRow, board);
         int cellsAway = Mathf.Max(Mathf.Abs(col - Instance._targetCol), Mathf.Abs(targetRowBoard - targetRowBoard));
         int points = Mathf.Max(0, Instance._pointsAtExact - cellsAway);
-        Debug.Log("Cells Away: " + cellsAway);
-        Debug.Log("Points: " + points);
         if (points <= 0) return;
 
         string ownerName = null;
@@ -100,14 +98,21 @@ public sealed class ScorePop : MonoBehaviour
 
         if (!inst.scoreTextPrefab) return;
 
-        var spawned = Instantiate(inst.scoreTextPrefab, cellRect);
+        var parent = cellRect.parent as RectTransform;
+        if (!parent) return;
+
+        var spawned = Instantiate(inst.scoreTextPrefab, parent);
         spawned.text = $"+{points}";
         var rt = spawned.rectTransform;
-        rt.anchoredPosition = Vector2.zero;
+        rt.anchorMin = cellRect.anchorMin;
+        rt.anchorMax = cellRect.anchorMax;
+        rt.pivot = cellRect.pivot;
+        rt.anchoredPosition = cellRect.anchoredPosition;
         rt.localScale = Vector3.one * inst.startScale;
+        rt.SetAsLastSibling();
         spawned.alpha = 0f;
-
         inst.StartCoroutine(inst.CoPop(spawned));
+
     }
 
     IEnumerator CoPop(TMP_Text t)
