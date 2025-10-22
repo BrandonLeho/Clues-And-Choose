@@ -1,9 +1,12 @@
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
 public class ScoreBannerEntry : MonoBehaviour
 {
+    public static readonly Dictionary<string, RectTransform> NameToScoreAnchor = new();
+
     [Header("Refs")]
     [SerializeField] TMP_Text nameText;
     [SerializeField] TMP_Text scoreText;
@@ -17,6 +20,8 @@ public class ScoreBannerEntry : MonoBehaviour
 
     string ownerName;
 
+    public RectTransform ScoreAnchor => scoreText ? scoreText.rectTransform : (RectTransform)transform;
+
     public void Initialize(string playerName, int initialScore = 0)
     {
         ownerName = playerName;
@@ -26,17 +31,32 @@ public class ScoreBannerEntry : MonoBehaviour
 
         RefreshColor();
         SubscribeScore();
+        RegisterSelf();
     }
 
-    void OnEnable() => SubscribeScore();
-    void OnDisable() => UnsubscribeScore();
+    void OnEnable()
+    {
+        SubscribeScore();
+        RegisterSelf();
+    }
+
+    void OnDisable()
+    {
+        UnsubscribeScore();
+        if (!string.IsNullOrEmpty(ownerName))
+            NameToScoreAnchor.Remove(ownerName);
+    }
+
+    void RegisterSelf()
+    {
+        if (!string.IsNullOrEmpty(ownerName))
+            NameToScoreAnchor[ownerName] = ScoreAnchor;
+    }
 
     void SubscribeScore()
     {
         UnsubscribeScore();
         ScoreRegistry.OnScoreChanged += HandleScoreChanged;
-
-
     }
 
     void UnsubscribeScore()
