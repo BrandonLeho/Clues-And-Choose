@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
 public class ScoreBannerEntry : MonoBehaviour
 {
@@ -15,25 +16,57 @@ public class ScoreBannerEntry : MonoBehaviour
     [Header("Glow")]
     [SerializeField] private BannerGlowController glowBinder;
 
-    [Header("FX Target")]
-    [Tooltip("Where score texts should fly to (defaults to this RectTransform center).")]
+    [Header("Fly Target")]
     [SerializeField] RectTransform flyTargetAnchor;
+
+    static readonly Dictionary<string, ScoreBannerEntry> Registry = new();
 
     string ownerName;
     public string OwnerName => ownerName;
-    public RectTransform FlyTargetAnchor => flyTargetAnchor ? flyTargetAnchor : (transform as RectTransform);
 
     public void Initialize(string playerName, int initialScore = 0)
     {
         ownerName = playerName;
+
         if (nameText) nameText.text = ownerName;
         if (scoreText) scoreText.text = initialScore.ToString();
+
         RefreshColor();
         SubscribeScore();
+
+        Register();
     }
 
-    void OnEnable() => SubscribeScore();
-    void OnDisable() => UnsubscribeScore();
+    void OnEnable() { SubscribeScore(); Register(); }
+    void OnDisable() { UnsubscribeScore(); Unregister(); }
+    void OnDestroy() { Unregister(); }
+
+    void Register()
+    {
+        if (string.IsNullOrEmpty(ownerName)) return;
+        Registry[ownerName] = this;
+    }
+
+    void Unregister()
+    {
+        if (string.IsNullOrEmpty(ownerName)) return;
+        if (Registry.TryGetValue(ownerName, out var cur) && cur == this)
+            Registry.Remove(ownerName);
+    }
+
+    public static bool TryGetFlyTargetFor(string playerName, out RectTransform target)
+    {
+        target = null;
+        if (string.IsNullOrEmpty(playerName)) return false;
+        if (!Registry.TryGetValue(playerName, out var entry) || !entry) return false;
+
+        target = entry.flyTargetAnchor
+              ? entry.flyTargetAnchor
+              : (entry.scoreText ? entry.scoreText.rectTransform
+                                 : entry.GetComponent<RectTransform>());
+
+        return target;
+    }
 
     void SubscribeScore()
     {
@@ -71,12 +104,5 @@ public class ScoreBannerEntry : MonoBehaviour
 
             if (glowBinder) glowBinder.SetPlayerGlowColor(fallbackBG);
         }
-    }
-
-    public void PulseGlow()
-    {
-        if (!glowBinder) return;
-        glowBinder.outlineIntensity = Mathf.Min(glowBinder.outlineIntensity + 0.6f, 5f);
-        glowBinder.topIntensity = Mathf.Min(glowBinder.topIntensity + 0.6f, 5f);
     }
 }

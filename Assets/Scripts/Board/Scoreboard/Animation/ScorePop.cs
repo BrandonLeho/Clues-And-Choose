@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Mirror;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 public sealed class ScorePop : MonoBehaviour
 {
@@ -13,81 +12,56 @@ public sealed class ScorePop : MonoBehaviour
     [SerializeField] RectTransform uiParent;
     [SerializeField] TMP_Text scoreTextPrefab;
 
-    [Header("Phases (durations)")]
-    [SerializeField, Min(0f)] float popDuration = 0.22f;
+    [Header("Pop/Hold/Fly Timing")]
+    [SerializeField, Min(0.01f)] float popDuration = 0.28f;
+
+    [Tooltip("Time the text stays readable before flying.")]
     [SerializeField, Min(0f)] float holdDuration = 0.35f;
-    [SerializeField, Min(0f)] float flyDuration = 0.55f;
 
-    [Header("Pop & Hold Style")]
-    [SerializeField] Vector2 rise = new Vector2(0f, 38f);
+    [Tooltip("Flight duration to the banner.")]
+    [SerializeField, Min(0.05f)] float flyDuration = 0.55f;
+
+    [Header("Pop Movement/Scale")]
+    [SerializeField] Vector2 rise = new Vector2(0f, 42f);
+    [SerializeField] AnimationCurve popEase = AnimationCurve.EaseInOut(0, 0, 1, 1);
     [SerializeField] float startScale = 0.65f;
-    [SerializeField] float popScale = 1.05f;
-    [SerializeField] AnimationCurve popCurve = null;
-    [SerializeField] AnimationCurve holdCurve = null;
+    [SerializeField] float readableScale = 1.0f;
 
-    [Header("Flight Style")]
-    [SerializeField] AnimationCurve flyCurve = null;
-    [Range(0f, 0.8f)] public float flyStretch = 0.28f;
-    [SerializeField] AnimationCurve globalAlphaCurve = null;
+    [Header("Flight Motion")]
+    [SerializeField] float flyArcPixels = 36f;
+    [SerializeField] AnimationCurve flyEase = AnimationCurve.EaseInOut(0, 0, 1, 1);
+    [SerializeField] Vector2 bannerOffset = new Vector2(0f, 10f);
 
-    [Header("Spawn Layer Override")]
+    [Header("Stretch During Flight")]
+    [SerializeField, Range(0f, 0.6f)] float flyStretchAmount = 0.18f;
+    [SerializeField, Range(0f, 0.6f)] float flySquashAmount = 0.08f;
+
+    [Header("Layer Override")]
     [SerializeField] RectTransform spawnLayer;
+
+    [Header("Debug")]
+    [SerializeField] bool debugLogs = false;
 
     int _targetCol = -1, _targetRow = -1;
     int _pointsAtExact = 3;
-
-    static readonly Dictionary<string, RectTransform> _bannerTargets = new();
 
     void Awake()
     {
         Instance = this;
         if (!uiParent) uiParent = transform as RectTransform;
-
-        if (popCurve == null) popCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
-        if (holdCurve == null) holdCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
-        if (flyCurve == null) flyCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
     }
 
-    void OnEnable()
-    {
-        PhaseController.OnClientTargetChosen += OnClientTargetChosen;
-        RebuildBannerTargets();
-    }
+    void OnEnable() { PhaseController.OnClientTargetChosen += OnClientTargetChosen; }
+    void OnDisable() { PhaseController.OnClientTargetChosen -= OnClientTargetChosen; }
 
-    void OnDisable()
-    {
-        PhaseController.OnClientTargetChosen -= OnClientTargetChosen;
-    }
-
-    void OnClientTargetChosen(int col, int row, Color _)
-    {
-        _targetCol = col;
-        _targetRow = row;
-    }
-
-    public void ConfigureFromPhase(int pointsAtExact)
-    {
-        _pointsAtExact = Mathf.Max(0, pointsAtExact);
-    }
-
-    public static void RebuildBannerTargets()
-    {
-        _bannerTargets.Clear();
-        var entries = Object.FindObjectsByType<ScoreBannerEntry>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-        for (int i = 0; i < entries.Length; i++)
-        {
-            var e = entries[i];
-            if (!e) continue;
-            var name = e.OwnerName;
-            var rt = e.FlyTargetAnchor ? e.FlyTargetAnchor : e.GetComponent<RectTransform>();
-            if (!string.IsNullOrEmpty(name) && rt) _bannerTargets[name] = rt;
-        }
-    }
+    void OnClientTargetChosen(int col, int row, Color _) { _targetCol = col; _targetRow = row; }
+    public void ConfigureFromPhase(int pointsAtExact) { _pointsAtExact = Mathf.Max(0, pointsAtExact); }
 
     public static void TrySpawnForCell(int col, int row, RectTransform cellRect)
     {
         var inst = Instance;
-        if (!inst || !cellRect || inst._targetCol < 0 || inst._targetRow < 0) return;
+        if (!inst || !cellRect) return;
+        if (inst._targetCol < 0 || inst._targetRow < 0) return;
 
         uint coinNetId = 0;
         int spotIndex = -1;
@@ -108,137 +82,162 @@ public sealed class ScorePop : MonoBehaviour
                 }
             }
         }
+
         if (coinNetId == 0) return;
+        if (inst.debugLogs) Debug.Log($"[ScorePop] coinNetId={coinNetId} spotIndex={spotIndex}");
 
         int targetRowBoard = NormalizeRowToBoard(inst._targetRow, board);
-        int rowBoardForCoin = NormalizeRowToBoard(row, board);
-        int cellsAway = Mathf.Max(Mathf.Abs(col - inst._targetCol), Mathf.Abs(rowBoardForCoin - targetRowBoard)); // fixed
+        int cellsAway = Mathf.Max(Mathf.Abs(col - inst._targetCol), Mathf.Abs(targetRowBoard - targetRowBoard)); // existing calc
         int points = Mathf.Max(0, inst._pointsAtExact - cellsAway);
         if (points <= 0) return;
 
         string ownerName = null;
-        if (NetworkClient.active && NetworkClient.spawned.TryGetValue(coinNetId, out var coinIdentity) && coinIdentity)
+        if (NetworkClient.active && NetworkClient.spawned.TryGetValue(coinNetId, out var coinId) && coinId)
         {
-            var coin = coinIdentity.GetComponent<NetworkCoin>();
+            var coin = coinId.GetComponent<NetworkCoin>();
             if (coin != null && coin.ownerNetId != 0)
+            {
                 RosterStore.TryGetNameByNetId(coin.ownerNetId, out ownerName);
+            }
         }
         if (string.IsNullOrWhiteSpace(ownerName)) ownerName = "Unknown";
 
-        if (_bannerTargets.Count == 0) RebuildBannerTargets();
-        _bannerTargets.TryGetValue(ownerName, out var bannerAnchor);
-        if (!bannerAnchor) { Debug.LogWarning($"[ScoreFX] Missing banner for '{ownerName}'"); return; }
+        if (inst.debugLogs) Debug.Log($"[ScoreFX] +{points} → {ownerName} @ cell ({col + 1},{row + 1})");
+
+        if (!inst.scoreTextPrefab) return;
 
         var parent = inst.spawnLayer ? inst.spawnLayer : (cellRect.parent as RectTransform);
         if (!parent) return;
 
-        if (!inst.scoreTextPrefab) return;
         var text = Instantiate(inst.scoreTextPrefab, parent);
         text.text = $"+{points}";
         var rt = text.rectTransform;
-        rt.SetAsLastSibling();
-        text.alpha = 0f;
 
-        var spawnCanvas = parent.GetComponentInParent<Canvas>();
-        Camera cam = spawnCanvas ? spawnCanvas.worldCamera : null;
-
-        Vector3 cellWorld = cellRect.TransformPoint(cellRect.rect.center);
-        Vector2 startLocal;
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(parent,
-            RectTransformUtility.WorldToScreenPoint(cam, cellWorld),
-            cam, out startLocal);
-
-        Vector2 midLocal = startLocal + inst.rise;
-
-        Vector3 bannerWorld = bannerAnchor.TransformPoint((Vector2)bannerAnchor.rect.center);
-        Vector2 targetLocal;
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(parent,
-            RectTransformUtility.WorldToScreenPoint(cam, bannerWorld),
-            cam, out targetLocal);
-
+        Vector2 startAnchored = inst.AnchoredAtCellCenter(cellRect, parent);
         rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
         rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = startLocal;
+        rt.anchoredPosition = startAnchored;
         rt.localScale = Vector3.one * inst.startScale;
+        text.alpha = 0f;
+        rt.SetAsLastSibling();
 
-        inst.StartCoroutine(inst.CoPopHoldFly(text, rt, startLocal, midLocal, targetLocal, bannerAnchor, ownerName));
+        RectTransform targetRt;
+        if (!ScoreBannerEntry.TryGetFlyTargetFor(ownerName, out targetRt))
+        {
+            if (inst.debugLogs) Debug.LogWarning($"[ScorePop] No banner for '{ownerName}'. Falling back to pop.");
+            inst.StartCoroutine(inst.CoPopOnly(text));
+            return;
+        }
+
+        Vector2 endAnchored = inst.AnchoredFromWorld(targetRt.TransformPoint(targetRt.rect.center), parent) + inst.bannerOffset;
+
+        inst.StartCoroutine(inst.CoPopHoldFly(text, startAnchored, endAnchored));
     }
 
-    IEnumerator CoPopHoldFly(TMP_Text t, RectTransform rt, Vector2 start, Vector2 mid, Vector2 target, RectTransform bannerAnchor, string ownerName)
+    IEnumerator CoPopOnly(TMP_Text t)
     {
-        float tPop = 0f; float dPop = Mathf.Max(0.0001f, popDuration);
-        while (tPop < dPop && t)
-        {
-            tPop += Time.deltaTime; float u = Mathf.Clamp01(tPop / dPop);
-            float e = popCurve != null ? popCurve.Evaluate(u) : u;
+        if (!t) yield break;
+        var rt = t.rectTransform;
+        Vector2 startPos = rt.anchoredPosition;
+        Vector2 endPos = startPos + rise;
 
-            float s = Mathf.Lerp(startScale, popScale, e);
+        float time = 0f;
+        float d = Mathf.Max(0.001f, popDuration + holdDuration * 0.5f);
+
+        while (time < d && t)
+        {
+            time += Time.deltaTime;
+            float u = Mathf.Clamp01(time / d);
+            float e = popEase != null ? popEase.Evaluate(u) : u;
+
+            float s = Mathf.Lerp(startScale, readableScale, e);
             rt.localScale = new Vector3(s, s, 1f);
-            rt.anchoredPosition = Vector2.LerpUnclamped(start, mid, e);
+            rt.anchoredPosition = Vector2.LerpUnclamped(startPos, endPos, e);
+            t.alpha = Mathf.SmoothStep(0f, 1f, Mathf.Min(u * 2f, 1f));
+            yield return null;
+        }
+        if (t) Destroy(t.gameObject);
+    }
 
-            float a = (globalAlphaCurve != null) ? globalAlphaCurve.Evaluate(u * 0.6f) : Mathf.SmoothStep(0f, 1f, u);
-            t.alpha = a;
+    IEnumerator CoPopHoldFly(TMP_Text t, Vector2 startAnchored, Vector2 endAnchored)
+    {
+        if (!t) yield break;
+        var rt = t.rectTransform;
 
+        Vector2 popEnd = startAnchored + rise;
+        float t1 = 0f;
+        while (t1 < popDuration && t)
+        {
+            t1 += Time.deltaTime;
+            float u = Mathf.Clamp01(t1 / Mathf.Max(0.0001f, popDuration));
+            float e = popEase != null ? popEase.Evaluate(u) : u;
+
+            float s = Mathf.Lerp(startScale, readableScale, e);
+            rt.localScale = new Vector3(s, s, 1f);
+            rt.anchoredPosition = Vector2.LerpUnclamped(startAnchored, popEnd, e);
+            t.alpha = Mathf.SmoothStep(0f, 1f, u);
             yield return null;
         }
 
-        float tHold = 0f; float dHold = Mathf.Max(0f, holdDuration);
-        Vector2 holdPos = rt.anchoredPosition;
-        while (tHold < dHold && t)
+        float t2 = 0f;
+        while (t2 < holdDuration && t)
         {
-            tHold += Time.deltaTime; float u = Mathf.Clamp01(tHold / Mathf.Max(0.0001f, dHold));
-            float e = holdCurve != null ? holdCurve.Evaluate(u) : u;
-
-            rt.anchoredPosition = Vector2.LerpUnclamped(holdPos, mid, e);
-            rt.localScale = Vector3.Lerp(Vector3.one * popScale, Vector3.one, e);
+            t2 += Time.deltaTime;
+            float settle = 1f + 0.03f * Mathf.Sin(Mathf.PI * Mathf.Clamp01(t2 / holdDuration));
+            rt.localScale = new Vector3(readableScale * settle, readableScale * settle, 1f);
+            rt.anchoredPosition = popEnd;
             t.alpha = 1f;
-
             yield return null;
         }
+        if (!t) yield break;
+        rt.localScale = Vector3.one * readableScale;
 
-        float tFly = 0f; float dFly = Mathf.Max(0.0001f, flyDuration);
-        Vector2 flyStart = rt.anchoredPosition;
+        Vector2 p0 = popEnd;
+        Vector2 p2 = endAnchored;
+        Vector2 p1 = Vector2.Lerp(p0, p2, 0.5f) + Vector2.up * flyArcPixels;
 
-        ScoreBannerEntry pulse = bannerAnchor ? bannerAnchor.GetComponentInParent<ScoreBannerEntry>() : null;
-
-        while (tFly < dFly && t)
+        float t3 = 0f;
+        while (t3 < flyDuration && t)
         {
-            tFly += Time.deltaTime; float u = Mathf.Clamp01(tFly / dFly);
-            float e = (flyCurve != null) ? flyCurve.Evaluate(u) : u;
+            t3 += Time.deltaTime;
+            float u = Mathf.Clamp01(t3 / Mathf.Max(0.0001f, flyDuration));
+            float e = flyEase != null ? flyEase.Evaluate(u) : u;
 
-            Vector2 pos = Vector2.LerpUnclamped(flyStart, target, e);
+            Vector2 a = Vector2.Lerp(p0, p1, e);
+            Vector2 b = Vector2.Lerp(p1, p2, e);
+            Vector2 pos = Vector2.Lerp(a, b, e);
             rt.anchoredPosition = pos;
 
-            Vector2 dir = (target - flyStart);
-            float len = dir.magnitude + 0.0001f;
-            Vector2 nd = dir / len;
-            float dirX = Mathf.Abs(nd.x);
-            float dirY = Mathf.Abs(nd.y);
-            float stretchNow = flyStretch * Mathf.SmoothStep(0f, 1f, e) * Mathf.SmoothStep(1f, 0f, Mathf.Abs(2f * e - 1f));
-            float sx = 1f + stretchNow * dirX * 1.5f;
-            float sy = 1f - stretchNow * 0.5f * dirX;
-            if (dirY > dirX)
-            {
-                sx = 1f - stretchNow * 0.5f * dirY;
-                sy = 1f + stretchNow * dirY * 1.5f;
-            }
-            rt.localScale = new Vector3(sx, sy, 1f);
-
-            float a = 1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(u * 1.2f - 0.15f));
-            t.alpha = a;
+            float k = Mathf.Sin(e * Mathf.PI);
+            float wide = readableScale * (1f + flyStretchAmount * k);
+            float tall = readableScale * (1f - flySquashAmount * k);
+            rt.localScale = new Vector3(wide, tall, 1f);
 
             yield return null;
         }
 
-        if (t) { rt.anchoredPosition = target; t.alpha = 0f; }
-
-        if (pulse) pulse.PulseGlow();
-
         if (t) Destroy(t.gameObject);
+    }
+
+    Vector2 AnchoredAtCellCenter(RectTransform cell, RectTransform targetParent)
+    {
+        var worldCenter = cell.TransformPoint(cell.rect.center);
+        return AnchoredFromWorld(worldCenter, targetParent);
+    }
+
+    Vector2 AnchoredFromWorld(Vector3 worldPos, RectTransform targetParent)
+    {
+        var canvas = targetParent.GetComponentInParent<Canvas>();
+        var cam = canvas && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
+        Vector2 screen = RectTransformUtility.WorldToScreenPoint(cam, worldPos);
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(targetParent, screen, cam, out var local);
+        return local;
     }
 
     public static int NormalizeRowToBoard(int rawRowBottomOrigin, BoardSpotsNet b)
     {
         return b.AStartsAtTop ? (b.GridRows - 1 - rawRowBottomOrigin) : rawRowBottomOrigin;
     }
+
+    public void SetSpawnLayer(RectTransform newLayer) => spawnLayer = newLayer;
 }
