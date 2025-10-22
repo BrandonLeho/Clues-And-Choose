@@ -28,6 +28,13 @@ public sealed class PhaseController : NetworkBehaviour
     public static event System.Action<int, int, Color> OnClientTargetChosen;
     public bool ClientHasTarget => targetCol >= 0 && targetRow >= 0;
 
+    [Header("Debug")]
+    [SerializeField] bool debugLogsEnabled = true;
+
+    void DLog(object msg) { if (debugLogsEnabled) Debug.Log(msg); }
+    void DWarn(object msg) { if (debugLogsEnabled) Debug.LogWarning(msg); }
+    void DError(object msg) { if (debugLogsEnabled) Debug.LogError(msg); }
+
     bool _waitingForScoringBanner;
     bool _coinsReturnedThisRound;
     bool _ringsRevealFinished;
@@ -129,14 +136,14 @@ public sealed class PhaseController : NetworkBehaviour
         var mgr = CoinRoundLockManager.Instance;
         if (mgr) mgr.LockAllCoins();
 
-        Debug.Log("[Phase] First placement cycle finished → All players locked. Waiting for clue giver decision…");
+        DLog("[Phase] First placement cycle finished → All players locked. Waiting for clue giver decision…");
     }
 
     [TargetRpc]
     void TargetShowEndRoundPrompt(NetworkConnection target)
     {
         EndRoundPromptUI.Instance?.Show();
-        Debug.Log("[Phase] End Round prompt shown (clue giver only).");
+        DLog("[Phase] End Round prompt shown (clue giver only).");
     }
 
     [ClientRpc]
@@ -148,13 +155,13 @@ public sealed class PhaseController : NetworkBehaviour
     [ClientRpc]
     void RpcAnnounceRoundDecision(bool endNow)
     {
-        Debug.Log(endNow ? "[Phase] Clue giver chose: END ROUND" : "[Phase] Clue giver chose: ANOTHER CYCLE");
+        DLog(endNow ? "[Phase] Clue giver chose: END ROUND" : "[Phase] Clue giver chose: ANOTHER CYCLE");
     }
 
     [Server]
     void ServerBeginScoring()
     {
-        Debug.Log("[Phase] Begin SCORING");
+        DLog("[Phase] Begin SCORING");
 
         _waitingForScoringBanner = true;
         _coinsReturnedThisRound = false;
@@ -163,14 +170,14 @@ public sealed class PhaseController : NetworkBehaviour
 
         if (targetCol < 0 || targetRow < 0)
         {
-            Debug.LogWarning("[Scoring] No target set. Did the clue giver select a card choice?");
+            DWarn("[Scoring] No target set. Did the clue giver select a card choice?");
             return;
         }
 
         var board = BoardSpotsNet.Instance;
         if (!board)
         {
-            Debug.LogWarning("[Scoring] BoardSpotsNet not found.");
+            DWarn("[Scoring] BoardSpotsNet not found.");
             return;
         }
 
@@ -202,11 +209,11 @@ public sealed class PhaseController : NetworkBehaviour
             {
                 ScoreRegistry.AddScore(ownerName, points);
                 awardedTotal += points;
-                Debug.Log($"[Scoring] +{points} → {ownerName} [{cellsAway} away]");
+                DLog($"[Scoring] +{points} → {ownerName} [{cellsAway} away]");
             }
             else
             {
-                Debug.Log($"[Scoring] +0 (no falloff points) [{cellsAway} away]");
+                DLog($"[Scoring] +0 (no falloff points) [{cellsAway} away]");
             }
 
             if (!string.IsNullOrWhiteSpace(clueGiverName) &&
@@ -221,17 +228,17 @@ public sealed class PhaseController : NetworkBehaviour
         {
             int clueGiverBonus = nearbyCountForClueGiver * perNearbyCoin;
             ScoreRegistry.AddScore(clueGiverName, clueGiverBonus);
-            Debug.Log($"[Scoring] Clue-giver bonus: +{clueGiverBonus} → {clueGiverName} " +
+            DLog($"[Scoring] Clue-giver bonus: +{clueGiverBonus} → {clueGiverName} " +
                       $"({nearbyCountForClueGiver} nearby coin(s) × {perNearbyCoin} each; " +
                       $"vicinitySize={vicinitySize}, playerCount={playerCount})");
             awardedTotal += clueGiverBonus;
         }
         else
         {
-            Debug.Log($"[Scoring] Clue-giver bonus: +0 (nearby={nearbyCountForClueGiver}, perCoin={perNearbyCoin}, name set={(!string.IsNullOrWhiteSpace(clueGiverName))})");
+            DLog($"[Scoring] Clue-giver bonus: +0 (nearby={nearbyCountForClueGiver}, perCoin={perNearbyCoin}, name set={(!string.IsNullOrWhiteSpace(clueGiverName))})");
         }
 
-        Debug.Log($"[Scoring] Round total awarded: {awardedTotal} point(s).");
+        DLog($"[Scoring] Round total awarded: {awardedTotal} point(s).");
 
         var cgConn = GetClueGiverConnection();
         if (cgConn != null)
@@ -333,7 +340,7 @@ public sealed class PhaseController : NetworkBehaviour
     [ClientRpc]
     void RpcAnnounceReverseToggle(bool value)
     {
-        Debug.Log($"[Phase] Reverse second cycle: {(value ? "ON" : "OFF")}");
+        DLog($"[Phase] Reverse second cycle: {(value ? "ON" : "OFF")}");
     }
 
     [Command(requiresAuthority = false)]
@@ -351,7 +358,7 @@ public sealed class PhaseController : NetworkBehaviour
         targetRow = normalizedRow;
         targetColor = color;
 
-        Debug.Log($"[Scoring] Target set → col={(targetCol + 1)}, row={RowLetters(targetRow)} " +
+        DLog($"[Scoring] Target set → col={(targetCol + 1)}, row={RowLetters(targetRow)} " +
                 $"(raw card row={rowFromCard}) color={ColorToHex(targetColor)}");
 
         RpcNotifyTargetChosen(targetCol, targetRow, targetColor);

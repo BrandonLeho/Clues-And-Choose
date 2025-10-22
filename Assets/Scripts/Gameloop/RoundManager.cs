@@ -37,6 +37,13 @@ public class RoundManager : NetworkBehaviour
     public static event Action OnServerRosterChanged;
     public static event Action<uint> OnServerClueGiverChanged;
 
+    [Header("Debug")]
+    [SerializeField] bool debugLogsEnabled = true;
+
+    void DLog(object msg) { if (debugLogsEnabled) Debug.Log(msg); }
+    void DWarn(object msg) { if (debugLogsEnabled) Debug.LogWarning(msg); }
+    void DError(object msg) { if (debugLogsEnabled) Debug.LogError(msg); }
+
     void Awake()
     {
         Instance = this;
@@ -144,7 +151,7 @@ public class RoundManager : NetworkBehaviour
         if (_roster.Count == 0) return;
         if (_fullCyclesCompleted >= maxFullCycles)
         {
-            Debug.Log("[Round] Clue-giver cycles finished; not advancing.");
+            DLog("[Round] Clue-giver cycles finished; not advancing.");
             OnServerClueGiverCyclesFinished?.Invoke();
             return;
         }
@@ -158,12 +165,12 @@ public class RoundManager : NetworkBehaviour
         {
             _fullCyclesCompleted++;
             OnServerFullCycleCompleted?.Invoke(_fullCyclesCompleted, maxFullCycles);
-            Debug.Log($"[Round] Full clue-giver cycle completed ({_fullCyclesCompleted}/{maxFullCycles}).");
+            DLog($"[Round] Full clue-giver cycle completed ({_fullCyclesCompleted}/{maxFullCycles}).");
 
             if (_fullCyclesCompleted >= maxFullCycles)
             {
                 OnServerClueGiverCyclesFinished?.Invoke();
-                Debug.Log("[Round] Max clue-giver cycles reached; rounds will no longer advance.");
+                DLog("[Round] Max clue-giver cycles reached; rounds will no longer advance.");
                 return;
             }
             _cycleStartIndex = _clueGiverRosterIndex;
@@ -235,8 +242,8 @@ public class RoundManager : NetworkBehaviour
         if (NetworkClient.localPlayer != null)
             localId = NetworkClient.localPlayer.netId;
 
-        Debug.Log("[Round Manager] localId: " + localId);
-        Debug.Log("[Round Manager] clueGiverNetId: " + clueGiverNetId);
+        DLog("[Round Manager] localId: " + localId);
+        DLog("[Round Manager] clueGiverNetId: " + clueGiverNetId);
 
         if (localId == clueGiverNetId)
         {
