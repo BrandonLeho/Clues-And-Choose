@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using Mirror;
 using TMPro;
 using UnityEngine;
@@ -16,9 +17,8 @@ public sealed class ScorePop : MonoBehaviour
     [SerializeField] float startScale = 0.7f;
     [SerializeField] float endScale = 1.2f;
 
-    [Header("Layering")]
+    [Header("Spawn Layer Override")]
     [SerializeField] RectTransform spawnLayer;
-    [SerializeField] bool setAsLastSibling = true;
 
     int _targetCol = -1, _targetRow = -1;
     int _pointsAtExact = 3;
@@ -29,8 +29,15 @@ public sealed class ScorePop : MonoBehaviour
         if (!uiParent) uiParent = transform as RectTransform;
     }
 
-    void OnEnable() { PhaseController.OnClientTargetChosen += OnClientTargetChosen; }
-    void OnDisable() { PhaseController.OnClientTargetChosen -= OnClientTargetChosen; }
+    void OnEnable()
+    {
+        PhaseController.OnClientTargetChosen += OnClientTargetChosen;
+    }
+
+    void OnDisable()
+    {
+        PhaseController.OnClientTargetChosen -= OnClientTargetChosen;
+    }
 
     void OnClientTargetChosen(int col, int row, Color _)
     {
@@ -55,7 +62,6 @@ public sealed class ScorePop : MonoBehaviour
         if (board != null)
         {
             int rowBoard = NormalizeRowToBoard(row, board);
-
             foreach (var kv in board.occupancy)
             {
                 if (board.TryGetSpotCoord(kv.Key, out int c, out int r))
@@ -74,9 +80,8 @@ public sealed class ScorePop : MonoBehaviour
         Debug.Log(coinNetId + " " + spotIndex);
 
         int targetRowBoard = NormalizeRowToBoard(inst._targetRow, board);
-        int thisRowBoard = NormalizeRowToBoard(row, board);
 
-        int cellsAway = Mathf.Max(Mathf.Abs(col - inst._targetCol), Mathf.Abs(thisRowBoard - targetRowBoard));
+        int cellsAway = Mathf.Max(Mathf.Abs(col - inst._targetCol), Mathf.Abs(targetRowBoard - targetRowBoard));
         int points = Mathf.Max(0, inst._pointsAtExact - cellsAway);
         if (points <= 0) return;
 
@@ -92,50 +97,35 @@ public sealed class ScorePop : MonoBehaviour
         if (string.IsNullOrWhiteSpace(ownerName)) ownerName = "Unknown";
 
         Debug.Log($"[ScoreFX] +{points} → {ownerName} @ cell ({col + 1},{row + 1})");
+
         if (!inst.scoreTextPrefab) return;
 
-        var targetLayer = inst.spawnLayer ? inst.spawnLayer : inst.uiParent;
-        if (!targetLayer) return;
+        var parent = inst.spawnLayer ? inst.spawnLayer : (cellRect.parent as RectTransform);
+        if (!parent) return;
 
-        var spawned = Instantiate(inst.scoreTextPrefab, targetLayer);
+        var spawned = Instantiate(inst.scoreTextPrefab, parent);
         spawned.text = $"+{points}";
         var rt = spawned.rectTransform;
 
-        PlaceAtCellOnLayer(rt, cellRect, targetLayer);
-
-        rt.localScale = Vector3.one * inst.startScale;
-        if (inst.setAsLastSibling) rt.SetAsLastSibling();
-        spawned.alpha = 0f;
-
-        inst.StartCoroutine(inst.CoPop(spawned));
-    }
-
-    static void PlaceAtCellOnLayer(RectTransform spawned, RectTransform cellRect, RectTransform layer)
-    {
-        if (!spawned || !cellRect || !layer) return;
-
-        Vector3 worldCenter = cellRect.TransformPoint(new Vector3(
-            (cellRect.rect.xMin + cellRect.rect.xMax) * 0.5f,
-            (cellRect.rect.yMin + cellRect.rect.yMax) * 0.5f,
-            0f));
-
-        var canvas = layer.GetComponentInParent<Canvas>();
-        Camera cam = null;
-        if (canvas && canvas.renderMode != RenderMode.ScreenSpaceOverlay)
-            cam = canvas.worldCamera;
-
-        Vector2 screen = RectTransformUtility.WorldToScreenPoint(cam, worldCenter);
-        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(layer, screen, cam, out Vector2 local))
+        if (!inst.spawnLayer || inst.spawnLayer == cellRect.parent)
         {
-            spawned.anchorMin = spawned.anchorMax = new Vector2(0.5f, 0.5f);
-            spawned.pivot = cellRect.pivot;
-            spawned.anchoredPosition = local;
+            rt.anchorMin = cellRect.anchorMin;
+            rt.anchorMax = cellRect.anchorMax;
+            rt.pivot = cellRect.pivot;
+            rt.anchoredPosition = cellRect.anchoredPosition;
         }
         else
         {
-            spawned.anchorMin = spawned.anchorMax = spawned.pivot = new Vector2(0.5f, 0.5f);
-            spawned.anchoredPosition = Vector2.zero;
+            Vector3 worldCenter = cellRect.TransformPoint(cellRect.rect.center);
+            rt.position = worldCenter;
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
         }
+
+        rt.localScale = Vector3.one * inst.startScale;
+        rt.SetAsLastSibling();
+        spawned.alpha = 0f;
+        inst.StartCoroutine(inst.CoPop(spawned));
     }
 
     IEnumerator CoPop(TMP_Text t)
@@ -157,10 +147,7 @@ public sealed class ScorePop : MonoBehaviour
             float s = Mathf.Lerp(startScale, endScale, e);
             rt.localScale = new Vector3(s, s, 1f);
             rt.anchoredPosition = Vector2.LerpUnclamped(startPos, endPos, e);
-
-            float fadeIn = Mathf.Min(u * 2f, 1f);
-            float fadeOut = Mathf.Max(0f, (u - 0.5f) * 2f);
-            t.alpha = Mathf.SmoothStep(0f, 1f, fadeIn) * (1f - Mathf.SmoothStep(0f, 1f, fadeOut));
+            t.alpha = Mathf.SmoothStep(0f, 1f, Mathf.Min(u * 2f, 1f)) * (1f - Mathf.SmoothStep(0f, 1f, Mathf.Max(0f, u - 0.5f) * 2f));
 
             yield return null;
         }
@@ -172,4 +159,6 @@ public sealed class ScorePop : MonoBehaviour
     {
         return b.AStartsAtTop ? (b.GridRows - 1 - rawRowBottomOrigin) : rawRowBottomOrigin;
     }
+
+    public void SetSpawnLayer(RectTransform newLayer) => spawnLayer = newLayer;
 }
