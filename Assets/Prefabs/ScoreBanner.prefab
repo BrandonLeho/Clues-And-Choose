@@ -268,7 +268,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 2100000, guid: 080f046f12c4e1c4685fc6c3f68c417b, type: 2}
+  m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -343,7 +343,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 2100000, guid: e44f86bcf0cfe294f8b6bb95bb5942d9, type: 2}
+  m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -556,6 +556,7 @@ MonoBehaviour:
   bannerBG: {fileID: 1248027586943008691}
   fallbackBG: {r: 1, g: 1, b: 1, a: 1}
   glowBinder: {fileID: 2295254407087023068}
+  flyTargetAnchor: {fileID: 1021042602258961995}
 --- !u!114 &2295254407087023068
 MonoBehaviour:
   m_ObjectHideFlags: 0
