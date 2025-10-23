@@ -12832,7 +12832,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 0.5527085
+    x: 9.436604
     y: 0
     width: 10
     height: 10
@@ -33210,9 +33210,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ScorePop
   uiParent: {fileID: 1936569665}
   scoreTextPrefab: {fileID: 2605645989221080303, guid: fd254b576b530b04992d09b87d7b9d70, type: 3}
-  popDuration: 0.28
-  holdDuration: 0.35
-  flyDuration: 0.55
+  popDuration: 0.15
+  holdDuration: 0.5
+  flyDuration: 0.25
   rise: {x: 0, y: 40}
   popEase:
     serializedVersion: 2
@@ -33238,9 +33238,9 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  startScale: 0.7
-  readableScale: 1
-  flyArcPixels: 36
+  startScale: 0.5
+  readableScale: 1.5
+  flyArcPixels: 40
   flyEase:
     serializedVersion: 2
     m_Curve:
@@ -33265,9 +33265,35 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  bannerOffset: {x: 0, y: 10}
-  flyStretchAmount: 0.18
-  flySquashAmount: 0.08
+  bannerOffset: {x: 0, y: 0}
+  flyStretchAmount: 0.6
+  flySquashAmount: 0.3
+  fadeDuringFlight: 1
+  fadeStart: 0
+  fadeEase:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 2
+      outSlope: 2
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   spawnLayer: {fileID: 2042784505}
   debugLogs: 1
 --- !u!1001 &592759318

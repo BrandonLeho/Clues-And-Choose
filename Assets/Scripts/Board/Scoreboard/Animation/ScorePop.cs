@@ -36,6 +36,17 @@ public sealed class ScorePop : MonoBehaviour
     [SerializeField, Range(0f, 0.6f)] float flyStretchAmount = 0.18f;
     [SerializeField, Range(0f, 0.6f)] float flySquashAmount = 0.08f;
 
+    [Header("Fade During Flight")]
+    [SerializeField] bool fadeDuringFlight = true;
+    [SerializeField, Range(0f, 1f)] float fadeStart = 0.6f;
+    [SerializeField] AnimationCurve fadeEase = AnimationCurve.Linear(0, 0, 1, 1);
+
+    [Header("Flight Scaling")]
+    [SerializeField] bool scaleDownDuringFlight = true;
+    [SerializeField, Range(0.1f, 2f)] float flightEndScale = 0.75f;
+    [SerializeField] AnimationCurve flightScaleEase = AnimationCurve.Linear(0, 0, 1, 1);
+
+
     [Header("Layer Override")]
     [SerializeField] RectTransform spawnLayer;
 
@@ -208,10 +219,28 @@ public sealed class ScorePop : MonoBehaviour
             Vector2 pos = Vector2.Lerp(a, b, e);
             rt.anchoredPosition = pos;
 
+            float baseScale = readableScale;
+            if (scaleDownDuringFlight)
+            {
+                float sT = flightScaleEase != null ? flightScaleEase.Evaluate(e) : e;
+                baseScale = Mathf.Lerp(readableScale, flightEndScale, sT);
+            }
+
             float k = Mathf.Sin(e * Mathf.PI);
-            float wide = readableScale * (1f + flyStretchAmount * k);
-            float tall = readableScale * (1f - flySquashAmount * k);
+            float wide = baseScale * (1f + flyStretchAmount * k);
+            float tall = baseScale * (1f - flySquashAmount * k);
             rt.localScale = new Vector3(wide, tall, 1f);
+
+            if (fadeDuringFlight)
+            {
+                float fadeT = Mathf.Clamp01((e - fadeStart) / Mathf.Max(0.0001f, 1f - fadeStart));
+                float fade = 1f - (fadeEase != null ? fadeEase.Evaluate(fadeT) : fadeT);
+                t.alpha = fade;
+            }
+            else
+            {
+                t.alpha = 1f;
+            }
 
             yield return null;
         }
