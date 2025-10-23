@@ -50,6 +50,7 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\Board\ColorChooser\BackgroundDeselect.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\RandomChildPaletteColor.cs" />
+    <Compile Include="Assets\Scripts\Board\Scoreboard\GridRingRevealer.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreRegistry.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\BoardLabelsHighlighter.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreboardBuilder.cs" />
@@ -128,7 +129,6 @@
     <Compile Include="Assets\Scripts\Board\ColorBoard\GridPalettePainter.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\Arrow\ArrowProbeHoverRouter.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceSelectUnlockAll.cs" />
-    <Compile Include="Assets\Scripts\Board\ColorBoard\GridRingRevealer.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverRoulette\RouletteNetSync.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\GameGroupEntryAnimator.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinDragSync.cs" />

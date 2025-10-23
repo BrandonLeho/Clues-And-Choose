@@ -114,6 +114,7 @@ public sealed class GridRingRevealer : MonoBehaviour
             chosen.SetHoverEnabled(true);
             chosen.ProbeEnter();
             ChosenOnTopIfFloating();
+            ScorePop.TrySpawnForCell(c0, r0, (RectTransform)chosen.transform);
         }
 
         t = 0f;
