@@ -1,5 +1,6 @@
 using Mirror;
 using UnityEngine;
+using System.Collections.Generic;
 
 public sealed class PhaseController : NetworkBehaviour
 {
@@ -40,6 +41,9 @@ public sealed class PhaseController : NetworkBehaviour
     bool _ringsRevealFinished;
 
     public int PointsAtExact => pointsAtExact;
+
+    Dictionary<string, int> _pendingAwards = new Dictionary<string, int>();
+    int _pendingClueGiverBonus = 0;
 
     public override void OnStartServer()
     {
@@ -166,6 +170,8 @@ public sealed class PhaseController : NetworkBehaviour
         _waitingForScoringBanner = true;
         _coinsReturnedThisRound = false;
         _ringsRevealFinished = false;
+        _pendingAwards.Clear();
+        _pendingClueGiverBonus = 0;
         RpcShowScoringBanner();
 
         if (targetCol < 0 || targetRow < 0)
@@ -207,7 +213,8 @@ public sealed class PhaseController : NetworkBehaviour
 
             if (points > 0 && !string.IsNullOrWhiteSpace(ownerName))
             {
-                ScoreRegistry.AddScore(ownerName, points);
+                if (_pendingAwards.TryGetValue(ownerName, out var acc)) _pendingAwards[ownerName] = acc + points;
+                else _pendingAwards[ownerName] = points;
                 awardedTotal += points;
                 DLog($"[Scoring] +{points} → {ownerName} [{cellsAway} away]");
             }
@@ -227,7 +234,7 @@ public sealed class PhaseController : NetworkBehaviour
         if (!string.IsNullOrWhiteSpace(clueGiverName) && nearbyCountForClueGiver > 0 && perNearbyCoin > 0)
         {
             int clueGiverBonus = nearbyCountForClueGiver * perNearbyCoin;
-            ScoreRegistry.AddScore(clueGiverName, clueGiverBonus);
+            _pendingClueGiverBonus += clueGiverBonus;
             DLog($"[Scoring] Clue-giver bonus: +{clueGiverBonus} → {clueGiverName} " +
                       $"({nearbyCountForClueGiver} nearby coin(s) × {perNearbyCoin} each; " +
                       $"vicinitySize={vicinitySize}, playerCount={playerCount})");
@@ -385,4 +392,21 @@ public sealed class PhaseController : NetworkBehaviour
     {
         OnClientTargetChosen?.Invoke(col, row, color);
     }
+
+    [Command(requiresAuthority = false)]
+    public void CmdReportScoreArrival(string playerName, int delta)
+    {
+        if (string.IsNullOrWhiteSpace(playerName) || delta <= 0) return;
+        if (_pendingAwards == null || _pendingAwards.Count == 0) return;
+
+        if (!_pendingAwards.TryGetValue(playerName, out var remaining) || remaining <= 0) return;
+
+        int toApply = Mathf.Min(delta, remaining);
+        _pendingAwards[playerName] = remaining - toApply;
+
+        ScoreRegistry.AddScore(playerName, toApply);
+
+        // TODO: Add clue giver points
+    }
+
 }

@@ -56,6 +56,8 @@ public sealed class ScorePop : MonoBehaviour
     int _targetCol = -1, _targetRow = -1;
     int _pointsAtExact = 3;
 
+    public static event System.Action<string, int> OnScoreFlyArrived;
+
     void Awake()
     {
         Instance = this;
@@ -140,7 +142,8 @@ public sealed class ScorePop : MonoBehaviour
 
         Vector2 endAnchored = inst.AnchoredFromWorld(targetRt.TransformPoint(targetRt.rect.center), parent) + inst.bannerOffset;
 
-        inst.StartCoroutine(inst.CoPopHoldFly(text, startAnchored, endAnchored));
+        inst.StartCoroutine(inst.CoPopHoldFly(text, startAnchored, endAnchored, ownerName, points));
+
     }
 
     IEnumerator CoPopOnly(TMP_Text t)
@@ -168,7 +171,7 @@ public sealed class ScorePop : MonoBehaviour
         if (t) Destroy(t.gameObject);
     }
 
-    IEnumerator CoPopHoldFly(TMP_Text t, Vector2 startAnchored, Vector2 endAnchored)
+    IEnumerator CoPopHoldFly(TMP_Text t, Vector2 startAnchored, Vector2 endAnchored, string ownerName, int points)
     {
         if (!t) yield break;
         var rt = t.rectTransform;
@@ -243,7 +246,10 @@ public sealed class ScorePop : MonoBehaviour
             yield return null;
         }
 
+        OnScoreFlyArrived?.Invoke(ownerName, points);
+        if (PhaseController.Instance) PhaseController.Instance.CmdReportScoreArrival(ownerName, points);
         if (t) Destroy(t.gameObject);
+
     }
 
     Vector2 AnchoredAtCellCenter(RectTransform cell, RectTransform targetParent)
