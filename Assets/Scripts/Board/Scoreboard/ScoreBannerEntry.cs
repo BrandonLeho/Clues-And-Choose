@@ -25,7 +25,7 @@ public class ScoreBannerEntry : MonoBehaviour
 
     int _displayedScore;
     int _authoritativeScore;
-    System.Collections.Generic.Queue<int> _pendingDeltas = new();
+    Queue<int> _pendingDeltas = new();
     Coroutine _countCo;
 
     static readonly Dictionary<string, ScoreBannerEntry> Registry = new();
@@ -165,7 +165,7 @@ public class ScoreBannerEntry : MonoBehaviour
 
         while (t < dur)
         {
-            t += UnityEngine.Time.deltaTime;
+            t += Time.deltaTime;
             float u = Mathf.Clamp01(t / dur);
             float e = countEase != null ? countEase.Evaluate(u) : u;
 
