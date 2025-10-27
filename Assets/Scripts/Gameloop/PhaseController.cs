@@ -344,6 +344,7 @@ public sealed class PhaseController : NetworkBehaviour
         reverseSecondCycleEnabled = value;
         RpcAnnounceReverseToggle(value);
     }
+
     [ClientRpc]
     void RpcAnnounceReverseToggle(bool value)
     {
@@ -394,15 +395,17 @@ public sealed class PhaseController : NetworkBehaviour
     }
 
     [Command(requiresAuthority = false)]
-    public void CmdReportScoreArrival(string playerName, int delta)
+    public void CmdReportScoreArrival(string playerName, int delta, bool isClueGiverBonus)
     {
         if (string.IsNullOrWhiteSpace(playerName) || delta <= 0) return;
 
         string cg = RosterStore.CurrentClueGiverName;
 
-        if (!string.IsNullOrWhiteSpace(cg) && playerName == cg)
+        if (isClueGiverBonus)
         {
+            if (playerName != cg) return;
             if (_pendingClueGiverBonus <= 0) return;
+
             int toApply = Mathf.Min(delta, _pendingClueGiverBonus);
             _pendingClueGiverBonus -= toApply;
             ScoreRegistry.AddScore(playerName, toApply);
@@ -414,7 +417,6 @@ public sealed class PhaseController : NetworkBehaviour
 
         int toApplyNormal = Mathf.Min(delta, remaining);
         _pendingAwards[playerName] = remaining - toApplyNormal;
-
         ScoreRegistry.AddScore(playerName, toApplyNormal);
     }
 }

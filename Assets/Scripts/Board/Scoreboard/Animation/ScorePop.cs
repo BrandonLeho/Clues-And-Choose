@@ -14,11 +14,7 @@ public sealed class ScorePop : MonoBehaviour
 
     [Header("Pop/Hold/Fly Timing")]
     [SerializeField, Min(0.01f)] float popDuration = 0.28f;
-
-    [Tooltip("Time the text stays readable before flying.")]
     [SerializeField, Min(0f)] float holdDuration = 0.35f;
-
-    [Tooltip("Flight duration to the banner.")]
     [SerializeField, Min(0.05f)] float flyDuration = 0.55f;
 
     [Header("Pop Movement/Scale")]
@@ -45,7 +41,6 @@ public sealed class ScorePop : MonoBehaviour
     [SerializeField] bool scaleDownDuringFlight = true;
     [SerializeField, Range(0.1f, 2f)] float flightEndScale = 0.75f;
     [SerializeField] AnimationCurve flightScaleEase = AnimationCurve.Linear(0, 0, 1, 1);
-
 
     [Header("Layer Override")]
     [SerializeField] RectTransform spawnLayer;
@@ -122,30 +117,22 @@ public sealed class ScorePop : MonoBehaviour
         var parent = inst.spawnLayer ? inst.spawnLayer : (cellRect.parent as RectTransform);
         if (!parent) return;
 
-        var text = Instantiate(inst.scoreTextPrefab, parent);
-        text.text = $"+{points}";
+        var text = inst.CreateText(parent, points);
         var rt = text.rectTransform;
 
         Vector2 startAnchored = inst.AnchoredAtCellCenter(cellRect, parent);
-        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
-        rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = startAnchored;
-        rt.localScale = Vector3.one * inst.startScale;
-        text.alpha = 0f;
+        inst.SetupRect(rt, startAnchored, inst.startScale);
         rt.SetAsLastSibling();
 
-        RectTransform targetRt;
-        if (!ScoreBannerEntry.TryGetFlyTargetFor(ownerName, out targetRt))
+        if (!ScoreBannerEntry.TryGetFlyTargetFor(ownerName, out RectTransform targetRt))
         {
             if (inst.debugLogs) Debug.LogWarning($"[ScorePop] No banner for '{ownerName}'. Falling back to pop.");
             inst.StartCoroutine(inst.CoPopOnly(text));
             return;
         }
 
-        Vector2 endAnchored = inst.AnchoredFromWorld(targetRt.TransformPoint(targetRt.rect.center), parent) + inst.bannerOffset;
-
-        inst.StartCoroutine(inst.CoPopHoldFly(text, startAnchored, endAnchored, ownerName, points));
-
+        Vector2 endAnchored = inst.EndAnchorForTarget(targetRt, parent);
+        inst.StartCoroutine(inst.CoPopHoldFlyUnified(text, startAnchored, endAnchored, ownerName, points, false));
     }
 
     IEnumerator CoPopOnly(TMP_Text t)
@@ -173,7 +160,7 @@ public sealed class ScorePop : MonoBehaviour
         if (t) Destroy(t.gameObject);
     }
 
-    IEnumerator CoPopHoldFly(TMP_Text t, Vector2 startAnchored, Vector2 endAnchored, string ownerName, int points)
+    IEnumerator CoPopHoldFlyUnified(TMP_Text t, Vector2 startAnchored, Vector2 endAnchored, string ownerName, int points, bool isBonus)
     {
         if (!t) yield break;
         var rt = t.rectTransform;
@@ -249,9 +236,8 @@ public sealed class ScorePop : MonoBehaviour
         }
 
         OnScoreFlyArrived?.Invoke(ownerName, points);
-        if (PhaseController.Instance) PhaseController.Instance.CmdReportScoreArrival(ownerName, points);
+        if (PhaseController.Instance) PhaseController.Instance.CmdReportScoreArrival(ownerName, points, isBonus);
         if (t) Destroy(t.gameObject);
-
     }
 
     Vector2 AnchoredAtCellCenter(RectTransform cell, RectTransform targetParent)
@@ -285,16 +271,11 @@ public sealed class ScorePop : MonoBehaviour
         var parent = inst.spawnLayer ? inst.spawnLayer : (cellRect.parent as RectTransform);
         if (!parent) return;
 
-        var text = Instantiate(inst.scoreTextPrefab, parent);
-        text.text = $"+{points}";
+        var text = inst.CreateText(parent, points);
         var rt = text.rectTransform;
 
         Vector2 startAnchored = inst.AnchoredAtCellCenter(cellRect, parent);
-        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
-        rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = startAnchored;
-        rt.localScale = Vector3.one * inst.startScale * Mathf.Max(0.01f, scaleMultiplier);
-        text.alpha = 0f;
+        inst.SetupRect(rt, startAnchored, inst.startScale * Mathf.Max(0.01f, scaleMultiplier));
         rt.SetAsLastSibling();
 
         if (!ScoreBannerEntry.TryGetFlyTargetFor(ownerName, out var targetRt))
@@ -304,22 +285,57 @@ public sealed class ScorePop : MonoBehaviour
             return;
         }
 
-        Vector2 endAnchored = inst.AnchoredFromWorld(targetRt.TransformPoint(targetRt.rect.center), parent) + inst.bannerOffset;
-
-        inst.StartCoroutine(inst.CoPopHoldFly_WithScale(text, startAnchored, endAnchored, ownerName, points, scaleMultiplier));
+        Vector2 endAnchored = inst.EndAnchorForTarget(targetRt, parent);
+        inst.StartCoroutine(inst.CoPopHoldFlyUnifiedScaled(text, startAnchored, endAnchored, ownerName, points, scaleMultiplier, true));
     }
 
-    IEnumerator CoPopHoldFly_WithScale(TMP_Text t, Vector2 startAnchored, Vector2 endAnchored, string ownerName, int points, float scaleMul)
+    IEnumerator CoPopHoldFlyUnifiedScaled(TMP_Text t, Vector2 startAnchored, Vector2 endAnchored, string ownerName, int points, float scaleMul, bool isBonus)
     {
         float oldStart = startScale;
         float oldReadable = readableScale;
         startScale *= scaleMul;
         readableScale *= scaleMul;
 
-        yield return CoPopHoldFly(t, startAnchored, endAnchored, ownerName, points);
+        yield return CoPopHoldFlyUnified(t, startAnchored, endAnchored, ownerName, points, isBonus);
 
         startScale = oldStart;
         readableScale = oldReadable;
     }
 
+    Vector2 EndAnchorForTarget(RectTransform targetRt, RectTransform parent)
+    {
+        return AnchoredFromWorld(targetRt.TransformPoint(targetRt.rect.center), parent) + bannerOffset;
+    }
+
+    TMP_Text CreateText(RectTransform parent, int points)
+    {
+        var text = Instantiate(scoreTextPrefab, parent);
+        text.text = $"+{points}";
+        return text;
+    }
+
+    void SetupRect(RectTransform rt, Vector2 anchoredPos, float scale)
+    {
+        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = anchoredPos;
+        rt.localScale = Vector3.one * scale;
+        var t = rt.GetComponent<TMP_Text>();
+        if (t) t.alpha = 0f;
+    }
+
+    IEnumerator CoPopHoldFly_WithScale(TMP_Text t, Vector2 startAnchored, Vector2 endAnchored, string ownerName, int points, float scaleMul)
+    {
+        yield return CoPopHoldFlyUnifiedScaled(t, startAnchored, endAnchored, ownerName, points, scaleMul, false);
+    }
+
+    IEnumerator CoPopHoldFly_WithScale_Bonus(TMP_Text t, Vector2 startAnchored, Vector2 endAnchored, string ownerName, int points, float scaleMul)
+    {
+        yield return CoPopHoldFlyUnifiedScaled(t, startAnchored, endAnchored, ownerName, points, scaleMul, true);
+    }
+
+    IEnumerator CoPopHoldFly_Bonus(TMP_Text t, Vector2 startAnchored, Vector2 endAnchored, string ownerName, int points)
+    {
+        yield return CoPopHoldFlyUnified(t, startAnchored, endAnchored, ownerName, points, true);
+    }
 }
