@@ -58,6 +58,8 @@ public sealed class ScorePop : MonoBehaviour
 
     public static event System.Action<string, int> OnScoreFlyArrived;
 
+    public static float TotalFlightSeconds => Instance ? (Instance.popDuration + Instance.holdDuration + Instance.flyDuration) : 1f;
+
     void Awake()
     {
         Instance = this;
@@ -273,4 +275,51 @@ public sealed class ScorePop : MonoBehaviour
     }
 
     public void SetSpawnLayer(RectTransform newLayer) => spawnLayer = newLayer;
+
+    public static void TrySpawnFromCellToBanner(string ownerName, int points, RectTransform cellRect, float scaleMultiplier = 1f)
+    {
+        var inst = Instance;
+        if (!inst || !cellRect || string.IsNullOrWhiteSpace(ownerName) || points <= 0) return;
+        if (!inst.scoreTextPrefab) return;
+
+        var parent = inst.spawnLayer ? inst.spawnLayer : (cellRect.parent as RectTransform);
+        if (!parent) return;
+
+        var text = Instantiate(inst.scoreTextPrefab, parent);
+        text.text = $"+{points}";
+        var rt = text.rectTransform;
+
+        Vector2 startAnchored = inst.AnchoredAtCellCenter(cellRect, parent);
+        rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = startAnchored;
+        rt.localScale = Vector3.one * inst.startScale * Mathf.Max(0.01f, scaleMultiplier);
+        text.alpha = 0f;
+        rt.SetAsLastSibling();
+
+        if (!ScoreBannerEntry.TryGetFlyTargetFor(ownerName, out var targetRt))
+        {
+            if (inst.debugLogs) Debug.LogWarning($"[ScorePop] No banner for '{ownerName}' (bonus).");
+            inst.StartCoroutine(inst.CoPopOnly(text));
+            return;
+        }
+
+        Vector2 endAnchored = inst.AnchoredFromWorld(targetRt.TransformPoint(targetRt.rect.center), parent) + inst.bannerOffset;
+
+        inst.StartCoroutine(inst.CoPopHoldFly_WithScale(text, startAnchored, endAnchored, ownerName, points, scaleMultiplier));
+    }
+
+    IEnumerator CoPopHoldFly_WithScale(TMP_Text t, Vector2 startAnchored, Vector2 endAnchored, string ownerName, int points, float scaleMul)
+    {
+        float oldStart = startScale;
+        float oldReadable = readableScale;
+        startScale *= scaleMul;
+        readableScale *= scaleMul;
+
+        yield return CoPopHoldFly(t, startAnchored, endAnchored, ownerName, points);
+
+        startScale = oldStart;
+        readableScale = oldReadable;
+    }
+
 }

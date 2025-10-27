@@ -30,6 +30,9 @@ public sealed class GridRingRevealer : MonoBehaviour
     [Min(0f)] public float ringFadeSeconds = 0.18f;
     public AnimationCurve ringFadeEase = null;
 
+    [Header("Clue Giver Bonus Scale")]
+    [SerializeField, Range(0.5f, 1f)] float clueGiverTextScale = 0.65f;
+
     List<GridCellHoverWithCoords> _cells = new List<GridCellHoverWithCoords>();
     GridCellHoverWithCoords[] _indexToCell;
     bool _cacheBuilt;
@@ -37,6 +40,8 @@ public sealed class GridRingRevealer : MonoBehaviour
     Coroutine _co;
 
     GridCellHoverWithCoords _currentChosen;
+
+    int _chosenColUI, _chosenRowUI;
 
     void Awake()
     {
@@ -87,6 +92,8 @@ public sealed class GridRingRevealer : MonoBehaviour
 
     public void Begin(int chosenCol, int chosenRowUI, bool keepOnlyChosenHoverEnabled)
     {
+        _chosenColUI = chosenCol;
+        _chosenRowUI = chosenRowUI;
         var chosen = GetCellComponent(chosenCol, chosenRowUI);
         _currentChosen = chosen;
 
@@ -115,6 +122,7 @@ public sealed class GridRingRevealer : MonoBehaviour
             chosen.ProbeEnter();
             ChosenOnTopIfFloating();
             ScorePop.TrySpawnForCell(c0, r0, (RectTransform)chosen.transform);
+            StartCoroutine(CoCellSequence(c0, r0, (RectTransform)chosen.transform));
         }
 
         t = 0f;
@@ -149,6 +157,7 @@ public sealed class GridRingRevealer : MonoBehaviour
                             cell.FloatWithoutHover();
                     }
                     ScorePop.TrySpawnForCell(cc, rr, (RectTransform)cell.transform);
+                    StartCoroutine(CoCellSequence(cc, rr, (RectTransform)cell.transform));
                     floatedAny = true;
 
                     ChosenOnTopIfFloating();
@@ -179,5 +188,85 @@ public sealed class GridRingRevealer : MonoBehaviour
         if (idx < 0 || idx >= _indexToCell.Length) return null;
 
         return _indexToCell[idx];
+    }
+
+    IEnumerator CoCellSequence(int col, int rowUI, RectTransform cellRt)
+    {
+        yield return new WaitForSeconds(ScorePop.TotalFlightSeconds);
+
+        var phase = PhaseController.Instance;
+        if (!phase || !_currentChosen) yield break;
+
+        int dc = Mathf.Abs(col - _chosenColUI);
+        int dr = Mathf.Abs(rowUI - _chosenRowUI);
+        int cheby = Mathf.Max(dc, dr);
+
+        int vicinity = GetVicinityClient();
+        if (cheby >= vicinity) yield break;
+
+        string owner = TryResolveOwnerNameAt(col, rowUI);
+        string cg = RosterStore.CurrentClueGiverName;
+        if (string.IsNullOrWhiteSpace(owner) || string.IsNullOrWhiteSpace(cg) || owner == cg) yield break;
+
+        int perNearby = GetPerNearbyCoinClient();
+        if (perNearby <= 0) yield break;
+
+        const float cgScale = 0.85f;
+        ScorePop.TrySpawnFromCellToBanner(cg, perNearby, cellRt, cgScale);
+    }
+
+    string TryResolveOwnerNameAt(int col, int rowUI)
+    {
+        var board = BoardSpotsNet.Instance;
+        if (!board) return null;
+
+        int rr = flipRowForMapping ? Mathf.Clamp(rows - 1 - rowUI, 0, rows - 1) : rowUI;
+
+        foreach (var kv in board.occupancy)
+        {
+            if (board.TryGetSpotCoord(kv.Key, out int c, out int r) && c == col && r == rr)
+            {
+                uint coinNetId = kv.Value;
+                if (coinNetId == 0) return null;
+                if (!Mirror.NetworkClient.spawned.TryGetValue(coinNetId, out var coinId) || !coinId) return null;
+
+                var coin = coinId.GetComponent<NetworkCoin>();
+                if (coin == null || coin.ownerNetId == 0) return null;
+
+                RosterStore.TryGetNameByNetId(coin.ownerNetId, out string name);
+                return name;
+            }
+        }
+        return null;
+    }
+
+    int GetVicinityClient()
+    {
+        var phase = PhaseController.Instance;
+        if (!phase) return 2;
+
+        var t = phase.GetType();
+        var f = t.GetField("vicinitySize", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        return f != null ? (int)f.GetValue(phase) : 2;
+    }
+
+    int GetPerNearbyCoinClient()
+    {
+        var phase = PhaseController.Instance;
+        if (!phase) return 0;
+
+        int playerCount = (RosterStore.Instance != null && RosterStore.Instance.Names != null)
+            ? RosterStore.Instance.Names.Count : 0;
+
+        var t = phase.GetType();
+        int fewThr = 3, many = 1, few = 2;
+        var fFewThr = t.GetField("fewPlayersThreshold", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var fMany = t.GetField("pointsPerNearbyCoinManyPlayers", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var fFew = t.GetField("pointsPerNearbyCoinFewPlayers", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        if (fFewThr != null) fewThr = (int)fFewThr.GetValue(phase);
+        if (fMany != null) many = (int)fMany.GetValue(phase);
+        if (fFew != null) few = (int)fFew.GetValue(phase);
+
+        return (playerCount <= fewThr) ? few : many;
     }
 }

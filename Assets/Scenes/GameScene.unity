@@ -12832,7 +12832,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 9.436604
+    x: 1.1593924
     y: 0
     width: 10
     height: 10
@@ -33166,8 +33166,8 @@ MonoBehaviour:
   rows: 16
   flipRowForMapping: 1
   includeDiagonals: 1
-  firstRingDelaySeconds: 2.5
-  ringDelaySeconds: 1.5
+  firstRingDelaySeconds: 1.5
+  ringDelaySeconds: 2
   maxRings: 2
   ringCellsFadeOnReveal: 1
   ringFadeStartAlpha: 0.35
@@ -33196,6 +33196,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  clueGiverTextScale: 0.65
 --- !u!114 &592216755
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -33286,6 +33287,32 @@ MonoBehaviour:
       time: 1
       value: 1
       inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  scaleDownDuringFlight: 1
+  flightEndScale: 0.75
+  flightScaleEase:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 1
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 1
       outSlope: 0
       tangentMode: 0
       weightedMode: 0
