@@ -59,7 +59,6 @@ public sealed class ScorePop : MonoBehaviour
     int _targetCol = -1, _targetRow = -1;
     int _pointsAtExact = 3;
 
-    // Clue giver bonus config (fed by PhaseController)
     string _cgName = null;
     int _cgVicinitySize = 0;
     int _cgPerCoin = 0;
@@ -136,7 +135,6 @@ public sealed class ScorePop : MonoBehaviour
         var parent = inst.spawnLayer ? inst.spawnLayer : (cellRect.parent as RectTransform);
         if (!parent) return;
 
-        // Regular (owner) points
         var text = Instantiate(inst.scoreTextPrefab, parent);
         text.text = $"+{points}";
         var rt = text.rectTransform;
@@ -159,7 +157,6 @@ public sealed class ScorePop : MonoBehaviour
 
         Vector2 endAnchored = inst.AnchoredFromWorld(targetRt.TransformPoint(targetRt.rect.center), parent) + inst.bannerOffset;
 
-        // Spawn owner points now…
         inst.StartCoroutine(inst.CoPopHoldFlyGeneral(
             t: text,
             startAnchored: startAnchored,
@@ -168,11 +165,11 @@ public sealed class ScorePop : MonoBehaviour
             onArrive: () =>
             {
                 OnScoreFlyArrived?.Invoke(ownerName, points);
-                if (PhaseController.Instance) PhaseController.Instance.CmdReportScoreArrival(ownerName, points);
+                if (NetworkServer.active && NetworkClient.active && PhaseController.Instance)
+                    PhaseController.Instance.CmdReportScoreArrival(ownerName, points);
             }
         ));
 
-        // …and if this coin contributes to the clue-giver bonus, spawn that RIGHT AFTER
         bool qualifiesForClue =
             inst._cgPerCoin > 0 &&
             !string.IsNullOrWhiteSpace(inst._cgName) &&
@@ -188,14 +185,14 @@ public sealed class ScorePop : MonoBehaviour
             cgRT.anchorMin = cgRT.anchorMax = new Vector2(0.5f, 0.5f);
             cgRT.pivot = new Vector2(0.5f, 0.5f);
             cgRT.anchoredPosition = startAnchored;
-            cgRT.localScale = Vector3.one * inst.startScale * inst.clueGiverScaleMultiplier; // slightly smaller
+            cgRT.localScale = Vector3.one * inst.startScale * inst.clueGiverScaleMultiplier;
             cgText.alpha = 0f;
             cgRT.SetAsLastSibling();
 
             Vector2 cgEnd = inst.AnchoredFromWorld(cgTarget.TransformPoint(cgTarget.rect.center), parent) + inst.bannerOffset;
 
             inst.StartCoroutine(inst.CoDelayThenPopHoldFlyGeneral(
-                delay: inst.clueGiverSpawnDelay,   // “right after” the regular points appear
+                delay: inst.clueGiverSpawnDelay,
                 t: cgText,
                 startAnchored: startAnchored,
                 endAnchored: cgEnd,
@@ -203,13 +200,14 @@ public sealed class ScorePop : MonoBehaviour
                 onArrive: () =>
                 {
                     OnScoreFlyArrived?.Invoke(inst._cgName, inst._cgPerCoin);
-                    if (PhaseController.Instance) PhaseController.Instance.CmdReportClueGiverBonusArrival(inst._cgPerCoin);
+                    if (NetworkServer.active && NetworkClient.active && PhaseController.Instance)
+                        PhaseController.Instance.CmdReportClueGiverBonusArrival(inst._cgPerCoin);
                 }
             ));
         }
     }
 
-    IEnumerator CoDelayThenPopHoldFlyGeneral(float delay, TMP_Text t, Vector2 startAnchored, Vector2 endAnchored, float baseReadableScale, System.Action onArrive)
+    IEnumerator CoDelayThenPopHoldFlyGeneral(float delay, TMP_Text t, Vector2 startAnchored, Vector2 endAnchored, float baseReadableScale, Action onArrive)
     {
         float d = Mathf.Max(0f, delay);
         float t0 = 0f;
@@ -242,7 +240,7 @@ public sealed class ScorePop : MonoBehaviour
         if (t) Destroy(t.gameObject);
     }
 
-    IEnumerator CoPopHoldFlyGeneral(TMP_Text t, Vector2 startAnchored, Vector2 endAnchored, float baseReadableScale, System.Action onArrive)
+    IEnumerator CoPopHoldFlyGeneral(TMP_Text t, Vector2 startAnchored, Vector2 endAnchored, float baseReadableScale, Action onArrive)
     {
         if (!t) yield break;
         var rt = t.rectTransform;
