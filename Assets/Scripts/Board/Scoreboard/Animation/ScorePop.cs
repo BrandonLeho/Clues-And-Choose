@@ -1,5 +1,5 @@
 using System.Collections;
-using System.Collections.Generic;
+using System;
 using Mirror;
 using TMPro;
 using UnityEngine;
@@ -46,15 +46,23 @@ public sealed class ScorePop : MonoBehaviour
     [SerializeField, Range(0.1f, 2f)] float flightEndScale = 0.75f;
     [SerializeField] AnimationCurve flightScaleEase = AnimationCurve.Linear(0, 0, 1, 1);
 
-
     [Header("Layer Override")]
     [SerializeField] RectTransform spawnLayer;
+
+    [Header("Clue-Giver Bonus")]
+    [SerializeField] float clueGiverScaleMultiplier = 0.88f;
+    [SerializeField, Min(0f)] float clueGiverSpawnDelay = 0.06f;
 
     [Header("Debug")]
     [SerializeField] bool debugLogs = false;
 
     int _targetCol = -1, _targetRow = -1;
     int _pointsAtExact = 3;
+
+    // Clue giver bonus config (fed by PhaseController)
+    string _cgName = null;
+    int _cgVicinitySize = 0;
+    int _cgPerCoin = 0;
 
     public static event System.Action<string, int> OnScoreFlyArrived;
 
@@ -68,7 +76,15 @@ public sealed class ScorePop : MonoBehaviour
     void OnDisable() { PhaseController.OnClientTargetChosen -= OnClientTargetChosen; }
 
     void OnClientTargetChosen(int col, int row, Color _) { _targetCol = col; _targetRow = row; }
+
     public void ConfigureFromPhase(int pointsAtExact) { _pointsAtExact = Mathf.Max(0, pointsAtExact); }
+
+    public void ConfigureClueGiverBonus(string clueGiverName, int vicinitySize, int perNearbyCoin)
+    {
+        _cgName = string.IsNullOrWhiteSpace(clueGiverName) ? null : clueGiverName;
+        _cgVicinitySize = Mathf.Max(0, vicinitySize);
+        _cgPerCoin = Mathf.Max(0, perNearbyCoin);
+    }
 
     public static void TrySpawnForCell(int col, int row, RectTransform cellRect)
     {
@@ -120,6 +136,7 @@ public sealed class ScorePop : MonoBehaviour
         var parent = inst.spawnLayer ? inst.spawnLayer : (cellRect.parent as RectTransform);
         if (!parent) return;
 
+        // Regular (owner) points
         var text = Instantiate(inst.scoreTextPrefab, parent);
         text.text = $"+{points}";
         var rt = text.rectTransform;
@@ -142,8 +159,62 @@ public sealed class ScorePop : MonoBehaviour
 
         Vector2 endAnchored = inst.AnchoredFromWorld(targetRt.TransformPoint(targetRt.rect.center), parent) + inst.bannerOffset;
 
-        inst.StartCoroutine(inst.CoPopHoldFly(text, startAnchored, endAnchored, ownerName, points));
+        // Spawn owner points now…
+        inst.StartCoroutine(inst.CoPopHoldFlyGeneral(
+            t: text,
+            startAnchored: startAnchored,
+            endAnchored: endAnchored,
+            baseReadableScale: inst.readableScale,
+            onArrive: () =>
+            {
+                OnScoreFlyArrived?.Invoke(ownerName, points);
+                if (PhaseController.Instance) PhaseController.Instance.CmdReportScoreArrival(ownerName, points);
+            }
+        ));
 
+        // …and if this coin contributes to the clue-giver bonus, spawn that RIGHT AFTER
+        bool qualifiesForClue =
+            inst._cgPerCoin > 0 &&
+            !string.IsNullOrWhiteSpace(inst._cgName) &&
+            !string.Equals(ownerName, inst._cgName) &&
+            cellsAway < inst._cgVicinitySize;
+
+        if (qualifiesForClue && ScoreBannerEntry.TryGetFlyTargetFor(inst._cgName, out var cgTarget))
+        {
+            var cgText = Instantiate(inst.scoreTextPrefab, parent);
+            cgText.text = $"+{inst._cgPerCoin}";
+            var cgRT = cgText.rectTransform;
+
+            cgRT.anchorMin = cgRT.anchorMax = new Vector2(0.5f, 0.5f);
+            cgRT.pivot = new Vector2(0.5f, 0.5f);
+            cgRT.anchoredPosition = startAnchored;
+            cgRT.localScale = Vector3.one * inst.startScale * inst.clueGiverScaleMultiplier; // slightly smaller
+            cgText.alpha = 0f;
+            cgRT.SetAsLastSibling();
+
+            Vector2 cgEnd = inst.AnchoredFromWorld(cgTarget.TransformPoint(cgTarget.rect.center), parent) + inst.bannerOffset;
+
+            inst.StartCoroutine(inst.CoDelayThenPopHoldFlyGeneral(
+                delay: inst.clueGiverSpawnDelay,   // “right after” the regular points appear
+                t: cgText,
+                startAnchored: startAnchored,
+                endAnchored: cgEnd,
+                baseReadableScale: inst.readableScale * inst.clueGiverScaleMultiplier,
+                onArrive: () =>
+                {
+                    OnScoreFlyArrived?.Invoke(inst._cgName, inst._cgPerCoin);
+                    if (PhaseController.Instance) PhaseController.Instance.CmdReportClueGiverBonusArrival(inst._cgPerCoin);
+                }
+            ));
+        }
+    }
+
+    IEnumerator CoDelayThenPopHoldFlyGeneral(float delay, TMP_Text t, Vector2 startAnchored, Vector2 endAnchored, float baseReadableScale, System.Action onArrive)
+    {
+        float d = Mathf.Max(0f, delay);
+        float t0 = 0f;
+        while (t0 < d && t) { t0 += Time.deltaTime; yield return null; }
+        if (t) yield return CoPopHoldFlyGeneral(t, startAnchored, endAnchored, baseReadableScale, onArrive);
     }
 
     IEnumerator CoPopOnly(TMP_Text t)
@@ -171,7 +242,7 @@ public sealed class ScorePop : MonoBehaviour
         if (t) Destroy(t.gameObject);
     }
 
-    IEnumerator CoPopHoldFly(TMP_Text t, Vector2 startAnchored, Vector2 endAnchored, string ownerName, int points)
+    IEnumerator CoPopHoldFlyGeneral(TMP_Text t, Vector2 startAnchored, Vector2 endAnchored, float baseReadableScale, System.Action onArrive)
     {
         if (!t) yield break;
         var rt = t.rectTransform;
@@ -184,7 +255,7 @@ public sealed class ScorePop : MonoBehaviour
             float u = Mathf.Clamp01(t1 / Mathf.Max(0.0001f, popDuration));
             float e = popEase != null ? popEase.Evaluate(u) : u;
 
-            float s = Mathf.Lerp(startScale, readableScale, e);
+            float s = Mathf.Lerp(startScale, baseReadableScale, e);
             rt.localScale = new Vector3(s, s, 1f);
             rt.anchoredPosition = Vector2.LerpUnclamped(startAnchored, popEnd, e);
             t.alpha = Mathf.SmoothStep(0f, 1f, u);
@@ -195,14 +266,14 @@ public sealed class ScorePop : MonoBehaviour
         while (t2 < holdDuration && t)
         {
             t2 += Time.deltaTime;
-            float settle = 1f + 0.03f * Mathf.Sin(Mathf.PI * Mathf.Clamp01(t2 / holdDuration));
-            rt.localScale = new Vector3(readableScale * settle, readableScale * settle, 1f);
+            float settle = 1f + 0.03f * Mathf.Sin((float)(Math.PI * Mathf.Clamp01(t2 / holdDuration)));
+            rt.localScale = new Vector3(baseReadableScale * settle, baseReadableScale * settle, 1f);
             rt.anchoredPosition = popEnd;
             t.alpha = 1f;
             yield return null;
         }
         if (!t) yield break;
-        rt.localScale = Vector3.one * readableScale;
+        rt.localScale = Vector3.one * baseReadableScale;
 
         Vector2 p0 = popEnd;
         Vector2 p2 = endAnchored;
@@ -220,16 +291,16 @@ public sealed class ScorePop : MonoBehaviour
             Vector2 pos = Vector2.Lerp(a, b, e);
             rt.anchoredPosition = pos;
 
-            float baseScale = readableScale;
+            float rs = baseReadableScale;
             if (scaleDownDuringFlight)
             {
                 float sT = flightScaleEase != null ? flightScaleEase.Evaluate(e) : e;
-                baseScale = Mathf.Lerp(readableScale, flightEndScale, sT);
+                rs = Mathf.Lerp(baseReadableScale, flightEndScale, sT);
             }
 
             float k = Mathf.Sin(e * Mathf.PI);
-            float wide = baseScale * (1f + flyStretchAmount * k);
-            float tall = baseScale * (1f - flySquashAmount * k);
+            float wide = rs * (1f + flyStretchAmount * k);
+            float tall = rs * (1f - flySquashAmount * k);
             rt.localScale = new Vector3(wide, tall, 1f);
 
             if (fadeDuringFlight)
@@ -246,10 +317,8 @@ public sealed class ScorePop : MonoBehaviour
             yield return null;
         }
 
-        OnScoreFlyArrived?.Invoke(ownerName, points);
-        if (PhaseController.Instance) PhaseController.Instance.CmdReportScoreArrival(ownerName, points);
+        onArrive?.Invoke();
         if (t) Destroy(t.gameObject);
-
     }
 
     Vector2 AnchoredAtCellCenter(RectTransform cell, RectTransform targetParent)

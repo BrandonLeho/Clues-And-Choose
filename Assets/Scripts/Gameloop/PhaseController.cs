@@ -42,6 +42,18 @@ public sealed class PhaseController : NetworkBehaviour
 
     public int PointsAtExact => pointsAtExact;
 
+    public int VicinitySize => vicinitySize;
+    public int PerNearbyCoinForCurrentPlayers
+    {
+        get
+        {
+            int playerCount = (RosterStore.Instance != null && RosterStore.Instance.Names != null)
+                ? RosterStore.Instance.Names.Count : 0;
+            return (playerCount <= fewPlayersThreshold) ? pointsPerNearbyCoinFewPlayers : pointsPerNearbyCoinManyPlayers;
+        }
+    }
+    public string CurrentClueGiverName => RosterStore.CurrentClueGiverName;
+
     Dictionary<string, int> _pendingAwards = new Dictionary<string, int>();
     int _pendingClueGiverBonus = 0;
 
@@ -258,7 +270,16 @@ public sealed class PhaseController : NetworkBehaviour
         var tn = FindFirstObjectByType<TurnNotification>();
         if (tn) tn.PlaySystemMessage("SCORING");
         GridDimmerOverlay.Instance?.FadeInDuringScoring();
-        if (ScorePop.Instance) ScorePop.Instance.ConfigureFromPhase(PointsAtExact);
+
+        if (ScorePop.Instance)
+        {
+            ScorePop.Instance.ConfigureFromPhase(PointsAtExact);
+            ScorePop.Instance.ConfigureClueGiverBonus(
+                CurrentClueGiverName,
+                VicinitySize,
+                PerNearbyCoinForCurrentPlayers
+            );
+        }
     }
 
     [Command(requiresAuthority = false)]
@@ -409,4 +430,19 @@ public sealed class PhaseController : NetworkBehaviour
         // TODO: Add clue giver points
     }
 
+    [Command(requiresAuthority = false)]
+    public void CmdReportClueGiverBonusArrival(int delta)
+    {
+        if (delta <= 0) return;
+        if (_pendingClueGiverBonus <= 0) return;
+
+        int toApply = Mathf.Min(delta, _pendingClueGiverBonus);
+        _pendingClueGiverBonus -= toApply;
+
+        string cg = RosterStore.CurrentClueGiverName;
+        if (!string.IsNullOrWhiteSpace(cg))
+        {
+            ScoreRegistry.AddScore(cg, toApply);
+        }
+    }
 }
