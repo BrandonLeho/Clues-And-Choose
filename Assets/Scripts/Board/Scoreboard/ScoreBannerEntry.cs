@@ -110,6 +110,8 @@ public class ScoreBannerEntry : MonoBehaviour
         if (string.IsNullOrEmpty(ownerName) || name != ownerName) return;
         if (delta <= 0) return;
 
+        if (!(Mirror.NetworkServer.active && Mirror.NetworkClient.active)) return;
+
         _pendingDeltas.Enqueue(delta);
         if (_countCo == null) _countCo = StartCoroutine(CoProcessQueue());
     }
@@ -146,13 +148,21 @@ public class ScoreBannerEntry : MonoBehaviour
             yield return CoCountTo(from, to, countDuration);
             _displayedScore = to;
 
-            if (_displayedScore < _authoritativeScore)
+            if (_displayedScore != _authoritativeScore)
             {
+                int catchFrom = _displayedScore;
                 int catchTo = _authoritativeScore;
                 float quick = Mathf.Min(countDuration * 0.5f, 0.35f);
-                yield return CoCountTo(_displayedScore, catchTo, quick);
+                yield return CoCountTo(catchFrom, catchTo, quick);
                 _displayedScore = catchTo;
             }
+        }
+
+        if (_displayedScore != _authoritativeScore)
+        {
+            float quick = Mathf.Min(countDuration * 0.5f, 0.35f);
+            yield return CoCountTo(_displayedScore, _authoritativeScore, quick);
+            _displayedScore = _authoritativeScore;
         }
         _countCo = null;
     }
