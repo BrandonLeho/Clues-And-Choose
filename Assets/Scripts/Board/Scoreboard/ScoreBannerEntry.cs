@@ -133,10 +133,8 @@ public class ScoreBannerEntry : MonoBehaviour
     void HandleFlyArrived(string name, int delta)
     {
         if (string.IsNullOrEmpty(ownerName) || name != ownerName) return;
-        if (delta <= 0) return;
 
-        if (Mirror.NetworkServer.active && Mirror.NetworkClient.active)
-            return;
+        if (delta <= 0) return;
 
         _pendingDeltas.Enqueue(delta);
 
