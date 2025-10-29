@@ -2,6 +2,7 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using System.Collections;
 
 public class ScoreBannerEntry : MonoBehaviour
 {
@@ -98,12 +99,17 @@ public class ScoreBannerEntry : MonoBehaviour
 
         _authoritativeScore = newScore;
 
-        if (_countCo == null && _pendingDeltas.Count == 0 && scoreText)
+        if (_pendingDeltas.Count == 0)
         {
-            _displayedScore = newScore;
-            scoreText.text = newScore.ToString();
+            if (_countCo != null) StopCoroutine(_countCo);
+
+            if (_displayedScore != _authoritativeScore)
+                _countCo = StartCoroutine(CoAnimateToAuthoritative(_authoritativeScore));
+            else
+                _countCo = null;
         }
     }
+
 
     void HandleFlyArrived(string name, int delta)
     {
@@ -137,7 +143,7 @@ public class ScoreBannerEntry : MonoBehaviour
         }
     }
 
-    System.Collections.IEnumerator CoProcessQueue()
+    IEnumerator CoProcessQueue()
     {
         while (_pendingDeltas.Count > 0)
         {
@@ -167,7 +173,7 @@ public class ScoreBannerEntry : MonoBehaviour
         _countCo = null;
     }
 
-    System.Collections.IEnumerator CoCountTo(int from, int to, float dur)
+    IEnumerator CoCountTo(int from, int to, float dur)
     {
         dur = Mathf.Max(0.0001f, dur);
         float t = 0f;
@@ -193,5 +199,22 @@ public class ScoreBannerEntry : MonoBehaviour
         }
 
         if (scoreText) scoreText.text = to.ToString();
+    }
+
+    IEnumerator CoAnimateToAuthoritative(int target)
+    {
+        int from = _displayedScore;
+        float dur = countDuration;
+        yield return CoCountTo(from, target, dur);
+        _displayedScore = target;
+
+        if (_displayedScore != _authoritativeScore)
+        {
+            float quick = Mathf.Min(countDuration * 0.5f, 0.35f);
+            yield return CoCountTo(_displayedScore, _authoritativeScore, quick);
+            _displayedScore = _authoritativeScore;
+        }
+
+        _countCo = null;
     }
 }
