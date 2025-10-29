@@ -164,8 +164,7 @@ public sealed class ScorePop : MonoBehaviour
             baseReadableScale: inst.readableScale,
             onArrive: () =>
             {
-                if (NetworkServer.active && NetworkClient.active)
-                    OnScoreFlyArrived?.Invoke(ownerName, points);
+                OnScoreFlyArrived?.Invoke(ownerName, points);
 
                 if (NetworkServer.active && NetworkClient.active && PhaseController.Instance)
                     PhaseController.Instance.CmdReportScoreArrival(ownerName, points);
@@ -201,8 +200,7 @@ public sealed class ScorePop : MonoBehaviour
                 baseReadableScale: inst.readableScale * inst.clueGiverScaleMultiplier,
                 onArrive: () =>
                 {
-                    if (NetworkServer.active && NetworkClient.active)
-                        OnScoreFlyArrived?.Invoke(inst._cgName, inst._cgPerCoin);
+                    OnScoreFlyArrived?.Invoke(inst._cgName, inst._cgPerCoin);
 
                     if (NetworkServer.active && NetworkClient.active && PhaseController.Instance)
                         PhaseController.Instance.CmdReportClueGiverBonusArrival(inst._cgPerCoin);

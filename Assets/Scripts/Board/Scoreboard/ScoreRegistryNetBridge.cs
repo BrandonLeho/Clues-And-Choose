@@ -3,6 +3,13 @@ using Mirror;
 
 public class ScoreRegistryNetBridge : NetworkBehaviour
 {
+    [Header("Debug")]
+    [SerializeField] bool debugLogsEnabled = true;
+
+    void DLog(object msg) { if (debugLogsEnabled) Debug.Log(msg); }
+    void DWarn(object msg) { if (debugLogsEnabled) Debug.LogWarning(msg); }
+    void DError(object msg) { if (debugLogsEnabled) Debug.LogError(msg); }
+
     public override void OnStartServer()
     {
         ScoreRegistry.OnScoreChanged += HandleServerScoreChanged;
@@ -17,7 +24,7 @@ public class ScoreRegistryNetBridge : NetworkBehaviour
     void HandleServerScoreChanged(string name, int newScore)
     {
         if (ScoreRegistry.IsNetworkApplying) return;
-        Debug.Log("Player [" + name + "] is awarded: " + newScore + " points");
+        DLog("Player [" + name + "] is awarded: " + newScore + " points");
         RpcPushScore(name, newScore);
     }
 

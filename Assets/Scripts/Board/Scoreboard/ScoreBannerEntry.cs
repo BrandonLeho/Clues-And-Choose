@@ -139,6 +139,7 @@ public class ScoreBannerEntry : MonoBehaviour
             return;
 
         _pendingDeltas.Enqueue(delta);
+
         if (_countCo == null) _countCo = StartCoroutine(CoProcessQueue());
     }
 

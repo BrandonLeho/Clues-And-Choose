@@ -639,8 +639,8 @@ MonoBehaviour:
   glowTopIntensity: 1.85
   glowOutlineThickness: 0.2
   glowOutlineFeather: 0
-  glowOutlineTopFalloff: 2
-  glowOutlineIntensity: 3
+  glowOutlineTopFalloff: 1
+  glowOutlineIntensity: 5
 --- !u!114 &2295254407087023068
 MonoBehaviour:
   m_ObjectHideFlags: 0

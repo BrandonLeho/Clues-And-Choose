@@ -15,6 +15,12 @@ public class BoardSpotsNet : NetworkBehaviour
     [SerializeField, Min(1)] int gridRows = 16;
     [SerializeField] bool aStartsAtTop = true;
 
+    [Header("Debug")]
+    [SerializeField] bool debugLogsEnabled = true;
+
+    void DLog(object msg) { if (debugLogsEnabled) Debug.Log(msg); }
+    void DWarn(object msg) { if (debugLogsEnabled) Debug.LogWarning(msg); }
+    void DError(object msg) { if (debugLogsEnabled) Debug.LogError(msg); }
 
     public class SpotDict : SyncDictionary<int, uint> { }
     public readonly SpotDict occupancy = new SpotDict();
@@ -120,7 +126,7 @@ public class BoardSpotsNet : NetworkBehaviour
         if (sender != null)
         {
             var reqId = sender.identity ? sender.identity.netId : 0u;
-            Debug.Log($"[Claim] Request from {reqId} coin={coinNetId} spot={spotIndex}");
+            DLog($"[Claim] Request from {reqId} coin={coinNetId} spot={spotIndex}");
         }
 
         if (sender != null && CoinPlacementTurnManager.Instance != null)
@@ -128,7 +134,7 @@ public class BoardSpotsNet : NetworkBehaviour
             uint requesterPlayerNetId = sender.identity ? sender.identity.netId : 0u;
             if (!CoinPlacementTurnManager.Instance.ServerCanPlayerPlace(requesterPlayerNetId))
             {
-                Debug.LogWarning($"[Claim] REJECT (not your turn) requester={requesterPlayerNetId} " + $"current={CoinPlacementTurnManager.Instance.currentPlacerNetId} spot={spotIndex}");
+                DWarn($"[Claim] REJECT (not your turn) requester={requesterPlayerNetId} current={CoinPlacementTurnManager.Instance.currentPlacerNetId} spot={spotIndex}");
                 TargetClaimResult(sender, false, spotIndex, Vector3.zero);
                 return;
             }
@@ -155,7 +161,7 @@ public class BoardSpotsNet : NetworkBehaviour
 
                 RpcApplySpot(spotIndex, coinNetId);
 
-                Debug.Log($"[Claim] SUCCESS spot={spotIndex} coin={coinNetId} by player={sender?.identity?.netId}");
+                DLog($"[Claim] SUCCESS spot={spotIndex} coin={coinNetId} by player={sender?.identity?.netId}");
 
                 if (CoinPlacementTurnManager.Instance != null)
                 {
@@ -165,7 +171,7 @@ public class BoardSpotsNet : NetworkBehaviour
             }
             else
             {
-                Debug.LogWarning($"[Claim] REJECT (occupied) spot={spotIndex} currentCoin={cur}");
+                DWarn($"[Claim] REJECT (occupied) spot={spotIndex} currentCoin={cur}");
             }
         }
 
@@ -219,5 +225,4 @@ public class BoardSpotsNet : NetworkBehaviour
         row = r;
         return true;
     }
-
 }
