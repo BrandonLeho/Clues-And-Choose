@@ -583,9 +583,9 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   glowOnCount: 1
-  glowRiseTime: 0.18
-  glowHoldTime: 0.2
-  glowSettleTime: 0.3
+  glowRiseTime: 0.05
+  glowHoldTime: 0.75
+  glowSettleTime: 1.5
   glowInEase:
     serializedVersion: 2
     m_Curve:
