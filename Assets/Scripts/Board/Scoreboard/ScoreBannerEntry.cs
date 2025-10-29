@@ -116,7 +116,8 @@ public class ScoreBannerEntry : MonoBehaviour
         if (string.IsNullOrEmpty(ownerName) || name != ownerName) return;
         if (delta <= 0) return;
 
-        if (!(Mirror.NetworkServer.active && Mirror.NetworkClient.active)) return;
+        if (Mirror.NetworkServer.active && Mirror.NetworkClient.active)
+            return;
 
         _pendingDeltas.Enqueue(delta);
         if (_countCo == null) _countCo = StartCoroutine(CoProcessQueue());
