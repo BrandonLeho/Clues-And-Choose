@@ -24,10 +24,30 @@ public class ScoreBannerEntry : MonoBehaviour
     [SerializeField, Min(0.05f)] float countDuration = 0.45f;
     [SerializeField] AnimationCurve countEase = AnimationCurve.Linear(0, 0, 1, 1);
 
+    [Header("Glow On Count")]
+    [SerializeField] bool glowOnCount = true;
+    [SerializeField, Min(0f)] float glowRiseTime = 0.18f;
+    [SerializeField, Min(0f)] float glowHoldTime = 0.20f;
+    [SerializeField, Min(0f)] float glowSettleTime = 0.30f;
+    [SerializeField] AnimationCurve glowInEase = AnimationCurve.EaseInOut(0, 0, 1, 1);
+    [SerializeField] AnimationCurve glowOutEase = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
+    [Header("Peak Glow Targets")]
+    [Range(0f, 1f)] public float glowTopHeight = 0.9f;
+    [Range(0f, 1f)] public float glowTopFeather = 0.15f;
+    [Range(0f, 5f)] public float glowTopIntensity = 3.0f;
+
+    [Range(0f, 0.5f)] public float glowOutlineThickness = 0.25f;
+    [Range(0f, 1f)] public float glowOutlineFeather = 0.25f;
+    [Range(1f, 8f)] public float glowOutlineTopFalloff = 2.5f;
+    [Range(0f, 5f)] public float glowOutlineIntensity = 3.0f;
+
     int _displayedScore;
     int _authoritativeScore;
     Queue<int> _pendingDeltas = new();
     Coroutine _countCo;
+
+    Coroutine _glowCo;
 
     static readonly Dictionary<string, ScoreBannerEntry> Registry = new();
 
@@ -110,7 +130,6 @@ public class ScoreBannerEntry : MonoBehaviour
         }
     }
 
-
     void HandleFlyArrived(string name, int delta)
     {
         if (string.IsNullOrEmpty(ownerName) || name != ownerName) return;
@@ -151,6 +170,8 @@ public class ScoreBannerEntry : MonoBehaviour
             int delta = _pendingDeltas.Dequeue();
             int from = _displayedScore;
             int to = from + delta;
+
+            if (glowOnCount) TriggerGlowPulse();
 
             yield return CoCountTo(from, to, countDuration);
             _displayedScore = to;
@@ -217,5 +238,79 @@ public class ScoreBannerEntry : MonoBehaviour
         }
 
         _countCo = null;
+    }
+
+    void TriggerGlowPulse()
+    {
+        if (!glowBinder) return;
+        if (_glowCo != null) StopCoroutine(_glowCo);
+        _glowCo = StartCoroutine(CoGlowPulse());
+    }
+
+    IEnumerator CoGlowPulse()
+    {
+        float bTopHeight = glowBinder.topHeight;
+        float bTopFeather = glowBinder.topFeather;
+        float bTopIntensity = glowBinder.topIntensity;
+
+        float bOutThick = glowBinder.outlineThickness;
+        float bOutFeather = glowBinder.outlineFeather;
+        float bOutTopFalloff = glowBinder.outlineTopFalloff;
+        float bOutIntensity = glowBinder.outlineIntensity;
+
+        float t = 0f, d = Mathf.Max(0.0001f, glowRiseTime);
+        while (t < d)
+        {
+            t += Time.deltaTime;
+            float u = Mathf.Clamp01(t / d);
+            float e = glowInEase != null ? glowInEase.Evaluate(u) : u;
+
+            glowBinder.topHeight = Mathf.Lerp(bTopHeight, glowTopHeight, e);
+            glowBinder.topFeather = Mathf.Lerp(bTopFeather, glowTopFeather, e);
+            glowBinder.topIntensity = Mathf.Lerp(bTopIntensity, glowTopIntensity, e);
+
+            glowBinder.outlineThickness = Mathf.Lerp(bOutThick, glowOutlineThickness, e);
+            glowBinder.outlineFeather = Mathf.Lerp(bOutFeather, glowOutlineFeather, e);
+            glowBinder.outlineTopFalloff = Mathf.Lerp(bOutTopFalloff, glowOutlineTopFalloff, e);
+            glowBinder.outlineIntensity = Mathf.Lerp(bOutIntensity, glowOutlineIntensity, e);
+
+            glowBinder.ApplyAll();
+            yield return null;
+        }
+
+        float hold = Mathf.Max(0f, glowHoldTime);
+        if (hold > 0f) { float h = 0f; while (h < hold) { h += Time.deltaTime; yield return null; } }
+
+        t = 0f; d = Mathf.Max(0.0001f, glowSettleTime);
+        while (t < d)
+        {
+            t += Time.deltaTime;
+            float u = Mathf.Clamp01(t / d);
+            float e = glowOutEase != null ? glowOutEase.Evaluate(u) : u;
+
+            glowBinder.topHeight = Mathf.Lerp(glowTopHeight, bTopHeight, e);
+            glowBinder.topFeather = Mathf.Lerp(glowTopFeather, bTopFeather, e);
+            glowBinder.topIntensity = Mathf.Lerp(glowTopIntensity, bTopIntensity, e);
+
+            glowBinder.outlineThickness = Mathf.Lerp(glowOutlineThickness, bOutThick, e);
+            glowBinder.outlineFeather = Mathf.Lerp(glowOutlineFeather, bOutFeather, e);
+            glowBinder.outlineTopFalloff = Mathf.Lerp(glowOutlineTopFalloff, bOutTopFalloff, e);
+            glowBinder.outlineIntensity = Mathf.Lerp(glowOutlineIntensity, bOutIntensity, e);
+
+            glowBinder.ApplyAll();
+            yield return null;
+        }
+
+        glowBinder.topHeight = bTopHeight;
+        glowBinder.topFeather = bTopFeather;
+        glowBinder.topIntensity = bTopIntensity;
+
+        glowBinder.outlineThickness = bOutThick;
+        glowBinder.outlineFeather = bOutFeather;
+        glowBinder.outlineTopFalloff = bOutTopFalloff;
+        glowBinder.outlineIntensity = bOutIntensity;
+
+        glowBinder.ApplyAll();
+        _glowCo = null;
     }
 }

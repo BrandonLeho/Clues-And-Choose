@@ -557,6 +557,90 @@ MonoBehaviour:
   fallbackBG: {r: 1, g: 1, b: 1, a: 1}
   glowBinder: {fileID: 2295254407087023068}
   flyTargetAnchor: {fileID: 1021042602258961995}
+  countDuration: 0.25
+  countEase:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 1
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 1
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  glowOnCount: 1
+  glowRiseTime: 0.18
+  glowHoldTime: 0.2
+  glowSettleTime: 0.3
+  glowInEase:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  glowOutEase:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  glowTopHeight: 1
+  glowTopFeather: 0
+  glowTopIntensity: 1.85
+  glowOutlineThickness: 0.2
+  glowOutlineFeather: 0
+  glowOutlineTopFalloff: 2
+  glowOutlineIntensity: 3
 --- !u!114 &2295254407087023068
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -575,11 +659,11 @@ MonoBehaviour:
   backgroundImage: {fileID: 1248027586943008691}
   playerGlowColor: {r: 1, g: 1, b: 1, a: 1}
   topHeight: 1
-  topFeather: 0
+  topFeather: 0.5
   topIntensity: 1
   outlineThickness: 0.2
-  outlineFeather: 0.5
-  outlineTopFalloff: 1
+  outlineFeather: 1
+  outlineTopFalloff: 2
   outlineIntensity: 2
   computeInnerUVFromRects: 0
   manualInnerUV: {x: 0.08, y: 0.06, z: 0.92, w: 0.94}

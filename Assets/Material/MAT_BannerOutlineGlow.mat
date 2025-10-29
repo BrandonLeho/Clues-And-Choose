@@ -43,7 +43,7 @@ Material:
     m_Floats:
     - _ColorMask: 15
     - _EnableExternalAlpha: 0
-    - _Feather: 0.5
+    - _Feather: 1
     - _Intensity: 2
     - _Stencil: 0
     - _StencilComp: 8
@@ -51,7 +51,7 @@ Material:
     - _StencilReadMask: 255
     - _StencilWriteMask: 255
     - _Thickness: 0.2
-    - _TopFalloff: 1
+    - _TopFalloff: 2
     - _UseAlphaFromTex: 0
     - _ZWrite: 0
     m_Colors:
