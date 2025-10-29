@@ -76,7 +76,7 @@ public class BannerGlowController : MonoBehaviour
                 Release(ref _topMat, ref _ownsTop);
                 if (src != null)
                 {
-                    _topMat = topLightImage.material;
+                    _topMat = new Material(src) { name = src.name + " (BannerInst)" };
                     _ownsTop = true;
                     topLightImage.material = _topMat;
                 }
@@ -104,7 +104,7 @@ public class BannerGlowController : MonoBehaviour
                 Release(ref _outlineMat, ref _ownsOutline);
                 if (src != null)
                 {
-                    _outlineMat = outlineGlowImage.material;
+                    _outlineMat = new Material(src) { name = src.name + " (BannerInst)" };
                     _ownsOutline = true;
                     outlineGlowImage.material = _outlineMat;
                 }
