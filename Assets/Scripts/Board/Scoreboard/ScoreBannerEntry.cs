@@ -166,13 +166,16 @@ public class ScoreBannerEntry : MonoBehaviour
     void HandleFlyArrived(string name, int delta)
     {
         if (string.IsNullOrEmpty(ownerName) || name != ownerName) return;
-
         if (delta <= 0) return;
 
         _pendingDeltas.Enqueue(delta);
 
-        if (_countCo == null) _countCo = StartCoroutine(CoProcessQueue());
+        if (glowOnCount) TriggerGlowPulse();
+
+        if (_countCo == null)
+            _countCo = StartCoroutine(CoProcessQueue());
     }
+
 
     public void RefreshColor()
     {
@@ -269,7 +272,14 @@ public class ScoreBannerEntry : MonoBehaviour
             _displayedScore = _authoritativeScore;
         }
 
-        _countCo = null;
+        if (_pendingDeltas.Count > 0)
+        {
+            _countCo = StartCoroutine(CoProcessQueue());
+        }
+        else
+        {
+            _countCo = null;
+        }
     }
 
     void TriggerGlowPulse()
