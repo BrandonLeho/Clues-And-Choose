@@ -133,23 +133,30 @@ public sealed class GridDimmerOverlay : MonoBehaviour
 
     void DisableAllCellHoversNow()
     {
-        if (!gridRoot) return;
+        GridHoverRelay.Instance?.HoverExit();
 
-        var hovers = gridRoot.GetComponentsInChildren<GridCellHoverWithCoords>(true);
+        var hovers = FindObjectsByType<GridCellHoverWithCoords>(FindObjectsSortMode.None);
         for (int i = 0; i < hovers.Length; i++)
         {
             var h = hovers[i];
             if (!h) continue;
+
+            if (h.IsHoverLocked)
+            {
+                h.SetHoverLock(false, keepShown: false);
+                h.ProbeEnter();
+            }
 
             h.ProbeExit();
 
             h.SetHoverEnabled(false);
         }
 
-        var enablers = gridRoot.GetComponents<EnableAllCellHoversAfterFlyIn>();
-        for (int i = 0; i < enablers.Length; i++)
+        if (gridRoot)
         {
-            if (enablers[i]) enablers[i].enabled = false;
+            var enablers = gridRoot.GetComponents<EnableAllCellHoversAfterFlyIn>();
+            for (int i = 0; i < enablers.Length; i++)
+                if (enablers[i]) enablers[i].enabled = false;
         }
     }
 
