@@ -1,4 +1,6 @@
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using Mirror;
 using UnityEngine;
 
@@ -16,6 +18,9 @@ public class CoinSlideInIntro : NetworkBehaviour
     [Range(0, 1)] public float startAlpha = 1f;
     [Range(0, 1)] public float endAlpha = 1f;
 
+    [Header("Sync control")]
+    public bool suspendTransformSyncDuringIntro = true;
+
     Vector3 _startPos;
     Vector3 _targetPos;
     bool _configured;
@@ -30,9 +35,12 @@ public class CoinSlideInIntro : NetworkBehaviour
     SpriteRenderer[] _srs;
     bool _clientAnimStarted;
 
-    public void Configure(Vector3 startPos, Vector3 targetPos, float delay,
-                          float speed, float sRot, float eRot,
-                          float sAlpha, float eAlpha, AnimationCurve curve)
+    readonly List<Behaviour> _syncers = new List<Behaviour>();
+    bool _syncersCached;
+
+    public void Configure(
+        Vector3 startPos, Vector3 targetPos, float delay,
+        float speed, float sRot, float eRot, float sAlpha, float eAlpha, AnimationCurve curve)
     {
         _startPos = startPos;
         _targetPos = targetPos;
@@ -60,6 +68,35 @@ public class CoinSlideInIntro : NetworkBehaviour
         if (_srs == null) _srs = GetComponentsInChildren<SpriteRenderer>(true);
     }
 
+    void CacheSyncersIfNeeded()
+    {
+        if (_syncersCached) return;
+        _syncersCached = true;
+
+        var behaviours = GetComponentsInChildren<Behaviour>(true);
+        foreach (var b in behaviours)
+        {
+            if (!b) continue;
+            var n = b.GetType().Name;
+            if (n == "NetworkTransform" ||
+                n == "NetworkTransformChild" ||
+                n.Contains("NetworkTransform"))
+            {
+                _syncers.Add(b);
+            }
+        }
+    }
+
+    void SetTransformSyncEnabled(bool enabled)
+    {
+        if (!suspendTransformSyncDuringIntro) return;
+        CacheSyncersIfNeeded();
+        foreach (var b in _syncers)
+        {
+            if (b) b.enabled = enabled;
+        }
+    }
+
     public override void OnStartServer()
     {
         base.OnStartServer();
@@ -77,9 +114,9 @@ public class CoinSlideInIntro : NetworkBehaviour
         if (syncSpeed > 0f)
         {
             StopAllCoroutines();
-            StartCoroutine(Co_ClientAnim(syncStartPos, syncTargetPos, syncStartAtServerTime,
-                                         syncSpeed, syncStartRotZ, syncEndRotZ,
-                                         syncStartAlpha, syncEndAlpha));
+            StartCoroutine(Co_ClientAnim(
+                syncStartPos, syncTargetPos, syncStartAtServerTime,
+                syncSpeed, syncStartRotZ, syncEndRotZ, syncStartAlpha, syncEndAlpha));
             _clientAnimStarted = true;
         }
     }
@@ -87,17 +124,17 @@ public class CoinSlideInIntro : NetworkBehaviour
     [Server]
     IEnumerator Co_ServerAnim()
     {
+        SetTransformSyncEnabled(false);
+
         transform.position = _startPos;
         transform.rotation = Quaternion.Euler(0, 0, startRotZ);
         SetAlpha(startAlpha);
 
         while (NetworkTime.time < syncStartAtServerTime) yield return null;
-
         yield return null;
 
         RpcStartSlide(syncStartPos, syncTargetPos, syncStartAtServerTime,
-                      syncSpeed, syncStartRotZ, syncEndRotZ,
-                      syncStartAlpha, syncEndAlpha);
+                      syncSpeed, syncStartRotZ, syncEndRotZ, syncStartAlpha, syncEndAlpha);
 
         float dist = Vector3.Distance(_startPos, _targetPos);
         float dur = Mathf.Max(0.0001f, dist / unitsPerSecond);
@@ -122,6 +159,7 @@ public class CoinSlideInIntro : NetworkBehaviour
         if (snap) snap.SetHome(_targetPos, true);
         RpcSetHome(_targetPos);
 
+        SetTransformSyncEnabled(true);
         enabled = false;
     }
 
@@ -141,6 +179,8 @@ public class CoinSlideInIntro : NetworkBehaviour
     IEnumerator Co_ClientAnim(Vector3 start, Vector3 target, double startAtServerTime,
                               float speed, float sRot, float eRot, float sAlpha, float eAlpha)
     {
+        SetTransformSyncEnabled(false);
+
         transform.position = start;
         transform.rotation = Quaternion.Euler(0, 0, sRot);
         SetAlpha(sAlpha);
@@ -165,6 +205,8 @@ public class CoinSlideInIntro : NetworkBehaviour
         transform.position = target;
         transform.rotation = Quaternion.Euler(0, 0, eRot);
         SetAlpha(eAlpha);
+
+        SetTransformSyncEnabled(true);
     }
 
     [ClientRpc]
@@ -179,7 +221,9 @@ public class CoinSlideInIntro : NetworkBehaviour
         EnsureSRs();
         for (int i = 0; i < _srs.Length; i++)
         {
-            var c = _srs[i].color; c.a = a; _srs[i].color = c;
+            var c = _srs[i].color;
+            c.a = a;
+            _srs[i].color = c;
         }
     }
 }
