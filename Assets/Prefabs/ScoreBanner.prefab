@@ -634,6 +634,9 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  defaultGlowRise: 0.05
+  defaultGlowHold: 0.75
+  defaultGlowSettle: 1.5
   glowTopHeight: 1
   glowTopFeather: 0
   glowTopIntensity: 1.85
