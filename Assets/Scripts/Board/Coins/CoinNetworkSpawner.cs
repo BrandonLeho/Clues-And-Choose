@@ -35,6 +35,9 @@ public class CoinNetworkSpawner : NetworkBehaviour
     [Range(0, 1)][SerializeField] float startAlpha = 1f;
     [Range(0, 1)][SerializeField] float endAlpha = 1f;
 
+    [Header("Client animation")]
+    [SerializeField] bool clientSlideIsLocal = true;
+
     bool _spawned;
     public static event System.Action OnInitialSpawnSettled;
 
@@ -140,13 +143,14 @@ public class CoinNetworkSpawner : NetworkBehaviour
                     int col = slotIdx % cols;
 
                     float jitter = (randomDelayJitter > 0f) ? Random.Range(0f, randomDelayJitter) : 0f;
-                    float startDelay = globalStartDelay + (row * perRowDelay) + (col * perCoinDelay) + jitter;
+                    float startDelayLocal = globalStartDelay + (row * perRowDelay) + (col * perCoinDelay) + jitter;
 
                     var intro = go.GetComponent<CoinSlideInIntro>();
                     if (!intro) intro = go.AddComponent<CoinSlideInIntro>();
-                    intro.Configure(spawnPos, targetPos, startDelay,
+                    intro.Configure(spawnPos, targetPos, startDelayLocal,
                                     slideUnitsPerSecond, startRotZ, endRotZ,
-                                    startAlpha, endAlpha, slideEase);
+                                    startAlpha, endAlpha, slideEase,
+                                    clientSlideIsLocal);
                 }
 
                 NetworkServer.Spawn(go);
