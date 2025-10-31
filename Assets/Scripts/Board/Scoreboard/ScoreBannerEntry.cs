@@ -49,6 +49,7 @@ public class ScoreBannerEntry : MonoBehaviour
     int _authoritativeScore;
     Queue<int> _pendingDeltas = new();
     Coroutine _countCo;
+    bool _glowArmed;
 
     Coroutine _glowCo;
 
@@ -97,6 +98,9 @@ public class ScoreBannerEntry : MonoBehaviour
             StopCoroutine(_glowCo);
             _glowCo = null;
         }
+
+        _glowArmed = false;
+
         RestoreGlowBaseline();
     }
 
@@ -170,12 +174,15 @@ public class ScoreBannerEntry : MonoBehaviour
 
         _pendingDeltas.Enqueue(delta);
 
-        if (glowOnCount) TriggerGlowPulse();
+        if (glowOnCount && !_glowArmed)
+        {
+            _glowArmed = true;
+            TriggerGlowPulse();
+        }
 
         if (_countCo == null)
             _countCo = StartCoroutine(CoProcessQueue());
     }
-
 
     public void RefreshColor()
     {
@@ -200,13 +207,17 @@ public class ScoreBannerEntry : MonoBehaviour
 
     IEnumerator CoProcessQueue()
     {
+        if (glowOnCount && !_glowArmed)
+        {
+            _glowArmed = true;
+            TriggerGlowPulse();
+        }
+
         while (_pendingDeltas.Count > 0)
         {
             int delta = _pendingDeltas.Dequeue();
             int from = _displayedScore;
             int to = from + delta;
-
-            if (glowOnCount) TriggerGlowPulse();
 
             yield return CoCountTo(from, to, countDuration);
             _displayedScore = to;
@@ -227,6 +238,8 @@ public class ScoreBannerEntry : MonoBehaviour
             yield return CoCountTo(_displayedScore, _authoritativeScore, quick);
             _displayedScore = _authoritativeScore;
         }
+
+        _glowArmed = false;
         _countCo = null;
     }
 
@@ -278,6 +291,7 @@ public class ScoreBannerEntry : MonoBehaviour
         }
         else
         {
+            _glowArmed = false;
             _countCo = null;
         }
     }
