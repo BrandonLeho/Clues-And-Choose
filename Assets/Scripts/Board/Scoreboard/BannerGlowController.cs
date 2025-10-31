@@ -29,6 +29,10 @@ public class BannerGlowController : MonoBehaviour
     public bool computeInnerUVFromRects = true;
     public Vector4 manualInnerUV = new Vector4(0.1f, 0.1f, 0.9f, 0.9f);
 
+    [Header("Auto Restore")]
+    [SerializeField] bool autoRestoreToInspectorValues = false;
+    [SerializeField, Min(0f)] float autoRestoreSpeed = 12f;
+
     Material _topMat;
     Material _outlineMat;
     bool _ownsTop;
@@ -64,7 +68,24 @@ public class BannerGlowController : MonoBehaviour
         if (!Application.isPlaying && computeInnerUVFromRects)
             ApplyInnerUVFromRects();
 #endif
+
+        if (Application.isPlaying && autoRestoreToInspectorValues)
+        {
+            float dt = Time.unscaledDeltaTime;
+            float k = 1f - Mathf.Exp(-autoRestoreSpeed * dt);
+
+            topHeight = Mathf.Lerp(topHeight, Mathf.Clamp01(topHeight), k);
+            topFeather = Mathf.Lerp(topFeather, Mathf.Clamp01(topFeather), k);
+            topIntensity = Mathf.Lerp(topIntensity, Mathf.Max(0f, topIntensity), k);
+            outlineThickness = Mathf.Lerp(outlineThickness, Mathf.Clamp01(outlineThickness), k);
+            outlineFeather = Mathf.Lerp(outlineFeather, Mathf.Clamp01(outlineFeather), k);
+            outlineTopFalloff = Mathf.Lerp(outlineTopFalloff, Mathf.Max(1f, outlineTopFalloff), k);
+            outlineIntensity = Mathf.Lerp(outlineIntensity, Mathf.Max(0f, outlineIntensity), k);
+
+            ApplyAll();
+        }
     }
+
 
     void EnsureInstanceMaterials()
     {
@@ -76,7 +97,7 @@ public class BannerGlowController : MonoBehaviour
                 Release(ref _topMat, ref _ownsTop);
                 if (src != null)
                 {
-                    _topMat = new Material(src) { name = src.name + " (BannerInst)" };
+                    _topMat = new Material(src) { name = src.name };
                     _ownsTop = true;
                     topLightImage.material = _topMat;
                 }
@@ -104,7 +125,7 @@ public class BannerGlowController : MonoBehaviour
                 Release(ref _outlineMat, ref _ownsOutline);
                 if (src != null)
                 {
-                    _outlineMat = new Material(src) { name = src.name + " (BannerInst)" };
+                    _outlineMat = new Material(src) { name = src.name };
                     _ownsOutline = true;
                     outlineGlowImage.material = _outlineMat;
                 }

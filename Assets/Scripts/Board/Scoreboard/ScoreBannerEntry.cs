@@ -57,6 +57,10 @@ public class ScoreBannerEntry : MonoBehaviour
     string ownerName;
     public string OwnerName => ownerName;
 
+    BannerGlowController _glow;
+    float _baseTopHeight, _baseTopFeather, _baseTopIntensity;
+    float _baseOutThick, _baseOutFeather, _baseOutTopFalloff, _baseOutIntensity;
+
     public void Initialize(string playerName, int initialScore = 0)
     {
         ownerName = playerName;
@@ -74,9 +78,35 @@ public class ScoreBannerEntry : MonoBehaviour
         Register();
     }
 
+    void Awake()
+    {
+        _glow = glowBinder;
+        CaptureGlowBaseline();
+    }
+
     void OnEnable() { SubscribeScore(); Register(); ScorePop.OnScoreFlyArrived += HandleFlyArrived; }
-    void OnDisable() { UnsubscribeScore(); Unregister(); ScorePop.OnScoreFlyArrived -= HandleFlyArrived; }
-    void OnDestroy() { ScorePop.OnScoreFlyArrived -= HandleFlyArrived; Unregister(); }
+
+    void OnDisable()
+    {
+        UnsubscribeScore();
+        Unregister();
+        ScorePop.OnScoreFlyArrived -= HandleFlyArrived;
+
+        if (_glowCo != null)
+        {
+            StopCoroutine(_glowCo);
+            _glowCo = null;
+        }
+        RestoreGlowBaseline();
+    }
+
+    void OnDestroy()
+    {
+        ScorePop.OnScoreFlyArrived -= HandleFlyArrived;
+        Unregister();
+
+        RestoreGlowBaseline();
+    }
 
     void Register()
     {
@@ -251,14 +281,17 @@ public class ScoreBannerEntry : MonoBehaviour
 
     IEnumerator CoGlowPulse()
     {
-        float bTopHeight = glowBinder.topHeight;
-        float bTopFeather = glowBinder.topFeather;
-        float bTopIntensity = glowBinder.topIntensity;
+        var g = glowBinder;
+        if (!g) yield break;
 
-        float bOutThick = glowBinder.outlineThickness;
-        float bOutFeather = glowBinder.outlineFeather;
-        float bOutTopFalloff = glowBinder.outlineTopFalloff;
-        float bOutIntensity = glowBinder.outlineIntensity;
+        float bTopHeight = _glow ? _baseTopHeight : g.topHeight;
+        float bTopFeather = _glow ? _baseTopFeather : g.topFeather;
+        float bTopIntensity = _glow ? _baseTopIntensity : g.topIntensity;
+
+        float bOutThick = _glow ? _baseOutThick : g.outlineThickness;
+        float bOutFeather = _glow ? _baseOutFeather : g.outlineFeather;
+        float bOutTopFalloff = _glow ? _baseOutTopFalloff : g.outlineTopFalloff;
+        float bOutIntensity = _glow ? _baseOutIntensity : g.outlineIntensity;
 
         float t = 0f, d = Mathf.Max(0.0001f, glowRiseTime);
         while (t < d)
@@ -311,5 +344,30 @@ public class ScoreBannerEntry : MonoBehaviour
 
         glowBinder.ApplyAll();
         _glowCo = null;
+    }
+
+    void CaptureGlowBaseline()
+    {
+        if (!_glow) return;
+        _baseTopHeight = _glow.topHeight;
+        _baseTopFeather = _glow.topFeather;
+        _baseTopIntensity = _glow.topIntensity;
+        _baseOutThick = _glow.outlineThickness;
+        _baseOutFeather = _glow.outlineFeather;
+        _baseOutTopFalloff = _glow.outlineTopFalloff;
+        _baseOutIntensity = _glow.outlineIntensity;
+    }
+
+    void RestoreGlowBaseline()
+    {
+        if (!_glow) return;
+        _glow.topHeight = _baseTopHeight;
+        _glow.topFeather = _baseTopFeather;
+        _glow.topIntensity = _baseTopIntensity;
+        _glow.outlineThickness = _baseOutThick;
+        _glow.outlineFeather = _baseOutFeather;
+        _glow.outlineTopFalloff = _baseOutTopFalloff;
+        _glow.outlineIntensity = _baseOutIntensity;
+        _glow.ApplyAll();
     }
 }
