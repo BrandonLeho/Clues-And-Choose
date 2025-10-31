@@ -99,8 +99,11 @@ public class CoinDropSnap : MonoBehaviour
 
     void Start()
     {
-        _lastValidWorldPos = transform.position;
-        _spawnZ = transform.position.z;
+        if (!_hasHome)
+        {
+            _lastValidWorldPos = transform.position;
+            _spawnZ = transform.position.z;
+        }
     }
 
     void OnDestroy()
@@ -447,7 +450,6 @@ public class CoinDropSnap : MonoBehaviour
         _homeWorldPos = worldPos;
         _hasHome = true;
     }
-
 
     public void ReleasePlacementLockAndSpot()
     {

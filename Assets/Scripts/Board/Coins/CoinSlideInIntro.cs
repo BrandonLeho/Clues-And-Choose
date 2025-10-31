@@ -158,6 +158,9 @@ public class CoinSlideInIntro : NetworkBehaviour
         transform.rotation = Quaternion.Euler(0, 0, eRot);
         SetAlpha(eAlpha);
 
+        var snapFinal = GetComponent<CoinDropSnap>();
+        if (snapFinal) snapFinal.SetHome(target, true);
+
         SetSyncEnabled(true);
 
         enabled = false;
