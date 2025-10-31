@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Linq;
 using Mirror;
 using UnityEngine;
 
@@ -17,8 +16,9 @@ public class CoinSlideInIntro : NetworkBehaviour
     [Range(0, 1)] public float startAlpha = 1f;
     [Range(0, 1)] public float endAlpha = 1f;
 
-    [Header("Net Sync Control")]
-    [SerializeField] bool disableNetSyncDuringIntro = true;
+    [Header("Intro Behaviour")]
+    [SerializeField] bool useLocalOnlyIntro = true;
+    [SerializeField] bool disableSyncDuringIntro = true;
 
     Vector3 _startPos;
     Vector3 _targetPos;
@@ -30,51 +30,33 @@ public class CoinSlideInIntro : NetworkBehaviour
     [SyncVar] float syncSpeed;
     [SyncVar] float syncStartRotZ, syncEndRotZ;
     [SyncVar] float syncStartAlpha, syncEndAlpha;
+    [SyncVar] float syncStartDelay;
+    [SyncVar] bool syncUseLocalOnlyIntro;
 
     SpriteRenderer[] _srs;
-    bool _clientAnimStarted;
-
-    Behaviour[] _syncers;
+    CoinDragSync _dragSync;
 
     void EnsureSRs()
     {
         if (_srs == null) _srs = GetComponentsInChildren<SpriteRenderer>(true);
     }
 
-    void EnsureSyncers()
+    void EnsureSyncComponents()
     {
-        if (_syncers != null) return;
-
-        var all = GetComponents<Behaviour>();
-        _syncers = all.Where(b => b &&
-                                  (b.GetType().Name == "NetworkTransform" ||
-                                   b.GetType().Name == "NetworkTransformReliable" ||
-                                   b.GetType().Name == "NetworkTransform2D" ||
-                                   b.GetType().Name == "NetworkRigidbody" ||
-                                   b.GetType().Name == "NetworkRigidbody2D"))
-                      .ToArray();
+        if (_dragSync == null) _dragSync = GetComponent<CoinDragSync>();
     }
 
-    void SetSyncersEnabled(bool enabled)
+    void SetSyncEnabled(bool v)
     {
-        EnsureSyncers();
-        for (int i = 0; i < _syncers.Length; i++)
-        {
-            if (_syncers[i]) _syncers[i].enabled = enabled;
-        }
-    }
-
-    [ClientRpc]
-    void RpcSetTransformSync(bool enabled)
-    {
-        if (isServer) return;
-        if (!disableNetSyncDuringIntro) return;
-        SetSyncersEnabled(enabled);
+        if (!disableSyncDuringIntro) return;
+        EnsureSyncComponents();
+        if (_dragSync) _dragSync.enabled = v;
     }
 
     public void Configure(Vector3 startPos, Vector3 targetPos, float delay,
                           float speed, float sRot, float eRot,
-                          float sAlpha, float eAlpha, AnimationCurve curve)
+                          float sAlpha, float eAlpha, AnimationCurve curve,
+                          bool localOnlyIntro = true)
     {
         _startPos = startPos;
         _targetPos = targetPos;
@@ -85,6 +67,7 @@ public class CoinSlideInIntro : NetworkBehaviour
         startAlpha = Mathf.Clamp01(sAlpha);
         endAlpha = Mathf.Clamp01(eAlpha);
         ease = curve ?? AnimationCurve.EaseInOut(0, 0, 1, 1);
+        useLocalOnlyIntro = localOnlyIntro;
         _configured = true;
 
         syncStartPos = _startPos;
@@ -94,6 +77,8 @@ public class CoinSlideInIntro : NetworkBehaviour
         syncEndRotZ = endRotZ;
         syncStartAlpha = startAlpha;
         syncEndAlpha = endAlpha;
+        syncStartDelay = startDelay;
+        syncUseLocalOnlyIntro = useLocalOnlyIntro;
         syncStartAtServerTime = NetworkTime.time + startDelay;
     }
 
@@ -101,112 +86,71 @@ public class CoinSlideInIntro : NetworkBehaviour
     {
         base.OnStartServer();
         EnsureSRs();
-        if (_configured) StartCoroutine(Co_ServerAnim());
+
+        if (_configured)
+        {
+            transform.position = _targetPos;
+            transform.rotation = Quaternion.Euler(0, 0, endRotZ);
+            SetAlpha(endAlpha);
+
+            var snap = GetComponent<CoinDropSnap>();
+            if (snap) snap.SetHome(_targetPos, true);
+            RpcSetHome(_targetPos);
+        }
     }
 
     public override void OnStartClient()
     {
         base.OnStartClient();
-        if (isServer) return;
-        if (_clientAnimStarted) return;
 
         if (syncSpeed > 0f)
         {
             StopAllCoroutines();
-            StartCoroutine(Co_ClientAnim(syncStartPos, syncTargetPos, syncStartAtServerTime,
-                                         syncSpeed, syncStartRotZ, syncEndRotZ,
-                                         syncStartAlpha, syncEndAlpha));
-            _clientAnimStarted = true;
+            StartCoroutine(Co_ClientLocalIntro(
+                syncStartPos,
+                syncTargetPos,
+                syncStartDelay,
+                syncSpeed,
+                syncStartRotZ,
+                syncEndRotZ,
+                syncStartAlpha,
+                syncEndAlpha,
+                syncUseLocalOnlyIntro
+            ));
         }
     }
 
-    [Server]
-    IEnumerator Co_ServerAnim()
+    IEnumerator Co_ClientLocalIntro(Vector3 start, Vector3 target, float delay,
+                                    float speed, float sRot, float eRot,
+                                    float sAlpha, float eAlpha,
+                                    bool localOnly)
     {
-        if (disableNetSyncDuringIntro)
-        {
-            SetSyncersEnabled(false);
-            RpcSetTransformSync(false);
-        }
-
-        transform.position = _startPos;
-        transform.rotation = Quaternion.Euler(0, 0, startRotZ);
-        SetAlpha(startAlpha);
-
-        while (NetworkTime.time < syncStartAtServerTime) yield return null;
-
-        RpcStartSlide(syncStartPos, syncTargetPos, syncStartAtServerTime,
-                      syncSpeed, syncStartRotZ, syncEndRotZ,
-                      syncStartAlpha, syncEndAlpha);
-
-        float dist = Vector3.Distance(_startPos, _targetPos);
-        float dur = Mathf.Max(0.0001f, dist / unitsPerSecond);
-        float t = 0f;
-        while (t < 1f)
-        {
-            t += Time.deltaTime / dur;
-            float u = ease != null ? ease.Evaluate(Mathf.Clamp01(t)) : Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t));
-            transform.position = Vector3.LerpUnclamped(_startPos, _targetPos, u);
-            float r = Mathf.LerpAngle(startRotZ, endRotZ, u);
-            transform.rotation = Quaternion.Euler(0, 0, r);
-            SetAlpha(Mathf.Lerp(startAlpha, endAlpha, u));
-            yield return null;
-        }
-
-        transform.position = _targetPos;
-        transform.rotation = Quaternion.Euler(0, 0, endRotZ);
-        SetAlpha(endAlpha);
-
-        var snap = GetComponent<CoinDropSnap>();
-        if (snap) snap.SetHome(_targetPos, true);
-        RpcSetHome(_targetPos);
-
-        if (disableNetSyncDuringIntro)
-        {
-            yield return null;
-            RpcSetTransformSync(true);
-            SetSyncersEnabled(true);
-        }
-
-        enabled = false;
-    }
-
-    [ClientRpc]
-    void RpcStartSlide(Vector3 start, Vector3 target, double startAtServerTime,
-                       float speed, float sRot, float eRot, float sAlpha, float eAlpha)
-    {
-        if (isServer) return;
-        if (_clientAnimStarted) return;
-
         EnsureSRs();
-        StopAllCoroutines();
-        StartCoroutine(Co_ClientAnim(start, target, startAtServerTime, speed, sRot, eRot, sAlpha, eAlpha));
-        _clientAnimStarted = true;
-    }
 
-    IEnumerator Co_ClientAnim(Vector3 start, Vector3 target, double startAtServerTime,
-                              float speed, float sRot, float eRot, float sAlpha, float eAlpha)
-    {
-        if (disableNetSyncDuringIntro) SetSyncersEnabled(false);
+        SetSyncEnabled(false);
 
         transform.position = start;
         transform.rotation = Quaternion.Euler(0, 0, sRot);
         SetAlpha(sAlpha);
 
-        while (NetworkTime.time < startAtServerTime) yield return null;
+        if (delay > 0f)
+            yield return new WaitForSeconds(delay);
 
         float dist = Vector3.Distance(start, target);
         float dur = Mathf.Max(0.0001f, dist / Mathf.Max(0.01f, speed));
-        double endAt = startAtServerTime + dur;
+        float t = 0f;
 
-        while (NetworkTime.time < endAt)
+        while (t < 1f)
         {
-            float u = Mathf.Clamp01((float)((NetworkTime.time - startAtServerTime) / dur));
+            t += Time.deltaTime / dur;
+            float u = Mathf.Clamp01(t);
             float e = ease != null ? ease.Evaluate(u) : Mathf.SmoothStep(0f, 1f, u);
+
             transform.position = Vector3.LerpUnclamped(start, target, e);
             float r = Mathf.LerpAngle(sRot, eRot, e);
             transform.rotation = Quaternion.Euler(0, 0, r);
             SetAlpha(Mathf.Lerp(sAlpha, eAlpha, e));
+
             yield return null;
         }
 
@@ -214,7 +158,9 @@ public class CoinSlideInIntro : NetworkBehaviour
         transform.rotation = Quaternion.Euler(0, 0, eRot);
         SetAlpha(eAlpha);
 
-        if (disableNetSyncDuringIntro) SetSyncersEnabled(true);
+        SetSyncEnabled(true);
+
+        enabled = false;
     }
 
     [ClientRpc]
@@ -229,7 +175,9 @@ public class CoinSlideInIntro : NetworkBehaviour
         EnsureSRs();
         for (int i = 0; i < _srs.Length; i++)
         {
-            var c = _srs[i].color; c.a = a; _srs[i].color = c;
+            var c = _srs[i].color;
+            c.a = a;
+            _srs[i].color = c;
         }
     }
 }
