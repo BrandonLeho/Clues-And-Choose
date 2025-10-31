@@ -26,15 +26,14 @@ public class ScoreBannerEntry : MonoBehaviour
 
     [Header("Glow On Count")]
     [SerializeField] bool glowOnCount = true;
-    [SerializeField, Min(0f)] float glowRiseTime = 0.05f;
-    [SerializeField, Min(0f)] float glowHoldTime = 0.75f;
-    [SerializeField, Min(0f)] float glowSettleTime = 1.5f;
+    [SerializeField, Min(0f)] float glowRiseTime = 0.18f;
+    [SerializeField, Min(0f)] float glowHoldTime = 0.20f;
+    [SerializeField, Min(0f)] float glowSettleTime = 0.30f;
     [SerializeField] AnimationCurve glowInEase = AnimationCurve.EaseInOut(0, 0, 1, 1);
     [SerializeField] AnimationCurve glowOutEase = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
-    [SerializeField, Min(0.01f)] float defaultGlowRise = 0.05f;
-    [SerializeField, Min(0f)] float defaultGlowHold = 0.75f;
-    [SerializeField, Min(0.01f)] float defaultGlowSettle = 1.5f;
+    [SerializeField] bool useUnscaledTime = true;
+    float DT => useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
 
     [Header("Peak Glow Targets")]
     [Range(0f, 1f)] public float glowTopHeight = 0.9f;
@@ -206,7 +205,7 @@ public class ScoreBannerEntry : MonoBehaviour
 
         while (t < dur)
         {
-            t += Time.deltaTime;
+            t += DT;
             float u = Mathf.Clamp01(t / dur);
             float e = countEase != null ? countEase.Evaluate(u) : u;
 
@@ -261,21 +260,16 @@ public class ScoreBannerEntry : MonoBehaviour
         float bOutTopFalloff = glowBinder.outlineTopFalloff;
         float bOutIntensity = glowBinder.outlineIntensity;
 
-        float rise = (glowRiseTime > 0f) ? glowRiseTime : defaultGlowRise;
-        float hold = (glowHoldTime > 0f) ? glowHoldTime : defaultGlowHold;
-        float settle = (glowSettleTime > 0f) ? glowSettleTime : defaultGlowSettle;
-
-        float t = 0f;
-        while (t < rise)
+        float t = 0f, d = Mathf.Max(0.0001f, glowRiseTime);
+        while (t < d)
         {
-            t += Time.unscaledDeltaTime;
-            float u = Mathf.Clamp01(t / rise);
+            t += DT;
+            float u = Mathf.Clamp01(t / d);
             float e = glowInEase != null ? glowInEase.Evaluate(u) : u;
 
             glowBinder.topHeight = Mathf.Lerp(bTopHeight, glowTopHeight, e);
             glowBinder.topFeather = Mathf.Lerp(bTopFeather, glowTopFeather, e);
             glowBinder.topIntensity = Mathf.Lerp(bTopIntensity, glowTopIntensity, e);
-
             glowBinder.outlineThickness = Mathf.Lerp(bOutThick, glowOutlineThickness, e);
             glowBinder.outlineFeather = Mathf.Lerp(bOutFeather, glowOutlineFeather, e);
             glowBinder.outlineTopFalloff = Mathf.Lerp(bOutTopFalloff, glowOutlineTopFalloff, e);
@@ -285,27 +279,19 @@ public class ScoreBannerEntry : MonoBehaviour
             yield return null;
         }
 
-        if (hold > 0f)
-        {
-            float h = 0f;
-            while (h < hold)
-            {
-                h += Time.unscaledDeltaTime;
-                yield return null;
-            }
-        }
+        float hold = Mathf.Max(0f, glowHoldTime);
+        if (hold > 0f) { float h = 0f; while (h < hold) { h += DT; yield return null; } } // was Time.deltaTime
 
-        t = 0f;
-        while (t < settle)
+        t = 0f; d = Mathf.Max(0.0001f, glowSettleTime);
+        while (t < d)
         {
-            t += Time.unscaledDeltaTime;
-            float u = Mathf.Clamp01(t / settle);
+            t += DT;
+            float u = Mathf.Clamp01(t / d);
             float e = glowOutEase != null ? glowOutEase.Evaluate(u) : u;
 
             glowBinder.topHeight = Mathf.Lerp(glowTopHeight, bTopHeight, e);
             glowBinder.topFeather = Mathf.Lerp(glowTopFeather, bTopFeather, e);
             glowBinder.topIntensity = Mathf.Lerp(glowTopIntensity, bTopIntensity, e);
-
             glowBinder.outlineThickness = Mathf.Lerp(glowOutlineThickness, bOutThick, e);
             glowBinder.outlineFeather = Mathf.Lerp(glowOutlineFeather, bOutFeather, e);
             glowBinder.outlineTopFalloff = Mathf.Lerp(glowOutlineTopFalloff, bOutTopFalloff, e);
@@ -322,6 +308,8 @@ public class ScoreBannerEntry : MonoBehaviour
         glowBinder.outlineFeather = bOutFeather;
         glowBinder.outlineTopFalloff = bOutTopFalloff;
         glowBinder.outlineIntensity = bOutIntensity;
+
         glowBinder.ApplyAll();
+        _glowCo = null;
     }
 }
