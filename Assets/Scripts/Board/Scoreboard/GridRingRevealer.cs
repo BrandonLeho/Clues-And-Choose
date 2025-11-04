@@ -180,4 +180,15 @@ public sealed class GridRingRevealer : MonoBehaviour
 
         return _indexToCell[idx];
     }
+
+    public void ResetFromRingReveal()
+    {
+        if (_currentChosen)
+        {
+            _currentChosen.SetHoverLock(false, keepShown: false);
+            _currentChosen.ProbeExit();
+            _currentChosen.SetHoverEnabled(true);
+        }
+        _currentChosen = null;
+    }
 }

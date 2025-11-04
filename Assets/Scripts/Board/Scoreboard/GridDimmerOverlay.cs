@@ -160,7 +160,13 @@ public sealed class GridDimmerOverlay : MonoBehaviour
         }
     }
 
-    void EnableAllCellHovers()
+    public void RestoreToNormalAfterScoring()
+    {
+        FadeOut();
+        EnableAllCellHovers();
+    }
+
+    public void EnableAllCellHovers()
     {
         if (!gridRoot) return;
         var hovers = gridRoot.GetComponentsInChildren<GridCellHoverWithCoords>(true);

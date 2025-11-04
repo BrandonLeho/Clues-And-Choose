@@ -297,6 +297,8 @@ public sealed class PhaseController : NetworkBehaviour
         if (_waitingForScoringBanner) return;
         if (!_ringsRevealFinished) return;
 
+        RpcRestoreGridFromScoring();
+
         if (!_coinsReturnedThisRound && RoundManager.Instance != null)
         {
             RoundManager.Instance.ServerResetAllCoinsToHome(tween: true);
@@ -305,6 +307,13 @@ public sealed class PhaseController : NetworkBehaviour
 
         if (RoundManager.Instance)
             RoundManager.Instance.ServerAdvanceRound();
+    }
+
+    [ClientRpc]
+    void RpcRestoreGridFromScoring()
+    {
+        GridRingRevealer.Instance?.ResetFromRingReveal();
+        GridDimmerOverlay.Instance?.RestoreToNormalAfterScoring();
     }
 
     [Command(requiresAuthority = false)]
@@ -426,8 +435,6 @@ public sealed class PhaseController : NetworkBehaviour
         _pendingAwards[playerName] = remaining - toApply;
 
         ScoreRegistry.AddScore(playerName, toApply);
-
-        // TODO: Add clue giver points
     }
 
     [Command(requiresAuthority = false)]
