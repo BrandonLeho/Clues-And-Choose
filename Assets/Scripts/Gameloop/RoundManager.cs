@@ -227,6 +227,9 @@ public class RoundManager : NetworkBehaviour
     {
         onRoundChangedClient?.Invoke(roundIndex, clueGiverNetId);
         onClueGiverChangedClient?.Invoke(clueGiverNetId);
+
+        var pc = PhaseController.Instance;
+        if (pc) pc.ClientNormalizeGridNow();
     }
 
     [Server] public List<uint> ServerGetRosterSnapshot() => new List<uint>(_roster);

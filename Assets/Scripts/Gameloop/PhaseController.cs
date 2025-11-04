@@ -446,11 +446,17 @@ public sealed class PhaseController : NetworkBehaviour
         }
     }
 
-    [ClientRpc]
-    void RpcNormalizeGridBeforeCoinReset()
+    [Client]
+    public void ClientNormalizeGridNow()
     {
         GridRingRevealer.Instance?.ResetHoverStateFromReveal();
         GridRingRevealer.Instance?.ReturnAllCellsToOriginalLayerAndOrder();
         GridDimmerOverlay.Instance?.ReturnToNormalAfterScoring();
+    }
+
+    [ClientRpc]
+    void RpcNormalizeGridBeforeCoinReset()
+    {
+        ClientNormalizeGridNow();
     }
 }
