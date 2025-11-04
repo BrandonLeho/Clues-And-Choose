@@ -160,7 +160,7 @@ public sealed class GridDimmerOverlay : MonoBehaviour
         }
     }
 
-    public void RestoreToNormalAfterScoring()
+    public void ReturnToNormalAfterScoring()
     {
         FadeOut();
         EnableAllCellHovers();

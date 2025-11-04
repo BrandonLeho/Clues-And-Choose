@@ -181,14 +181,25 @@ public sealed class GridRingRevealer : MonoBehaviour
         return _indexToCell[idx];
     }
 
-    public void ResetFromRingReveal()
+    public void ResetHoverStateFromReveal()
     {
         if (_currentChosen)
         {
             _currentChosen.SetHoverLock(false, keepShown: false);
             _currentChosen.ProbeExit();
-            _currentChosen.SetHoverEnabled(true);
+            _currentChosen.SetHoverEnabled(false);
         }
+
+        if (_cells != null && _cells.Count > 0)
+        {
+            for (int i = 0; i < _cells.Count; i++)
+            {
+                var c = _cells[i];
+                if (!c) continue;
+                c.ProbeExit();
+            }
+        }
+
         _currentChosen = null;
     }
 }
