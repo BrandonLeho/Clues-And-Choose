@@ -202,4 +202,21 @@ public sealed class GridRingRevealer : MonoBehaviour
 
         _currentChosen = null;
     }
+
+    public void ReturnAllCellsToOriginalLayerAndOrder()
+    {
+        if (_cells == null || _cells.Count == 0) return;
+
+        for (int i = 0; i < _cells.Count; i++)
+        {
+            var c = _cells[i];
+            if (!c) continue;
+
+            c.RestoreHomeLayerAndOrder();
+            c.SetHoverEnabled(true);
+            c.ProbeExit();
+        }
+
+        _currentChosen = null;
+    }
 }

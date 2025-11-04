@@ -610,4 +610,21 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
         cg.blocksRaycasts = true;
         cg.interactable = true;
     }
+
+    public void RestoreHomeLayerAndOrder()
+    {
+        UnfloatIfFloating();
+
+        if (_homeParent && transform.parent != _homeParent)
+            ((RectTransform)transform).SetParent(_homeParent, true);
+
+        if (_fixedGridIndex < 0) ComputeFixedGridIndex();
+        if (_homeParent)
+        {
+            int clamped = Mathf.Clamp(_fixedGridIndex, 0, _homeParent.childCount - 1);
+            ((RectTransform)transform).SetSiblingIndex(clamped);
+        }
+
+        SetHoverEnabled(true);
+    }
 }

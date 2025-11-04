@@ -428,8 +428,6 @@ public sealed class PhaseController : NetworkBehaviour
         _pendingAwards[playerName] = remaining - toApply;
 
         ScoreRegistry.AddScore(playerName, toApply);
-
-        // TODO: Add clue giver points
     }
 
     [Command(requiresAuthority = false)]
@@ -452,6 +450,7 @@ public sealed class PhaseController : NetworkBehaviour
     void RpcNormalizeGridBeforeCoinReset()
     {
         GridRingRevealer.Instance?.ResetHoverStateFromReveal();
+        GridRingRevealer.Instance?.ReturnAllCellsToOriginalLayerAndOrder();
         GridDimmerOverlay.Instance?.ReturnToNormalAfterScoring();
     }
 }
