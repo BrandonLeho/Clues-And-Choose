@@ -1,5 +1,6 @@
 using Mirror;
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 
 public sealed class PhaseController : NetworkBehaviour
@@ -17,6 +18,11 @@ public sealed class PhaseController : NetworkBehaviour
     [SerializeField, Min(0)] int pointsPerNearbyCoinManyPlayers = 1;
     [SerializeField, Min(0)] int pointsPerNearbyCoinFewPlayers = 2;
     [SerializeField, Min(1)] int fewPlayersThreshold = 3;
+
+    [Header("Timing")]
+    [SerializeField, Min(0f)] float advanceAfterResetDelay = 0.9f;
+
+    bool _advanceAfterResetRunning;
 
     public static PhaseController Instance { get; private set; }
     void Awake() => Instance = this;
@@ -296,17 +302,29 @@ public sealed class PhaseController : NetworkBehaviour
     {
         if (_waitingForScoringBanner) return;
         if (!_ringsRevealFinished) return;
+        if (_advanceAfterResetRunning) return;
 
-        if (!_coinsReturnedThisRound && RoundManager.Instance != null)
+        _advanceAfterResetRunning = true;
+        StartCoroutine(CoResetThenAdvance());
+    }
+
+    [Server]
+    IEnumerator CoResetThenAdvance()
+    {
+        RpcNormalizeGridBeforeCoinReset();
+
+        if (RoundManager.Instance != null && !_coinsReturnedThisRound)
         {
-            RpcNormalizeGridBeforeCoinReset();
-
             RoundManager.Instance.ServerResetAllCoinsToHome(tween: true);
             _coinsReturnedThisRound = true;
         }
 
+        yield return new WaitForSeconds(advanceAfterResetDelay);
+
         if (RoundManager.Instance)
             RoundManager.Instance.ServerAdvanceRound();
+
+        _advanceAfterResetRunning = false;
     }
 
     [Command(requiresAuthority = false)]
