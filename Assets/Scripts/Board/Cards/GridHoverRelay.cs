@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
-using System.Collections;
 
 public class GridHoverRelay : MonoBehaviour
 {
@@ -14,20 +13,10 @@ public class GridHoverRelay : MonoBehaviour
     public bool simulateGridCellPointer = true;
     public bool incomingRowsBottomOrigin = false;
 
-    [Header("Hover Sequencing")]
-    public bool waitForPreviousHoverOut = true;
-    [Min(0f)] public float previousHoverExitSeconds = 0.20f;
-    public bool useUnscaledTime = true;
-
     public static GridHoverRelay Instance { get; private set; }
 
     GameObject _lastCellGO;
     int _cols = 1, _rows = 1;
-
-    bool _isSwitching;
-    bool _hasQueued;
-    int _qCol, _qRow;
-    Color _qColor;
 
     void Awake()
     {
@@ -72,22 +61,31 @@ public class GridHoverRelay : MonoBehaviour
         ResolveGridSize();
 
         int rowTopIndex = incomingRowsBottomOrigin ? (_rows - 1 - row) : row;
+
         col = Mathf.Clamp(col, 0, _cols - 1);
         rowTopIndex = Mathf.Clamp(rowTopIndex, 0, _rows - 1);
 
-        if (!waitForPreviousHoverOut)
+        if (labelsHighlighter)
+            labelsHighlighter.Highlight(col, rowTopIndex, choiceColor);
+
+        if (simulateGridCellPointer && EventSystem.current)
         {
-            DoImmediateEnter(col, rowTopIndex, choiceColor);
-            return;
+            int index = rowTopIndex * _cols + col;
+
+            GameObject cell = null;
+            string goName = $"ColorSlot ({index})";
+            cell = GameObject.Find(goName);
+
+            if (!cell && index >= 0 && index < gridRoot.childCount)
+                cell = gridRoot.GetChild(index).gameObject;
+
+            if (cell)
+            {
+                _lastCellGO = cell;
+                var fake = new PointerEventData(EventSystem.current);
+                ExecuteEvents.Execute(cell, fake, ExecuteEvents.pointerEnterHandler);
+            }
         }
-
-        _qCol = col;
-        _qRow = rowTopIndex;
-        _qColor = choiceColor;
-        _hasQueued = true;
-
-        if (!_isSwitching)
-            StartCoroutine(Co_SwitchLoop());
     }
 
     public void HoverExit()
@@ -101,80 +99,5 @@ public class GridHoverRelay : MonoBehaviour
             ExecuteEvents.Execute(_lastCellGO, fake, ExecuteEvents.pointerExitHandler);
             _lastCellGO = null;
         }
-    }
-
-    void DoImmediateEnter(int col, int rowTopIndex, Color choiceColor)
-    {
-        if (labelsHighlighter)
-            labelsHighlighter.Highlight(col, rowTopIndex, choiceColor);
-
-        if (!simulateGridCellPointer || !EventSystem.current) return;
-
-        int index = rowTopIndex * _cols + col;
-        if (index < 0 || index >= gridRoot.childCount) return;
-
-        var cell = gridRoot.GetChild(index).gameObject;
-        _lastCellGO = cell;
-
-        var fake = new PointerEventData(EventSystem.current);
-        ExecuteEvents.Execute(cell, fake, ExecuteEvents.pointerEnterHandler);
-    }
-
-    IEnumerator Co_SwitchLoop()
-    {
-        _isSwitching = true;
-
-        while (_hasQueued)
-        {
-            int targetCol = _qCol;
-            int targetRow = _qRow;
-            Color targetColor = _qColor;
-            _hasQueued = false;
-
-            if (simulateGridCellPointer && EventSystem.current && _lastCellGO)
-            {
-                var fake = new PointerEventData(EventSystem.current);
-                ExecuteEvents.Execute(_lastCellGO, fake, ExecuteEvents.pointerExitHandler);
-                _lastCellGO = null;
-            }
-
-            if (labelsHighlighter)
-                labelsHighlighter.Clear();
-
-            float t = 0f;
-            float dt()
-                => useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
-
-            while (t < previousHoverExitSeconds)
-            {
-                t += dt();
-                yield return null;
-            }
-
-            if (_hasQueued)
-            {
-                continue;
-            }
-
-            if (labelsHighlighter)
-                labelsHighlighter.Highlight(targetCol, targetRow, targetColor);
-
-            if (simulateGridCellPointer && EventSystem.current)
-            {
-                int index = targetRow * _cols + targetCol;
-                if (index >= 0 && index < gridRoot.childCount)
-                {
-                    var cell = gridRoot.GetChild(index).gameObject;
-                    _lastCellGO = cell;
-
-                    var fake = new PointerEventData(EventSystem.current);
-                    ExecuteEvents.Execute(cell, fake, ExecuteEvents.pointerEnterHandler);
-                }
-            }
-
-            yield return null;
-        }
-
-        _isSwitching = false;
     }
 }
