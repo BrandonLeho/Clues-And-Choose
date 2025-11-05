@@ -188,6 +188,7 @@ public sealed class GridRingRevealer : MonoBehaviour
             _currentChosen.SetHoverLock(false, keepShown: false);
             _currentChosen.ProbeExit();
             _currentChosen.SetHoverEnabled(false);
+            _currentChosen.ForceClearOccupantCoinLift();
         }
 
         if (_cells != null && _cells.Count > 0)
@@ -197,6 +198,7 @@ public sealed class GridRingRevealer : MonoBehaviour
                 var c = _cells[i];
                 if (!c) continue;
                 c.ProbeExit();
+                c.ForceClearOccupantCoinLift();
             }
         }
 
@@ -215,6 +217,7 @@ public sealed class GridRingRevealer : MonoBehaviour
             c.RestoreHomeLayerAndOrder();
             c.SetHoverEnabled(true);
             c.ProbeExit();
+            c.ForceClearOccupantCoinLift();
         }
 
         _currentChosen = null;

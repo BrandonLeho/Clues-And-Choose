@@ -564,10 +564,6 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
             if (label && deactivateLabelWhenHidden)
                 label.gameObject.SetActive(true);
         }
-        else if (!locked)
-        {
-            // TODO something
-        }
     }
 
     public void FloatWithoutHoverFade(float seconds, AnimationCurve curve = null, bool blockRaycastsDuringFade = true, float startAlpha = 0f)
@@ -626,5 +622,20 @@ public class GridCellHoverWithCoords : MonoBehaviour, IPointerEnterHandler, IPoi
         }
 
         SetHoverEnabled(true);
+    }
+
+    public void ForceClearOccupantCoinLift()
+    {
+        if (!spot || !spot.isOccupied || !spot.occupant) return;
+
+        var coinTr = spot.occupant.transform;
+        if (!coinTr) return;
+
+        var hover = coinTr.GetComponentInChildren<CoinHoverOffset>();
+        if (hover) hover.ResetOffset();
+
+        _coinBaseCached = false;
+        _occupantCoin = null;
+        _occupantLock = null;
     }
 }
