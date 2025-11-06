@@ -114,15 +114,12 @@ public sealed class ScorePop : MonoBehaviour
         if (coinNetId == 0) return;
         if (inst.debugLogs) Debug.Log($"[ScorePop] coinNetId={coinNetId} spotIndex={spotIndex}");
 
-        int cellRowBoard = NormalizeRowToBoard(row, board);
         int targetRowBoard = NormalizeRowToBoard(inst._targetRow, board);
-        int dCol = Mathf.Abs(col - inst._targetCol);
-        int dRow = Mathf.Abs(cellRowBoard - targetRowBoard);
-        int cellsAway = Mathf.Max(dCol, dRow);
+        int cellsAway = Mathf.Max(Mathf.Abs(col - inst._targetCol), Mathf.Abs(targetRowBoard - targetRowBoard));
         int points = Mathf.Max(0, inst._pointsAtExact - cellsAway);
+        if (points <= 0) return;
 
         Debug.Log("Cells: " + cellsAway + "\nPoints: " + points);
-        if (points <= 0) return;
 
         string ownerName = null;
         if (NetworkClient.active && NetworkClient.spawned.TryGetValue(coinNetId, out var coinId) && coinId)
@@ -341,9 +338,9 @@ public sealed class ScorePop : MonoBehaviour
         return local;
     }
 
-    public static int NormalizeRowToBoard(int rawRowTopOrigin, BoardSpotsNet b)
+    public static int NormalizeRowToBoard(int rawRowBottomOrigin, BoardSpotsNet b)
     {
-        return b.AStartsAtTop ? rawRowTopOrigin : (b.GridRows - 1 - rawRowTopOrigin);
+        return b.AStartsAtTop ? (b.GridRows - 1 - rawRowBottomOrigin) : rawRowBottomOrigin;
     }
 
     public void SetSpawnLayer(RectTransform newLayer) => spawnLayer = newLayer;
