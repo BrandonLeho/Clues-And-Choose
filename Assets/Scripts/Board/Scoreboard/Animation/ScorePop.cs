@@ -115,7 +115,7 @@ public sealed class ScorePop : MonoBehaviour
         if (inst.debugLogs) Debug.Log($"[ScorePop] coinNetId={coinNetId} spotIndex={spotIndex}");
 
         int targetRowBoard = NormalizeRowToBoard(inst._targetRow, board);
-        int cellsAway = Mathf.Max(Mathf.Abs(col - inst._targetCol), Mathf.Abs(targetRowBoard - inst._targetRow));
+        int cellsAway = Mathf.Max(Mathf.Abs(col - inst._targetCol), Mathf.Abs(targetRowBoard - targetRowBoard));
         int points = Mathf.Max(0, inst._pointsAtExact - cellsAway);
         if (points <= 0) return;
 
