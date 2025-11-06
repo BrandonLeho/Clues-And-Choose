@@ -94,11 +94,9 @@ public sealed class ScorePop : MonoBehaviour
         uint coinNetId = 0;
         int spotIndex = -1;
         var board = BoardSpotsNet.Instance;
-        int rowBoard = 0;
-
         if (board != null)
         {
-            rowBoard = NormalizeRowToBoard(row, board);
+            int rowBoard = NormalizeRowToBoard(row, board);
             foreach (var kv in board.occupancy)
             {
                 if (board.TryGetSpotCoord(kv.Key, out int c, out int r))
@@ -117,9 +115,7 @@ public sealed class ScorePop : MonoBehaviour
         if (inst.debugLogs) Debug.Log($"[ScorePop] coinNetId={coinNetId} spotIndex={spotIndex}");
 
         int targetRowBoard = NormalizeRowToBoard(inst._targetRow, board);
-        int colDelta = Mathf.Abs(col - inst._targetCol);
-        int rowDelta = Mathf.Abs(rowBoard - targetRowBoard);
-        int cellsAway = Mathf.Max(colDelta, rowDelta);
+        int cellsAway = Mathf.Max(Mathf.Abs(col - inst._targetCol), Mathf.Abs(targetRowBoard - targetRowBoard));
         int points = Mathf.Max(0, inst._pointsAtExact - cellsAway);
         if (points <= 0) return;
 
