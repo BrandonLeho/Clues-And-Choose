@@ -115,11 +115,16 @@ public sealed class ScorePop : MonoBehaviour
         if (inst.debugLogs) Debug.Log($"[ScorePop] coinNetId={coinNetId} spotIndex={spotIndex}");
 
         int targetRowBoard = NormalizeRowToBoard(inst._targetRow, board);
-        int cellsAway = Mathf.Max(Mathf.Abs(col - inst._targetCol), Mathf.Abs(targetRowBoard - targetRowBoard));
+        int cellRowBoard = NormalizeRowToBoard(row, board);
+        int cellsAway = Mathf.Max(Mathf.Abs(col - inst._targetCol), Mathf.Abs(cellRowBoard - targetRowBoard));
         int points = Mathf.Max(0, inst._pointsAtExact - cellsAway);
+
+        Debug.Log("\nTarget: " + targetRowBoard + "\nRows: " + cellRowBoard);
+        Debug.Log("\nCells: " + cellsAway + "\nPoints: " + points);
+
         if (points <= 0) return;
 
-        Debug.Log("Cells: " + cellsAway + "\nPoints: " + points);
+
 
         string ownerName = null;
         if (NetworkClient.active && NetworkClient.spawned.TryGetValue(coinNetId, out var coinId) && coinId)
