@@ -3,6 +3,7 @@ using TMPro;
 using UnityEngine.UI;
 using System.Collections.Generic;
 using System.Collections;
+using Mirror;
 
 public class ScoreBannerEntry : MonoBehaviour
 {
@@ -172,6 +173,8 @@ public class ScoreBannerEntry : MonoBehaviour
         if (string.IsNullOrEmpty(ownerName) || name != ownerName) return;
         if (delta <= 0) return;
 
+        if (!NetworkServer.active) return;
+
         _pendingDeltas.Enqueue(delta);
 
         if (glowOnCount && !_glowArmed)
@@ -249,16 +252,19 @@ public class ScoreBannerEntry : MonoBehaviour
         float t = 0f;
         int last = from;
 
+        int lo = Mathf.Min(from, to);
+        int hi = Mathf.Max(from, to);
+        bool up = to >= from;
+
         while (t < dur)
         {
             t += DT;
             float u = Mathf.Clamp01(t / dur);
             float e = countEase != null ? countEase.Evaluate(u) : u;
 
-            int val = Mathf.Clamp(
-                Mathf.FloorToInt(Mathf.Lerp(from, to + 0.999f, e)),
-                from, to
-            );
+            int val = up
+                ? Mathf.Clamp(Mathf.FloorToInt(Mathf.Lerp(from, to + 0.999f, e)), lo, hi)
+                : Mathf.Clamp(Mathf.CeilToInt(Mathf.Lerp(from, to - 0.999f, e)), lo, hi);
 
             if (val != last)
             {
