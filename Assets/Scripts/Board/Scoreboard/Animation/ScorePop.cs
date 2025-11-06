@@ -341,9 +341,9 @@ public sealed class ScorePop : MonoBehaviour
         return local;
     }
 
-    public static int NormalizeRowToBoard(int rawRowBottomOrigin, BoardSpotsNet b)
+    public static int NormalizeRowToBoard(int rawRowTopOrigin, BoardSpotsNet b)
     {
-        return b.AStartsAtTop ? (b.GridRows - 1 - rawRowBottomOrigin) : rawRowBottomOrigin;
+        return b.AStartsAtTop ? rawRowTopOrigin : (b.GridRows - 1 - rawRowTopOrigin);
     }
 
     public void SetSpawnLayer(RectTransform newLayer) => spawnLayer = newLayer;
