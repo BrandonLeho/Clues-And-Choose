@@ -41,6 +41,11 @@ public sealed class EndRoundOptionHover : MonoBehaviour, IPointerEnterHandler, I
         ClearGlow(_label);
     }
 
+    void OnDisable()
+    {
+        ResetVisuals();
+    }
+
     public void OnPointerEnter(PointerEventData eventData)
     {
         PlayScale(true);

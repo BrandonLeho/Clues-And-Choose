@@ -104,6 +104,9 @@ public sealed class EndRoundPromptUI : MonoBehaviour
             for (int i = 0; i < extraElements.Length; i++)
                 extraElements[i].anchoredPosition = extraOriginals[i];
         }
+
+        ResetOptionVisuals();
+
         gameObject.SetActive(false);
     }
 
@@ -159,7 +162,12 @@ public sealed class EndRoundPromptUI : MonoBehaviour
         panel.anchoredPosition = pTo;
         if (canvasGroup) canvasGroup.alpha = aTo;
 
-        if (!toShown) gameObject.SetActive(false);
+        if (!toShown)
+        {
+            ResetOptionVisuals();
+            gameObject.SetActive(false);
+        }
+
         animCo = null;
     }
 
@@ -194,6 +202,12 @@ public sealed class EndRoundPromptUI : MonoBehaviour
         PlayTo(false);
         while (animCo != null) yield return null;
 
-        if (chosen != null) chosen.ResetVisuals();
+        ResetOptionVisuals();
+    }
+
+    void ResetOptionVisuals()
+    {
+        if (yesOption) yesOption.ResetVisuals();
+        if (noOption) noOption.ResetVisuals();
     }
 }
