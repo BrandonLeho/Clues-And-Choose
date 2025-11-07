@@ -254,13 +254,32 @@ public class CardStackFlyInAnimator : MonoBehaviour
             yield break;
         }
 
-        var card = _landed[_landed.Count - 1];
-        _landed.RemoveAt(_landed.Count - 1);
+        for (int i = _landed.Count - 1; i >= 0; i--)
+            if (!_landed[i]) _landed.RemoveAt(i);
+
+        if (_landed.Count == 0)
+        {
+            _run = null;
+            yield break;
+        }
+
+        RectTransform card = null;
+        int maxSibling = -1;
+        for (int i = 0; i < _landed.Count; i++)
+        {
+            var rt = _landed[i];
+            if (!rt) continue;
+            int s = rt.GetSiblingIndex();
+            if (s > maxSibling) { maxSibling = s; card = rt; }
+        }
+
         if (!card)
         {
             _run = null;
             yield break;
         }
+
+        _landed.Remove(card);
 
         var parent = spawnParent ? spawnParent : (stackAnchor.parent as RectTransform);
         if (!parent) parent = stackAnchor;
@@ -297,9 +316,7 @@ public class CardStackFlyInAnimator : MonoBehaviour
         if (card) Destroy(card.gameObject);
 
         RectTransform newCard = Instantiate(cardPrefab, parent);
-
-        if (!newCard.gameObject.activeSelf)
-            newCard.gameObject.SetActive(true);
+        if (!newCard.gameObject.activeSelf) newCard.gameObject.SetActive(true);
 
         newCard.anchorMin = stackAnchor.anchorMin;
         newCard.anchorMax = stackAnchor.anchorMax;
@@ -312,7 +329,7 @@ public class CardStackFlyInAnimator : MonoBehaviour
         newCard.SetSiblingIndex(desired);
 
         SetAlphaRecursive(newCard, endAlpha);
-        ToggleRaycastTargets(card, true);
+        ToggleRaycastTargets(newCard, true);
 
         var hover = parent.GetComponent<CardHover>();
         if (hover) hover.RebindTopCard();
