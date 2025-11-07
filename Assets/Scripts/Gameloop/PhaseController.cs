@@ -265,9 +265,8 @@ public sealed class PhaseController : NetworkBehaviour
 
         DLog($"[Scoring] Round total awarded: {awardedTotal} point(s).");
 
-        var cgConn = GetClueGiverConnection();
-        if (cgConn != null)
-            TargetClueGiverSlideOutCardAndRespawn(cgConn);
+        uint cgId = RoundManager.Instance ? RoundManager.Instance.ServerGetClueGiverNetIdUnsafe() : 0u;
+        RpcClueGiverSlideOutCardAndRespawn(cgId);
     }
 
     [ClientRpc]
@@ -372,11 +371,17 @@ public sealed class PhaseController : NetworkBehaviour
         return !string.IsNullOrWhiteSpace(ownerName);
     }
 
-    [TargetRpc]
-    void TargetClueGiverSlideOutCardAndRespawn(NetworkConnection target)
+    [ClientRpc]
+    void RpcClueGiverSlideOutCardAndRespawn(uint clueGiverNetId)
     {
-        var anim = FindFirstObjectByType<CardStackFlyInAnimator>();
-        if (anim) anim.PlaySlideOutAndRespawn();
+        var myIdentity = NetworkClient.connection?.identity;
+        if (myIdentity == null) return;
+
+        if (myIdentity.netId == clueGiverNetId)
+        {
+            var anim = FindFirstObjectByType<CardStackFlyInAnimator>();
+            if (anim) anim.PlaySlideOutAndRespawn();
+        }
     }
 
     // Just in case I want to change the reverse order during runtime
@@ -385,6 +390,7 @@ public sealed class PhaseController : NetworkBehaviour
         reverseSecondCycleEnabled = value;
         RpcAnnounceReverseToggle(value);
     }
+
     [ClientRpc]
     void RpcAnnounceReverseToggle(bool value)
     {
