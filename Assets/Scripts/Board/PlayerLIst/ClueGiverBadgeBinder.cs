@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 
 [DisallowMultipleComponent]
@@ -10,12 +11,15 @@ public class ClueGiverBadgeBinder : MonoBehaviour
 
     [Header("Badge Style")]
     [SerializeField] string badgeText = "CLUE GIVER";
-    [SerializeField] float fontSizeScale = 0.7f;
+    [SerializeField, Min(0.1f)] float fontSizeScale = 0.7f;
     [SerializeField] FontStyles fontStyle = FontStyles.Bold;
     [SerializeField] TextAlignmentOptions alignment = TextAlignmentOptions.Left;
     [SerializeField] Vector2 anchoredOffset = new Vector2(0f, -6f);
 
     TMP_Text _badge;
+    Outline _nameOutlineUI;
+    Outline _badgeOutlineUI;
+
     bool _initialized;
 
     void Reset()
@@ -49,6 +53,7 @@ public class ClueGiverBadgeBinder : MonoBehaviour
     void TryInit()
     {
         if (_initialized) return;
+
         if (!nameLabel) nameLabel = GetComponentInChildren<TMP_Text>(true);
         if (!nameLabel) return;
 
@@ -59,23 +64,28 @@ public class ClueGiverBadgeBinder : MonoBehaviour
             go.transform.SetParent(parent, worldPositionStays: false);
             _badge = go.AddComponent<TextMeshProUGUI>();
 
-            _badge.font = (nameLabel as TextMeshProUGUI)?.font;
+            var nameTMP = nameLabel as TextMeshProUGUI;
+            _badge.font = nameTMP ? nameTMP.font : _badge.font;
             _badge.fontSize = Mathf.Max(1f, nameLabel.fontSize * fontSizeScale);
             _badge.fontStyle = fontStyle;
             _badge.alignment = alignment;
             _badge.enableAutoSizing = false;
             _badge.raycastTarget = false;
+            _badge.text = badgeText;
 
             int nameIdx = nameLabel.transform.GetSiblingIndex();
             _badge.transform.SetSiblingIndex(Mathf.Min(nameIdx + 1, parent.childCount - 1));
 
-            var rt = (RectTransform)_badge.transform;
-            rt.anchorMin = ((RectTransform)nameLabel.transform).anchorMin;
-            rt.anchorMax = ((RectTransform)nameLabel.transform).anchorMax;
-            rt.pivot = ((RectTransform)nameLabel.transform).pivot;
-            rt.anchoredPosition = ((RectTransform)nameLabel.transform).anchoredPosition + anchoredOffset;
+            var nrt = (RectTransform)nameLabel.transform;
+            var brt = (RectTransform)_badge.transform;
+            brt.anchorMin = nrt.anchorMin;
+            brt.anchorMax = nrt.anchorMax;
+            brt.pivot = nrt.pivot;
+            brt.anchoredPosition = nrt.anchoredPosition + anchoredOffset;
 
-            _badge.text = badgeText;
+            _nameOutlineUI = nameLabel.GetComponent<Outline>();
+            _badgeOutlineUI = _badge.GetComponent<Outline>();
+            if (_nameOutlineUI && !_badgeOutlineUI) _badgeOutlineUI = _badge.gameObject.AddComponent<Outline>();
         }
 
         _initialized = true;
@@ -91,6 +101,51 @@ public class ClueGiverBadgeBinder : MonoBehaviour
 
         _badge.gameObject.SetActive(isClueGiver);
 
-        if (nameLabel) _badge.color = nameLabel.color;
+        _badge.color = nameLabel ? nameLabel.color : _badge.color;
+
+        SyncOutlineFromNameToBadge();
+    }
+
+    void SyncOutlineFromNameToBadge()
+    {
+        var nameTMP = nameLabel as TextMeshProUGUI;
+        var badgeTMP = _badge as TextMeshProUGUI;
+
+        if (nameTMP && badgeTMP)
+        {
+            var src = nameTMP.fontMaterial;
+            if (src != null)
+            {
+                var dst = badgeTMP.fontMaterial;
+                if (dst == null || dst.shader != src.shader)
+                {
+                    dst = new Material(src);
+                    badgeTMP.fontSharedMaterial = dst;
+                }
+
+                if (src.HasProperty("_OutlineColor") && dst.HasProperty("_OutlineColor"))
+                {
+                    var oc = src.GetColor("_OutlineColor");
+                    dst.SetColor("_OutlineColor", oc);
+                }
+                if (src.HasProperty("_OutlineWidth") && dst.HasProperty("_OutlineWidth"))
+                {
+                    var ow = src.GetFloat("_OutlineWidth");
+                    dst.SetFloat("_OutlineWidth", ow);
+                }
+            }
+        }
+
+        if (_nameOutlineUI)
+        {
+            if (!_badgeOutlineUI) _badgeOutlineUI = _badge.gameObject.AddComponent<Outline>();
+            _badgeOutlineUI.effectColor = _nameOutlineUI.effectColor;
+            _badgeOutlineUI.effectDistance = _nameOutlineUI.effectDistance;
+            _badgeOutlineUI.useGraphicAlpha = _nameOutlineUI.useGraphicAlpha;
+        }
+        else
+        {
+            if (_badgeOutlineUI) _badgeOutlineUI.enabled = false;
+        }
     }
 }
