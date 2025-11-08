@@ -105,10 +105,10 @@ MonoBehaviour:
   ownerName: 
   nameLabel: {fileID: 8689178799550972272}
   badgeText: CLUE GIVER
-  fontSizeScale: 0.7
-  fontStyle: 1
-  alignment: 513
-  anchoredOffset: {x: 0, y: -6}
+  fontSizeScale: 0.9
+  fontStyle: 0
+  alignment: 514
+  anchoredOffset: {x: 0, y: -20}
 --- !u!1 &7409790449103965007
 GameObject:
   m_ObjectHideFlags: 0
