@@ -6,6 +6,7 @@ using TMPro;
 public class ClueGiverBadgeBinder : MonoBehaviour
 {
     [SerializeField] string ownerName;
+
     [Header("If left empty")]
     [SerializeField] TMP_Text nameLabel;
 
@@ -15,6 +16,13 @@ public class ClueGiverBadgeBinder : MonoBehaviour
     [SerializeField] FontStyles fontStyle = FontStyles.Bold;
     [SerializeField] TextAlignmentOptions alignment = TextAlignmentOptions.Left;
     [SerializeField] Vector2 anchoredOffset = new Vector2(0f, -6f);
+
+    [Header("Outline Control")]
+    [SerializeField] bool enableOutline = true;
+
+    [Header("Rect Size Override")]
+    [SerializeField] bool overrideSize = false;
+    [SerializeField] Vector2 sizeDelta = new Vector2(0f, 24f);
 
     TMP_Text _badge;
     Outline _nameOutlineUI;
@@ -101,15 +109,37 @@ public class ClueGiverBadgeBinder : MonoBehaviour
 
         _badge.gameObject.SetActive(isClueGiver);
 
-        _badge.color = nameLabel ? nameLabel.color : _badge.color;
+        if (nameLabel) _badge.color = nameLabel.color;
 
         SyncOutlineFromNameToBadge();
+        ApplySizeOverride();
+    }
+
+    void ApplySizeOverride()
+    {
+        if (!_badge) return;
+        var rt = (RectTransform)_badge.transform;
+        if (overrideSize) rt.sizeDelta = sizeDelta;
     }
 
     void SyncOutlineFromNameToBadge()
     {
         var nameTMP = nameLabel as TextMeshProUGUI;
         var badgeTMP = _badge as TextMeshProUGUI;
+
+        if (!enableOutline)
+        {
+            if (badgeTMP)
+            {
+                var dst = badgeTMP.fontMaterial;
+                if (dst != null && dst.HasProperty("_OutlineWidth"))
+                {
+                    dst.SetFloat("_OutlineWidth", 0f);
+                }
+            }
+            if (_badgeOutlineUI) _badgeOutlineUI.enabled = false;
+            return;
+        }
 
         if (nameTMP && badgeTMP)
         {
@@ -124,21 +154,17 @@ public class ClueGiverBadgeBinder : MonoBehaviour
                 }
 
                 if (src.HasProperty("_OutlineColor") && dst.HasProperty("_OutlineColor"))
-                {
-                    var oc = src.GetColor("_OutlineColor");
-                    dst.SetColor("_OutlineColor", oc);
-                }
+                    dst.SetColor("_OutlineColor", src.GetColor("_OutlineColor"));
+
                 if (src.HasProperty("_OutlineWidth") && dst.HasProperty("_OutlineWidth"))
-                {
-                    var ow = src.GetFloat("_OutlineWidth");
-                    dst.SetFloat("_OutlineWidth", ow);
-                }
+                    dst.SetFloat("_OutlineWidth", src.GetFloat("_OutlineWidth"));
             }
         }
 
         if (_nameOutlineUI)
         {
             if (!_badgeOutlineUI) _badgeOutlineUI = _badge.gameObject.AddComponent<Outline>();
+            _badgeOutlineUI.enabled = true;
             _badgeOutlineUI.effectColor = _nameOutlineUI.effectColor;
             _badgeOutlineUI.effectDistance = _nameOutlineUI.effectDistance;
             _badgeOutlineUI.useGraphicAlpha = _nameOutlineUI.useGraphicAlpha;

@@ -104,11 +104,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ClueGiverBadgeBinder
   ownerName: 
   nameLabel: {fileID: 8689178799550972272}
-  badgeText: CLUE GIVER
+  badgeText: C L U E  G I V E R
   fontSizeScale: 0.9
   fontStyle: 0
-  alignment: 514
+  alignment: 544
   anchoredOffset: {x: 0, y: -20}
+  enableOutline: 0
+  overrideSize: 1
+  sizeDelta: {x: 125, y: 100}
 --- !u!1 &7409790449103965007
 GameObject:
   m_ObjectHideFlags: 0
