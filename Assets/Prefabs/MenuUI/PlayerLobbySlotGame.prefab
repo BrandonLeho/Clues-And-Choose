@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 4412337882315842828}
   - component: {fileID: 4819395690104462582}
   - component: {fileID: 8226143361867110059}
+  - component: {fileID: 4598801482640072418}
   m_Layer: 5
   m_Name: PlayerLobbySlotGame
   m_TagString: Untagged
@@ -89,6 +90,25 @@ MonoBehaviour:
   uiText: {fileID: 0}
   tmpOutlineWidth: 0.2
   fallbackColor: {r: 1, g: 1, b: 1, a: 1}
+--- !u!114 &4598801482640072418
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4994856514909240876}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a8ef66fca8365e14ab80e9a7b9f70797, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ClueGiverBadgeBinder
+  ownerName: 
+  nameLabel: {fileID: 8689178799550972272}
+  badgeText: CLUE GIVER
+  fontSizeScale: 0.7
+  fontStyle: 1
+  alignment: 513
+  anchoredOffset: {x: 0, y: -6}
 --- !u!1 &7409790449103965007
 GameObject:
   m_ObjectHideFlags: 0

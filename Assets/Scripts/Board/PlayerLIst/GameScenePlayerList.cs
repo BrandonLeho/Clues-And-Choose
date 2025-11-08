@@ -19,6 +19,9 @@ public class GameScenePlayerList : MonoBehaviour
 
             var outlineBinder = row.GetComponentInChildren<PlayerNameOutlineBinder>(true);
             if (outlineBinder) outlineBinder.SetOwnerName(n);
+
+            var badgeBinder = row.GetComponentInChildren<ClueGiverBadgeBinder>(true);
+            if (badgeBinder) badgeBinder.SetOwnerName(n);
         }
     }
 }

@@ -59,6 +59,7 @@
     <Compile Include="Assets\Scripts\UI\Panel.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\RosterStore.cs" />
     <Compile Include="Assets\Scripts\Controller\CursorController\ChangeCursor.cs" />
+    <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverBadgeBinder.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerInteractionHandler.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinPulseController.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\ColorBoard2D.cs" />
