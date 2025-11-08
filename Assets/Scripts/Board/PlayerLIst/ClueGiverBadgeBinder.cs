@@ -120,11 +120,8 @@ public class ClueGiverBadgeBinder : MonoBehaviour
         TryInit();
         if (!_badge) return;
 
-        bool isClueGiver =
-            !string.IsNullOrWhiteSpace(ownerName) &&
-            !string.IsNullOrWhiteSpace(RosterStore.CurrentClueGiverName) &&
-            string.Equals(ownerName.Trim(), RosterStore.CurrentClueGiverName.Trim(), System.StringComparison.OrdinalIgnoreCase);
-
+        bool isClueGiver = !string.IsNullOrWhiteSpace(ownerName) &&
+                           string.Equals(ownerName, RosterStore.CurrentClueGiverName, System.StringComparison.Ordinal);
 
         if (nameLabel) _badge.color = nameLabel.color;
 
