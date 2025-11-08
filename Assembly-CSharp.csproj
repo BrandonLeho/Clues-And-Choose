@@ -130,6 +130,7 @@
     <Compile Include="Assets\Scripts\Board\Coins\Arrow\ArrowProbeHoverRouter.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceSelectUnlockAll.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverRoulette\RouletteNetSync.cs" />
+    <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerNameOutlineBinder.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\GameGroupEntryAnimator.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinDragSync.cs" />
     <Compile Include="Assets\Scripts\Handlers\PlayerLobbyHandlerGame.cs" />

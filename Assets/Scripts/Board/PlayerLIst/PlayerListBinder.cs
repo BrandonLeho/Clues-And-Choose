@@ -18,7 +18,11 @@ public class PlayerListBinder : MonoBehaviour
         foreach (var name in names)
         {
             var row = Instantiate(rowPrefab, listParent);
-            row.GetComponentInChildren<TMP_Text>().text = name;
+            var label = row.GetComponentInChildren<TMP_Text>();
+            label.text = name;
+
+            var outlineBinder = row.GetComponentInChildren<PlayerNameOutlineBinder>(true);
+            if (outlineBinder) outlineBinder.SetOwnerName(name);
         }
     }
 }

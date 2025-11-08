@@ -14,7 +14,11 @@ public class GameScenePlayerList : MonoBehaviour
         foreach (var n in names)
         {
             var row = Instantiate(rowPrefab, listParent);
-            row.GetComponentInChildren<TMP_Text>().text = n;
+            var label = row.GetComponentInChildren<TMP_Text>();
+            label.text = n;
+
+            var outlineBinder = row.GetComponentInChildren<PlayerNameOutlineBinder>(true);
+            if (outlineBinder) outlineBinder.SetOwnerName(n);
         }
     }
 }
