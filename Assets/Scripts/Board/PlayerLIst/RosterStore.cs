@@ -13,8 +13,6 @@ public class RosterStore : MonoBehaviour
 
     static readonly Dictionary<uint, string> _idToName = new Dictionary<uint, string>();
 
-    static uint _currentClueGiverNetId;
-
     void Awake()
     {
         if (Instance != null) { Destroy(gameObject); return; }
@@ -45,11 +43,6 @@ public class RosterStore : MonoBehaviour
         if (string.IsNullOrWhiteSpace(name)) return;
         _idToName[netId] = name;
         if (!Instance.Names.Contains(name)) Instance.Names.Add(name);
-
-        if (_currentClueGiverNetId == netId)
-        {
-            SetCurrentClueGiver(name);
-        }
     }
 
     static bool TryResolveIdentity(uint netId, out NetworkIdentity id)
@@ -119,7 +112,6 @@ public class RosterStore : MonoBehaviour
     public static void SetCurrentClueGiverByNetId(uint netId)
     {
         EnsureInstance();
-        _currentClueGiverNetId = netId;
         if (netId == 0) { SetCurrentClueGiver(null); return; }
         if (!TryGetNameByNetId(netId, out var name)) name = $"NetId:{netId}";
         //Debug.Log(name);

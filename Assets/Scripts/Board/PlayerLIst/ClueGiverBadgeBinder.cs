@@ -43,6 +43,9 @@ public class ClueGiverBadgeBinder : MonoBehaviour
     Coroutine _badgeAnimCo;
     Coroutine _nameScaleCo;
 
+    int _badgeAnimVersion = 0;
+    int _nameScaleVersion = 0;
+
     void Reset()
     {
         if (!nameLabel) nameLabel = GetComponentInChildren<TMP_Text>(true);
@@ -58,8 +61,8 @@ public class ClueGiverBadgeBinder : MonoBehaviour
     void OnDisable()
     {
         RosterStore.OnClueGiverChanged -= HandleClueGiverChanged;
-        KillCo(ref _badgeAnimCo);
-        KillCo(ref _nameScaleCo);
+        StopAndNull(ref _badgeAnimCo);
+        StopAndNull(ref _nameScaleCo);
     }
 
     public void SetOwnerName(string name)
@@ -104,7 +107,6 @@ public class ClueGiverBadgeBinder : MonoBehaviour
             brt.anchorMin = nrt.anchorMin;
             brt.anchorMax = nrt.anchorMax;
             brt.pivot = nrt.pivot;
-
             brt.anchoredPosition = nrt.anchoredPosition;
 
             _nameOutlineUI = nameLabel.GetComponent<Outline>();
@@ -120,8 +122,9 @@ public class ClueGiverBadgeBinder : MonoBehaviour
         TryInit();
         if (!_badge) return;
 
-        bool isClueGiver = !string.IsNullOrWhiteSpace(ownerName) &&
-                           string.Equals(ownerName, RosterStore.CurrentClueGiverName, System.StringComparison.Ordinal);
+        bool isClueGiver =
+            !string.IsNullOrWhiteSpace(ownerName) &&
+            string.Equals(ownerName, RosterStore.CurrentClueGiverName, System.StringComparison.Ordinal);
 
         if (nameLabel) _badge.color = nameLabel.color;
 
@@ -143,11 +146,12 @@ public class ClueGiverBadgeBinder : MonoBehaviour
 
     void AnimateBadge(bool show)
     {
-        KillCo(ref _badgeAnimCo);
-        _badgeAnimCo = StartCoroutine(Co_AnimateBadge(show));
+        StopAndNull(ref _badgeAnimCo);
+        _badgeAnimVersion++;
+        _badgeAnimCo = StartCoroutine(Co_AnimateBadge(show, _badgeAnimVersion));
     }
 
-    IEnumerator Co_AnimateBadge(bool show)
+    IEnumerator Co_AnimateBadge(bool show, int version)
     {
         if (!_badgeCg) _badgeCg = _badge.gameObject.GetComponent<CanvasGroup>() ?? _badge.gameObject.AddComponent<CanvasGroup>();
 
@@ -164,11 +168,17 @@ public class ClueGiverBadgeBinder : MonoBehaviour
         float dur = show ? slideInDuration : slideOutDuration;
         if (dur <= 0f) dur = 0.001f;
 
-        if (show) _badge.gameObject.SetActive(true);
+        if (show)
+        {
+            _badge.gameObject.SetActive(true);
+            _badgeCg.alpha = startAlpha;
+            brt.anchoredPosition = startPos;
+        }
 
         float t = 0f;
         while (t < dur)
         {
+            if (version != _badgeAnimVersion) yield break;
             t += Time.unscaledDeltaTime;
             float u = Mathf.Clamp01(t / dur);
             float e = slideCurve != null ? slideCurve.Evaluate(u) : u;
@@ -177,6 +187,8 @@ public class ClueGiverBadgeBinder : MonoBehaviour
             _badgeCg.alpha = Mathf.LerpUnclamped(startAlpha, endAlpha, e);
             yield return null;
         }
+
+        if (version != _badgeAnimVersion) yield break;
 
         brt.anchoredPosition = endPos;
         _badgeCg.alpha = endAlpha;
@@ -187,11 +199,12 @@ public class ClueGiverBadgeBinder : MonoBehaviour
 
     void AnimateNameScale(bool up)
     {
-        KillCo(ref _nameScaleCo);
-        _nameScaleCo = StartCoroutine(Co_AnimateNameScale(up));
+        StopAndNull(ref _nameScaleCo);
+        _nameScaleVersion++;
+        _nameScaleCo = StartCoroutine(Co_AnimateNameScale(up, _nameScaleVersion));
     }
 
-    IEnumerator Co_AnimateNameScale(bool up)
+    IEnumerator Co_AnimateNameScale(bool up, int version)
     {
         var tr = nameLabel.transform as RectTransform;
         float dur = nameScaleDuration <= 0f ? 0.001f : nameScaleDuration;
@@ -202,12 +215,15 @@ public class ClueGiverBadgeBinder : MonoBehaviour
         float t = 0f;
         while (t < dur)
         {
+            if (version != _nameScaleVersion) yield break;
             t += Time.unscaledDeltaTime;
             float u = Mathf.Clamp01(t / dur);
             float e = nameScaleCurve != null ? nameScaleCurve.Evaluate(u) : u;
             tr.localScale = Vector3.LerpUnclamped(from, to, e);
             yield return null;
         }
+
+        if (version != _nameScaleVersion) yield break;
         tr.localScale = to;
     }
 
@@ -269,8 +285,12 @@ public class ClueGiverBadgeBinder : MonoBehaviour
         }
     }
 
-    static void KillCo(ref Coroutine co)
+    void StopAndNull(ref Coroutine co)
     {
-        co = null;
+        if (co != null)
+        {
+            StopCoroutine(co);
+            co = null;
+        }
     }
 }
