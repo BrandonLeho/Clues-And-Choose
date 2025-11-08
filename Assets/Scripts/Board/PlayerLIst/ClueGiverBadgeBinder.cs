@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections;
 
 [DisallowMultipleComponent]
 public class ClueGiverBadgeBinder : MonoBehaviour
@@ -24,11 +25,23 @@ public class ClueGiverBadgeBinder : MonoBehaviour
     [SerializeField] bool overrideSize = false;
     [SerializeField] Vector2 sizeDelta = new Vector2(0f, 24f);
 
+    [Header("Animation")]
+    [SerializeField] float slideInDuration = 0.20f;
+    [SerializeField] float slideOutDuration = 0.18f;
+    [SerializeField] AnimationCurve slideCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+    [SerializeField] float nameScaleMultiplier = 1.06f;
+    [SerializeField] float nameScaleDuration = 0.18f;
+    [SerializeField] AnimationCurve nameScaleCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
     TMP_Text _badge;
     Outline _nameOutlineUI;
     Outline _badgeOutlineUI;
+    CanvasGroup _badgeCg;
 
     bool _initialized;
+    bool _lastIsClueGiver;
+    Coroutine _badgeAnimCo;
+    Coroutine _nameScaleCo;
 
     void Reset()
     {
@@ -45,6 +58,8 @@ public class ClueGiverBadgeBinder : MonoBehaviour
     void OnDisable()
     {
         RosterStore.OnClueGiverChanged -= HandleClueGiverChanged;
+        KillCo(ref _badgeAnimCo);
+        KillCo(ref _nameScaleCo);
     }
 
     public void SetOwnerName(string name)
@@ -53,10 +68,7 @@ public class ClueGiverBadgeBinder : MonoBehaviour
         Refresh();
     }
 
-    void HandleClueGiverChanged(string _)
-    {
-        Refresh();
-    }
+    void HandleClueGiverChanged(string _) => Refresh();
 
     void TryInit()
     {
@@ -71,6 +83,9 @@ public class ClueGiverBadgeBinder : MonoBehaviour
             var go = new GameObject("ClueGiverLabel", typeof(RectTransform));
             go.transform.SetParent(parent, worldPositionStays: false);
             _badge = go.AddComponent<TextMeshProUGUI>();
+
+            _badgeCg = go.AddComponent<CanvasGroup>();
+            _badgeCg.alpha = 0f;
 
             var nameTMP = nameLabel as TextMeshProUGUI;
             _badge.font = nameTMP ? nameTMP.font : _badge.font;
@@ -89,7 +104,8 @@ public class ClueGiverBadgeBinder : MonoBehaviour
             brt.anchorMin = nrt.anchorMin;
             brt.anchorMax = nrt.anchorMax;
             brt.pivot = nrt.pivot;
-            brt.anchoredPosition = nrt.anchoredPosition + anchoredOffset;
+
+            brt.anchoredPosition = nrt.anchoredPosition;
 
             _nameOutlineUI = nameLabel.GetComponent<Outline>();
             _badgeOutlineUI = _badge.GetComponent<Outline>();
@@ -107,12 +123,92 @@ public class ClueGiverBadgeBinder : MonoBehaviour
         bool isClueGiver = !string.IsNullOrWhiteSpace(ownerName) &&
                            string.Equals(ownerName, RosterStore.CurrentClueGiverName, System.StringComparison.Ordinal);
 
-        _badge.gameObject.SetActive(isClueGiver);
-
         if (nameLabel) _badge.color = nameLabel.color;
 
         SyncOutlineFromNameToBadge();
         ApplySizeOverride();
+
+        if (isClueGiver == _lastIsClueGiver)
+        {
+            if (!_badge.gameObject.activeSelf && isClueGiver)
+                _badge.gameObject.SetActive(true);
+            return;
+        }
+
+        _lastIsClueGiver = isClueGiver;
+
+        AnimateBadge(isClueGiver);
+        AnimateNameScale(isClueGiver);
+    }
+
+    void AnimateBadge(bool show)
+    {
+        KillCo(ref _badgeAnimCo);
+        _badgeAnimCo = StartCoroutine(Co_AnimateBadge(show));
+    }
+
+    IEnumerator Co_AnimateBadge(bool show)
+    {
+        if (!_badgeCg) _badgeCg = _badge.gameObject.GetComponent<CanvasGroup>() ?? _badge.gameObject.AddComponent<CanvasGroup>();
+
+        var nrt = (RectTransform)nameLabel.transform;
+        var brt = (RectTransform)_badge.transform;
+
+        Vector2 basePos = nrt.anchoredPosition;
+        Vector2 startPos = show ? basePos : basePos + anchoredOffset;
+        Vector2 endPos = show ? (basePos + anchoredOffset) : basePos;
+
+        float startAlpha = show ? 0f : _badgeCg.alpha;
+        float endAlpha = show ? 1f : 0f;
+
+        float dur = show ? slideInDuration : slideOutDuration;
+        if (dur <= 0f) dur = 0.001f;
+
+        if (show) _badge.gameObject.SetActive(true);
+
+        float t = 0f;
+        while (t < dur)
+        {
+            t += Time.unscaledDeltaTime;
+            float u = Mathf.Clamp01(t / dur);
+            float e = slideCurve != null ? slideCurve.Evaluate(u) : u;
+
+            brt.anchoredPosition = Vector2.LerpUnclamped(startPos, endPos, e);
+            _badgeCg.alpha = Mathf.LerpUnclamped(startAlpha, endAlpha, e);
+            yield return null;
+        }
+
+        brt.anchoredPosition = endPos;
+        _badgeCg.alpha = endAlpha;
+
+        if (!show)
+            _badge.gameObject.SetActive(false);
+    }
+
+    void AnimateNameScale(bool up)
+    {
+        KillCo(ref _nameScaleCo);
+        _nameScaleCo = StartCoroutine(Co_AnimateNameScale(up));
+    }
+
+    IEnumerator Co_AnimateNameScale(bool up)
+    {
+        var tr = nameLabel.transform as RectTransform;
+        float dur = nameScaleDuration <= 0f ? 0.001f : nameScaleDuration;
+
+        Vector3 from = tr.localScale;
+        Vector3 to = up ? Vector3.one * nameScaleMultiplier : Vector3.one;
+
+        float t = 0f;
+        while (t < dur)
+        {
+            t += Time.unscaledDeltaTime;
+            float u = Mathf.Clamp01(t / dur);
+            float e = nameScaleCurve != null ? nameScaleCurve.Evaluate(u) : u;
+            tr.localScale = Vector3.LerpUnclamped(from, to, e);
+            yield return null;
+        }
+        tr.localScale = to;
     }
 
     void ApplySizeOverride()
@@ -133,9 +229,7 @@ public class ClueGiverBadgeBinder : MonoBehaviour
             {
                 var dst = badgeTMP.fontMaterial;
                 if (dst != null && dst.HasProperty("_OutlineWidth"))
-                {
                     dst.SetFloat("_OutlineWidth", 0f);
-                }
             }
             if (_badgeOutlineUI) _badgeOutlineUI.enabled = false;
             return;
@@ -173,5 +267,10 @@ public class ClueGiverBadgeBinder : MonoBehaviour
         {
             if (_badgeOutlineUI) _badgeOutlineUI.enabled = false;
         }
+    }
+
+    static void KillCo(ref Coroutine co)
+    {
+        co = null;
     }
 }
