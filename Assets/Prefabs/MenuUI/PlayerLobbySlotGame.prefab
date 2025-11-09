@@ -112,8 +112,8 @@ MonoBehaviour:
   enableOutline: 0
   overrideSize: 1
   sizeDelta: {x: 125, y: 100}
-  slideInDuration: 0.5
-  slideOutDuration: 0.5
+  slideInDuration: 0.35
+  slideOutDuration: 0.35
   slideCurve:
     serializedVersion: 2
     m_Curve:
@@ -139,7 +139,7 @@ MonoBehaviour:
     m_PostInfinity: 2
     m_RotationOrder: 4
   nameScaleMultiplier: 1.12
-  nameScaleDuration: 0.5
+  nameScaleDuration: 0.35
   nameScaleCurve:
     serializedVersion: 2
     m_Curve:
