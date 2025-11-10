@@ -85,11 +85,11 @@ public sealed class ScorePop : MonoBehaviour
         _cgPerCoin = Mathf.Max(0, perNearbyCoin);
     }
 
-    public static void TrySpawnForCell(int col, int row, RectTransform cellRect)
+    public static bool TrySpawnForCell(int col, int row, RectTransform cellRect)
     {
         var inst = Instance;
-        if (!inst || !cellRect) return;
-        if (inst._targetCol < 0 || inst._targetRow < 0) return;
+        if (!inst || !cellRect) return false;
+        if (inst._targetCol < 0 || inst._targetRow < 0) return false;
 
         uint coinNetId = 0;
         int spotIndex = -1;
@@ -111,13 +111,12 @@ public sealed class ScorePop : MonoBehaviour
             }
         }
 
-        if (coinNetId == 0) return;
+        if (coinNetId == 0) return false;
         if (inst.debugLogs) Debug.Log($"[ScorePop] coinNetId={coinNetId} spotIndex={spotIndex}");
 
         int cellRowBoard = NormalizeRowToBoard(row, board);
         int cellsAway = Mathf.Max(Mathf.Abs(col - inst._targetCol), Mathf.Abs(cellRowBoard - inst._targetRow));
         int points = Mathf.Max(0, inst._pointsAtExact - cellsAway);
-        if (points <= 0) return;
 
         string ownerName = null;
         if (NetworkClient.active && NetworkClient.spawned.TryGetValue(coinNetId, out var coinId) && coinId)
@@ -130,10 +129,15 @@ public sealed class ScorePop : MonoBehaviour
         }
         if (string.IsNullOrWhiteSpace(ownerName)) ownerName = "Unknown";
 
-        if (!inst.scoreTextPrefab) return;
+        if (!inst.scoreTextPrefab)
+            return true;
 
         var parent = inst.spawnLayer ? inst.spawnLayer : (cellRect.parent as RectTransform);
-        if (!parent) return;
+        if (!parent)
+            return true;
+
+        if (points <= 0)
+            return true;
 
         var text = Instantiate(inst.scoreTextPrefab, parent);
         text.text = $"+{points}";
@@ -152,7 +156,7 @@ public sealed class ScorePop : MonoBehaviour
         {
             if (inst.debugLogs) Debug.LogWarning($"[ScorePop] No banner for '{ownerName}'. Falling back to pop.");
             inst.StartCoroutine(inst.CoPopOnly(text));
-            return;
+            return true;
         }
 
         Vector2 endAnchored = inst.AnchoredFromWorld(targetRt.TransformPoint(targetRt.rect.center), parent) + inst.bannerOffset;
@@ -207,6 +211,8 @@ public sealed class ScorePop : MonoBehaviour
                 }
             ));
         }
+
+        return true;
     }
 
     IEnumerator CoDelayThenPopHoldFlyGeneral(float delay, TMP_Text t, Vector2 startAnchored, Vector2 endAnchored, float baseReadableScale, Action onArrive)

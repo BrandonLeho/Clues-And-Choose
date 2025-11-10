@@ -22,6 +22,7 @@ public sealed class GridRingRevealer : MonoBehaviour
     [Header("Timing")]
     [Min(0f)] public float firstRingDelaySeconds = 1.0f;
     [Min(0f)] public float ringDelaySeconds = 1.0f;
+    [Min(0f)] public float emptyRingDelaySeconds = 0.25f;
     [Min(0)] public int maxRings = 8;
 
     [Header("Ring Float Fade")]
@@ -123,6 +124,7 @@ public sealed class GridRingRevealer : MonoBehaviour
         for (int ring = 1; ring <= maxRings; ring++)
         {
             bool floatedAny = false;
+            bool ringHasAnyCoin = false;
 
             for (int dc = -ring; dc <= ring; dc++)
             {
@@ -148,9 +150,11 @@ public sealed class GridRingRevealer : MonoBehaviour
                         else
                             cell.FloatWithoutHover();
                     }
-                    ScorePop.TrySpawnForCell(cc, rr, (RectTransform)cell.transform);
-                    floatedAny = true;
 
+                    if (ScorePop.TrySpawnForCell(cc, rr, (RectTransform)cell.transform))
+                        ringHasAnyCoin = true;
+
+                    floatedAny = true;
                     ChosenOnTopIfFloating();
                 }
             }
@@ -161,8 +165,9 @@ public sealed class GridRingRevealer : MonoBehaviour
                 yield break;
             }
 
+            float delay = ringHasAnyCoin ? ringDelaySeconds : emptyRingDelaySeconds;
             t = 0f;
-            while (t < ringDelaySeconds) { t += Time.deltaTime; yield return null; }
+            while (t < delay) { t += Time.deltaTime; yield return null; }
         }
 
         if (PhaseController.Instance) PhaseController.Instance.CmdNotifyRingsRevealFinished();
