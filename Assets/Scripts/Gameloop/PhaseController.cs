@@ -22,6 +22,9 @@ public sealed class PhaseController : NetworkBehaviour
     [Header("Timing")]
     [SerializeField, Min(0f)] float advanceAfterResetDelay = 0.9f;
 
+    [Header("Coin Home Safety Net")]
+    [SerializeField] bool forceHomeSnapAtAdvance = true;
+
     bool _advanceAfterResetRunning;
 
     public static PhaseController Instance { get; private set; }
@@ -332,6 +335,11 @@ public sealed class PhaseController : NetworkBehaviour
         }
 
         yield return new WaitForSeconds(advanceAfterResetDelay);
+
+        if (forceHomeSnapAtAdvance && RoundManager.Instance != null)
+        {
+            RoundManager.Instance.ServerResetAllCoinsToHome(tween: false);
+        }
 
         if (RoundManager.Instance)
             RoundManager.Instance.ServerAdvanceRound();

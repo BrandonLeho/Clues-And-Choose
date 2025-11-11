@@ -56,7 +56,6 @@ public class CoinDropSnap : MonoBehaviour
     public string colorGridName = "ColorGrid";
     public bool autoAddRectMask2DIfMissing = false;
 
-
     [Header("Stability")]
     public Transform scaleTarget;
     public bool pinDuringSquash = true;
