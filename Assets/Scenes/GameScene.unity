@@ -12832,7 +12832,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 6.943825
+    x: 0.29513738
     y: 0
     width: 10
     height: 10
@@ -33203,6 +33203,7 @@ MonoBehaviour:
   includeDiagonals: 1
   firstRingDelaySeconds: 1.5
   ringDelaySeconds: 2
+  emptyRingDelaySeconds: 0.65
   maxRings: 2
   ringCellsFadeOnReveal: 1
   ringFadeStartAlpha: 0.35

@@ -78,10 +78,23 @@ public sealed class PhaseController : NetworkBehaviour
     public void CmdStartPlacingPhase()
     {
         cyclesCompleted = 0;
+
+        targetCol = -1;
+        targetRow = -1;
+        targetColor = Color.white;
+
         if (CoinPlacementTurnManager.Instance)
             CoinPlacementTurnManager.Instance.ServerBeginCycleAtFirst(false);
 
         RpcEnablePerTurnLocks();
+        RpcForceLockAllCoins();
+    }
+
+    [ClientRpc]
+    void RpcForceLockAllCoins()
+    {
+        var mgr = CoinRoundLockManager.Instance;
+        if (mgr) mgr.LockAllCoins();
     }
 
     [Server]
