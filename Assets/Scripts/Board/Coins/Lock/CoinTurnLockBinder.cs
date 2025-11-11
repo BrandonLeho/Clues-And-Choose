@@ -51,9 +51,7 @@ public sealed class CoinTurnLockBinder : MonoBehaviour
     void HandleTargetChosen(int col, int row, Color color)
     {
         if (!_modeActive) return;
-
         _hasTargetOverride = true;
-
         if (CoinPlacementTurnManager.Instance)
             HandlePlacerChanged(CoinPlacementTurnManager.Instance.currentPlacerNetId);
     }
@@ -63,17 +61,14 @@ public sealed class CoinTurnLockBinder : MonoBehaviour
         if (debugLogs) Debug.Log("[TurnLock] Round changed → clear target gate and LOCK.");
         _hasTargetOverride = false;
         LockAllLocal();
-
         if (_modeActive && CoinPlacementTurnManager.Instance)
             HandlePlacerChanged(CoinPlacementTurnManager.Instance.currentPlacerNetId);
     }
-
     void HandleClueGiverChanged(uint ___)
     {
         if (debugLogs) Debug.Log("[TurnLock] Clue giver changed → clear target gate and LOCK.");
         _hasTargetOverride = false;
         LockAllLocal();
-
         if (_modeActive && CoinPlacementTurnManager.Instance)
             HandlePlacerChanged(CoinPlacementTurnManager.Instance.currentPlacerNetId);
     }
@@ -82,10 +77,7 @@ public sealed class CoinTurnLockBinder : MonoBehaviour
     {
         if (!_modeActive) return;
 
-        bool hasTarget =
-            _hasTargetOverride ||
-            (PhaseController.Instance && PhaseController.Instance.ClientHasTarget); // SyncVar gate
-
+        bool hasTarget = _hasTargetOverride || (PhaseController.Instance && PhaseController.Instance.ClientHasTarget);
         if (!hasTarget)
         {
             if (debugLogs) Debug.Log("[TurnLock] No target yet → keep ALL coins LOCKED.");
@@ -99,14 +91,6 @@ public sealed class CoinTurnLockBinder : MonoBehaviour
         else LockAllLocal();
     }
 
-    static void LockAllLocal()
-    {
-        var mgr = CoinRoundLockManager.Instance;
-        if (mgr) mgr.LockAllCoins();
-    }
-    static void UnlockAllLocal()
-    {
-        var mgr = CoinRoundLockManager.Instance;
-        if (mgr) mgr.UnlockAllCoins();
-    }
+    static void LockAllLocal() { var mgr = CoinRoundLockManager.Instance; if (mgr) mgr.LockAllCoins(); }
+    static void UnlockAllLocal() { var mgr = CoinRoundLockManager.Instance; if (mgr) mgr.UnlockAllCoins(); }
 }
