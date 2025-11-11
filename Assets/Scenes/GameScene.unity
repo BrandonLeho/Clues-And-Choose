@@ -12832,7 +12832,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 0.29513738
+    x: 0.16294643
     y: 0
     width: 10
     height: 10
@@ -26742,7 +26742,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   maxFullCycles: 2
-  debugLogsEnabled: 1
+  debugLogsEnabled: 0
 --- !u!4 &495439634
 Transform:
   m_ObjectHideFlags: 0

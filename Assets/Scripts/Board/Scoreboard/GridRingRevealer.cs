@@ -23,6 +23,7 @@ public sealed class GridRingRevealer : MonoBehaviour
     [Min(0f)] public float firstRingDelaySeconds = 1.0f;
     [Min(0f)] public float ringDelaySeconds = 1.0f;
     [Min(0f)] public float emptyRingDelaySeconds = 0.25f;
+    [Min(0f)] public float lastRingLingerSeconds = 1.5f;
     [Min(0)] public int maxRings = 8;
 
     [Header("Ring Float Fade")]
@@ -161,6 +162,9 @@ public sealed class GridRingRevealer : MonoBehaviour
 
             if (!floatedAny)
             {
+                float tHold = 0f;
+                while (tHold < lastRingLingerSeconds) { tHold += Time.deltaTime; yield return null; }
+
                 if (PhaseController.Instance) PhaseController.Instance.CmdNotifyRingsRevealFinished();
                 yield break;
             }
@@ -169,6 +173,9 @@ public sealed class GridRingRevealer : MonoBehaviour
             t = 0f;
             while (t < delay) { t += Time.deltaTime; yield return null; }
         }
+
+        float tFinalHold = 0f;
+        while (tFinalHold < lastRingLingerSeconds) { tFinalHold += Time.deltaTime; yield return null; }
 
         if (PhaseController.Instance) PhaseController.Instance.CmdNotifyRingsRevealFinished();
     }
