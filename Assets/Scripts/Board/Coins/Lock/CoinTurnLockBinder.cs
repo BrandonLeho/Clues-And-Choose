@@ -1,4 +1,3 @@
-// CoinTurnLockBinder.cs
 using Mirror;
 using UnityEngine;
 
@@ -6,6 +5,7 @@ public sealed class CoinTurnLockBinder : MonoBehaviour
 {
     [SerializeField] bool debugLogs = true;
     bool _modeActive;
+    bool _hasTargetOverride;
 
     void OnEnable()
     {
@@ -20,12 +20,16 @@ public sealed class CoinTurnLockBinder : MonoBehaviour
     {
         CoinPlacementTurnManager.OnPlacerChangedClient -= HandlePlacerChanged;
         PhaseController.OnClientTargetChosen -= HandleTargetChosen;
+        _hasTargetOverride = false;
     }
 
     public void SetModeActive(bool active)
     {
         _modeActive = active;
         if (debugLogs) Debug.Log($"[TurnLock] ModeActive={_modeActive}");
+
+        if (_modeActive) _hasTargetOverride = false;
+
         if (!_modeActive) { UnlockAllLocal(); return; }
         if (CoinPlacementTurnManager.Instance)
             HandlePlacerChanged(CoinPlacementTurnManager.Instance.currentPlacerNetId);
@@ -34,6 +38,9 @@ public sealed class CoinTurnLockBinder : MonoBehaviour
     void HandleTargetChosen(int col, int row, Color color)
     {
         if (!_modeActive) return;
+
+        _hasTargetOverride = true;
+
         if (CoinPlacementTurnManager.Instance)
             HandlePlacerChanged(CoinPlacementTurnManager.Instance.currentPlacerNetId);
     }
@@ -42,7 +49,11 @@ public sealed class CoinTurnLockBinder : MonoBehaviour
     {
         if (!_modeActive) return;
 
-        if (!(PhaseController.Instance && PhaseController.Instance.ClientHasTarget))
+        bool hasTarget =
+            _hasTargetOverride ||
+            (PhaseController.Instance && PhaseController.Instance.ClientHasTarget);
+
+        if (!hasTarget)
         {
             if (debugLogs) Debug.Log("[TurnLock] No target yet → keep ALL coins LOCKED.");
             LockAllLocal();
