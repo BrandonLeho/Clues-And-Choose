@@ -230,6 +230,10 @@ public class RoundManager : NetworkBehaviour
 
         var pc = PhaseController.Instance;
         if (pc) pc.ClientNormalizeGridNow();
+
+        var mgr = CoinRoundLockManager.Instance;
+        if (mgr) mgr.LockAllCoins();
+
     }
 
     [Server] public List<uint> ServerGetRosterSnapshot() => new List<uint>(_roster);

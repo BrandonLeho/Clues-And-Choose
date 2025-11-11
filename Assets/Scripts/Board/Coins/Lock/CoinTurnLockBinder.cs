@@ -12,6 +12,12 @@ public sealed class CoinTurnLockBinder : MonoBehaviour
         CoinPlacementTurnManager.OnPlacerChangedClient += HandlePlacerChanged;
         PhaseController.OnClientTargetChosen += HandleTargetChosen;
 
+        if (RoundManager.Instance)
+        {
+            RoundManager.Instance.onRoundChangedClient.AddListener(HandleRoundChanged);
+            RoundManager.Instance.onClueGiverChangedClient.AddListener(HandleClueGiverChanged);
+        }
+
         if (CoinPlacementTurnManager.Instance)
             HandlePlacerChanged(CoinPlacementTurnManager.Instance.currentPlacerNetId);
     }
@@ -20,6 +26,13 @@ public sealed class CoinTurnLockBinder : MonoBehaviour
     {
         CoinPlacementTurnManager.OnPlacerChangedClient -= HandlePlacerChanged;
         PhaseController.OnClientTargetChosen -= HandleTargetChosen;
+
+        if (RoundManager.Instance)
+        {
+            RoundManager.Instance.onRoundChangedClient.RemoveListener(HandleRoundChanged);
+            RoundManager.Instance.onClueGiverChangedClient.RemoveListener(HandleClueGiverChanged);
+        }
+
         _hasTargetOverride = false;
     }
 
@@ -45,13 +58,33 @@ public sealed class CoinTurnLockBinder : MonoBehaviour
             HandlePlacerChanged(CoinPlacementTurnManager.Instance.currentPlacerNetId);
     }
 
+    void HandleRoundChanged(int _, uint __)
+    {
+        if (debugLogs) Debug.Log("[TurnLock] Round changed → clear target gate and LOCK.");
+        _hasTargetOverride = false;
+        LockAllLocal();
+
+        if (_modeActive && CoinPlacementTurnManager.Instance)
+            HandlePlacerChanged(CoinPlacementTurnManager.Instance.currentPlacerNetId);
+    }
+
+    void HandleClueGiverChanged(uint ___)
+    {
+        if (debugLogs) Debug.Log("[TurnLock] Clue giver changed → clear target gate and LOCK.");
+        _hasTargetOverride = false;
+        LockAllLocal();
+
+        if (_modeActive && CoinPlacementTurnManager.Instance)
+            HandlePlacerChanged(CoinPlacementTurnManager.Instance.currentPlacerNetId);
+    }
+
     void HandlePlacerChanged(uint currentPlacerNetId)
     {
         if (!_modeActive) return;
 
         bool hasTarget =
             _hasTargetOverride ||
-            (PhaseController.Instance && PhaseController.Instance.ClientHasTarget);
+            (PhaseController.Instance && PhaseController.Instance.ClientHasTarget); // SyncVar gate
 
         if (!hasTarget)
         {
