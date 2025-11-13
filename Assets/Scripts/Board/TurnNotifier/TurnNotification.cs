@@ -114,6 +114,9 @@ public sealed class TurnNotification : MonoBehaviour
 
     void HandlePlacerChanged(uint placerNetId)
     {
+        if (_playingSystemMessage)
+            return;
+
         if (requireCardChoice && !_targetChosen)
         {
             _pendingPlacerId = placerNetId;
@@ -125,13 +128,20 @@ public sealed class TurnNotification : MonoBehaviour
         {
             var me = NetworkClient.connection?.identity;
             bool myTurn = me && placerNetId != 0 && me.netId == placerNetId;
-            if (!myTurn) { InstantHide(); return; }
+            if (!myTurn)
+            {
+                InstantHide();
+                return;
+            }
         }
 
-        if (placerNetId == 0) { InstantHide(); return; }
+        if (placerNetId == 0)
+        {
+            InstantHide();
+            return;
+        }
 
         label.text = $"{textPrefix} {ResolveDisplayName(placerNetId)}";
-
         RestartPlay();
     }
 
@@ -307,6 +317,9 @@ public sealed class TurnNotification : MonoBehaviour
 
     void HandleClientRoundChanged(int _, uint __)
     {
+        if (_playingSystemMessage)
+            return;
+
         if (requireCardChoice)
             _targetChosen = false;
 
