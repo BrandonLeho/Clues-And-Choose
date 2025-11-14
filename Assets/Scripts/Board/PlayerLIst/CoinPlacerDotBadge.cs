@@ -21,33 +21,46 @@ public sealed class CoinPlacerDotBadge : MonoBehaviour
     [Header("Animation")]
     [SerializeField, Min(0f)] float moveDuration = 0.25f;
     [SerializeField] AnimationCurve moveCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
-    [SerializeField, Min(0f)] float fadeDuration = 0.15f;
+    [SerializeField, Min(0f)] float popFadeDuration = 0.15f;
 
     [Header("Debug")]
     [SerializeField] bool debugLogs;
 
     readonly Dictionary<string, RectTransform> _nameToLabel = new();
+
+    RectTransform _listParentRt;
     RectTransform _dotRt;
     Image _dotImg;
     RectTransform _glowRt;
     Image _glowImg;
     CanvasGroup _cg;
+
     bool _hasTargetGate;
     uint _currentPlacerNetId;
-    Coroutine _moveCo;
-    int _moveVersion;
+    bool _visible;
+
+    Coroutine _transitionCo;
+    int _transitionVersion;
+
+    float _columnX;
+    bool _columnComputed;
+    Color _currentColor = Color.white;
 
     void Reset()
     {
-        if (!listParent && transform.childCount > 0) listParent = transform.GetChild(0);
+        if (!listParent && transform.childCount > 0)
+            listParent = transform.GetChild(0);
     }
 
     void OnEnable()
     {
+        _listParentRt = listParent ? listParent as RectTransform : transform as RectTransform;
         RebuildNameMap();
+        EnsureDot();
 
         CoinPlacementTurnManager.OnPlacerChangedClient += HandlePlacerChanged;
         PhaseController.OnClientTargetChosen += HandleTargetChosen;
+
         if (RoundManager.Instance)
         {
             RoundManager.Instance.onRoundChangedClient.AddListener(HandleRoundChanged);
@@ -59,7 +72,6 @@ public sealed class CoinPlacerDotBadge : MonoBehaviour
 
         _hasTargetGate = PhaseController.Instance && PhaseController.Instance.ClientHasTarget;
 
-        EnsureDot();
         UpdateVisibilityAndPosition(immediate: true);
     }
 
@@ -74,7 +86,7 @@ public sealed class CoinPlacerDotBadge : MonoBehaviour
             RoundManager.Instance.onClueGiverChangedClient.RemoveListener(HandleClueGiverChanged);
         }
 
-        KillMove();
+        KillTransition();
     }
 
     void HandlePlacerChanged(uint netId)
@@ -108,16 +120,40 @@ public sealed class CoinPlacerDotBadge : MonoBehaviour
     void RebuildNameMap()
     {
         _nameToLabel.Clear();
+        _columnComputed = false;
+        _columnX = 0f;
+
         if (!listParent) return;
+        _listParentRt = listParent as RectTransform;
+
+        float maxRightLocalX = 0f;
+        bool any = false;
 
         for (int i = 0; i < listParent.childCount; i++)
         {
             var row = listParent.GetChild(i);
             var label = row.GetComponentInChildren<TextMeshProUGUI>(true);
             if (!label) continue;
+
             string n = label.text?.Trim();
             if (string.IsNullOrWhiteSpace(n)) continue;
+
             _nameToLabel[n] = label.rectTransform;
+            any = true;
+
+            if (_listParentRt != null)
+            {
+                Rect r = label.rectTransform.rect;
+                Vector3 rightWorld = label.rectTransform.TransformPoint(new Vector3(r.xMax, r.center.y, 0f));
+                Vector3 rightLocal = _listParentRt.InverseTransformPoint(rightWorld);
+                maxRightLocalX = Mathf.Max(maxRightLocalX, rightLocal.x);
+            }
+        }
+
+        if (any && _listParentRt != null)
+        {
+            _columnX = maxRightLocalX + rightPadding;
+            _columnComputed = true;
         }
     }
 
@@ -125,25 +161,28 @@ public sealed class CoinPlacerDotBadge : MonoBehaviour
     {
         if (_dotRt) return;
 
+        if (!_listParentRt)
+            _listParentRt = listParent ? listParent as RectTransform : transform as RectTransform;
+
         var dotGo = new GameObject("CoinPlacerDot", typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
-        dotGo.transform.SetParent(listParent ? listParent : transform, worldPositionStays: false);
+        dotGo.transform.SetParent(_listParentRt ? _listParentRt : transform as RectTransform, false);
         _dotRt = (RectTransform)dotGo.transform;
         _dotImg = dotGo.GetComponent<Image>();
         _cg = dotGo.GetComponent<CanvasGroup>();
         _cg.alpha = 0f;
 
         _dotImg.raycastTarget = false;
-        _dotImg.sprite = dotSprite != null ? dotSprite : UnityEngine.Resources.GetBuiltinResource<Sprite>("UI/Skin/Background.psd");
+        _dotImg.sprite = dotSprite != null
+            ? dotSprite
+            : Resources.GetBuiltinResource<Sprite>("UI/Skin/Background.psd");
         _dotImg.type = Image.Type.Simple;
         _dotImg.preserveAspect = true;
 
-        _dotRt.anchorMin = new Vector2(0, 1);
-        _dotRt.anchorMax = new Vector2(0, 1);
-        _dotRt.pivot = new Vector2(0.5f, 0.5f);
+        _dotRt.anchorMin = _dotRt.anchorMax = _dotRt.pivot = new Vector2(0.5f, 0.5f);
         _dotRt.anchoredPosition = Vector2.zero;
 
         var glowGo = new GameObject("CoinPlacerDotGlow", typeof(RectTransform), typeof(Image));
-        glowGo.transform.SetParent(_dotRt, worldPositionStays: false);
+        glowGo.transform.SetParent(_dotRt, false);
         _glowRt = (RectTransform)glowGo.transform;
         _glowImg = glowGo.GetComponent<Image>();
         _glowImg.raycastTarget = false;
@@ -159,6 +198,7 @@ public sealed class CoinPlacerDotBadge : MonoBehaviour
     void ApplyDotSizing()
     {
         if (!_dotRt) return;
+
         float d = dotRadius * 2f;
         _dotRt.sizeDelta = new Vector2(d, d);
 
@@ -174,6 +214,7 @@ public sealed class CoinPlacerDotBadge : MonoBehaviour
         if (!_dotRt) return;
         _cg.alpha = 0f;
         _dotRt.gameObject.SetActive(false);
+        _visible = false;
     }
 
     void UpdateVisibilityAndPosition(bool immediate)
@@ -182,14 +223,14 @@ public sealed class CoinPlacerDotBadge : MonoBehaviour
 
         if (!_hasTargetGate || _currentPlacerNetId == 0)
         {
-            AnimateHide(immediate);
+            HideAnimated(immediate);
             return;
         }
 
         if (!RosterStore.TryGetNameByNetId(_currentPlacerNetId, out var placerName))
         {
-            if (debugLogs) Debug.Log("[DotBadge] Could not resolve placer name; hiding.");
-            AnimateHide(immediate);
+            if (debugLogs) Debug.Log("[DotBadge] Could not resolve placer name; popping out.");
+            HideAnimated(immediate);
             return;
         }
 
@@ -198,117 +239,190 @@ public sealed class CoinPlacerDotBadge : MonoBehaviour
             RebuildNameMap();
             if (!_nameToLabel.TryGetValue(placerName, out labelRt) || !labelRt)
             {
-                if (debugLogs) Debug.Log($"[DotBadge] No label found for {placerName}; hiding.");
-                AnimateHide(immediate);
+                if (debugLogs) Debug.Log($"[DotBadge] No label found for {placerName}; popping out.");
+                HideAnimated(immediate);
                 return;
             }
         }
 
-        Color c;
-        if (!RegistryNameColorLookup.TryGetColorForName(placerName, out c))
-            c = Color.white;
-        _dotImg.color = c;
-        _glowImg.color = new Color(c.r, c.g, c.b, glowAlpha);
+        if (!_columnComputed)
+            RebuildNameMap();
 
-        var rowParent = labelRt.parent as RectTransform;
-        var targetParent = rowParent ? rowParent : listParent as RectTransform;
-
-        float labelW = labelRt.rect.width;
-        var tmp = labelRt.GetComponent<TextMeshProUGUI>();
-        if (tmp) labelW = Mathf.Max(labelW, tmp.preferredWidth);
-
-        Vector3 worldTarget = labelRt.TransformPoint(new Vector3(labelW + rightPadding, verticalNudge, 0));
-
-        if (_dotRt.parent != targetParent)
+        if (!_columnComputed || _listParentRt == null)
         {
-            Vector3 worldBefore = _dotRt.position;
-            _dotRt.SetParent(targetParent, worldPositionStays: false);
-            _dotRt.position = worldBefore;
-        }
-
-        Vector2 anchoredTarget;
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            (RectTransform)_dotRt.parent,
-            RectTransformUtility.WorldToScreenPoint(null, worldTarget),
-            null, out anchoredTarget);
-
-        AnimateShowTo(anchoredTarget, immediate);
-    }
-
-    void AnimateShowTo(Vector2 anchoredTarget, bool immediate)
-    {
-        _dotRt.gameObject.SetActive(true);
-
-        KillMove();
-        _moveVersion++;
-
-        if (immediate)
-        {
-            _dotRt.anchoredPosition = anchoredTarget;
-            _cg.alpha = 1f;
+            if (debugLogs) Debug.Log("[DotBadge] Column not computed; popping out.");
+            HideAnimated(immediate);
             return;
         }
 
-        _moveCo = StartCoroutine(Co_MoveAndFade(anchoredTarget, show: true, version: _moveVersion));
-    }
+        Color targetColor;
+        if (!RegistryNameColorLookup.TryGetColorForName(placerName, out targetColor))
+            targetColor = Color.white;
 
-    void AnimateHide(bool immediate)
-    {
-        KillMove();
-        _moveVersion++;
+        Rect lr = labelRt.rect;
+        Vector3 centerWorld = labelRt.TransformPoint(new Vector3(lr.center.x, lr.center.y, 0f));
+        Vector3 centerLocal = _listParentRt.InverseTransformPoint(centerWorld);
 
-        if (!immediate && _dotRt.gameObject.activeSelf)
+        Vector2 targetPos = new Vector2(_columnX, centerLocal.y + verticalNudge);
+
+        if (immediate)
         {
-            _moveCo = StartCoroutine(Co_MoveAndFade(Vector2.zero, show: false, version: _moveVersion));
+            KillTransition();
+            _dotRt.gameObject.SetActive(true);
+            _dotRt.anchoredPosition = targetPos;
+            _cg.alpha = 1f;
+            SetDotColor(targetColor);
+            _visible = true;
+            return;
         }
+
+        if (!_visible)
+            PopIn(targetPos, targetColor);
         else
-        {
-            HideImmediate();
-        }
+            SlideTo(targetPos, targetColor);
     }
 
-    IEnumerator Co_MoveAndFade(Vector2 target, bool show, int version)
+    void HideAnimated(bool immediate)
     {
-        Vector2 fromPos = _dotRt.anchoredPosition;
-        float moveT = 0f, fadeT = 0f;
-
-        float moveDur = moveDuration <= 0f ? 0.001f : moveDuration;
-        float fadeDur = fadeDuration <= 0f ? 0.001f : fadeDuration;
-
-        float startA = _cg.alpha;
-        float endA = show ? 1f : 0f;
-
-        while (moveT < moveDur || fadeT < fadeDur)
+        if (immediate || !_visible)
         {
-            if (version != _moveVersion) yield break;
-            float dt = Time.unscaledDeltaTime;
+            KillTransition();
+            HideImmediate();
+            return;
+        }
 
-            moveT += dt;
-            fadeT += dt;
+        KillTransition();
+        _transitionVersion++;
+        _transitionCo = StartCoroutine(Co_PopOut(_transitionVersion));
+    }
 
-            float mu = Mathf.Clamp01(moveT / moveDur);
-            float fu = Mathf.Clamp01(fadeT / fadeDur);
-            float me = moveCurve != null ? moveCurve.Evaluate(mu) : mu;
+    void PopIn(Vector2 targetPos, Color targetColor)
+    {
+        KillTransition();
+        _transitionVersion++;
+        _transitionCo = StartCoroutine(Co_PopIn(targetPos, targetColor, _transitionVersion));
+    }
 
-            _dotRt.anchoredPosition = Vector2.LerpUnclamped(fromPos, target, me);
-            _cg.alpha = Mathf.LerpUnclamped(startA, endA, fu);
+    void SlideTo(Vector2 targetPos, Color targetColor)
+    {
+        KillTransition();
+        _transitionVersion++;
+        _transitionCo = StartCoroutine(Co_SlideTo(targetPos, targetColor, _transitionVersion));
+    }
+
+    void SetDotColor(Color c)
+    {
+        _currentColor = c;
+        if (_dotImg) _dotImg.color = c;
+        if (_glowImg) _glowImg.color = new Color(c.r, c.g, c.b, glowAlpha);
+    }
+
+    IEnumerator Co_PopIn(Vector2 targetPos, Color targetColor, int version)
+    {
+        _dotRt.gameObject.SetActive(true);
+        _dotRt.anchoredPosition = targetPos;
+
+        float dur = popFadeDuration <= 0f ? 0.001f : popFadeDuration;
+
+        Color fromColor = _currentColor;
+        Color toColor = targetColor;
+
+        float t = 0f;
+        float startA = 0f;
+        float endA = 1f;
+
+        while (t < dur)
+        {
+            if (version != _transitionVersion) yield break;
+
+            t += Time.unscaledDeltaTime;
+            float u = Mathf.Clamp01(t / dur);
+
+            Color c = Color.LerpUnclamped(fromColor, toColor, u);
+            SetDotColor(c);
+            _cg.alpha = Mathf.LerpUnclamped(startA, endA, u);
 
             yield return null;
         }
 
-        if (version != _moveVersion) yield break;
+        if (version != _transitionVersion) yield break;
 
-        _dotRt.anchoredPosition = target;
+        SetDotColor(toColor);
         _cg.alpha = endA;
-
-        if (!show)
-            _dotRt.gameObject.SetActive(false);
+        _visible = true;
     }
 
-    void KillMove()
+    IEnumerator Co_PopOut(int version)
     {
-        if (_moveCo != null) StopCoroutine(_moveCo);
-        _moveCo = null;
+        float dur = popFadeDuration <= 0f ? 0.001f : popFadeDuration;
+
+        float t = 0f;
+        float startA = _cg.alpha;
+        float endA = 0f;
+
+        while (t < dur)
+        {
+            if (version != _transitionVersion) yield break;
+
+            t += Time.unscaledDeltaTime;
+            float u = Mathf.Clamp01(t / dur);
+            _cg.alpha = Mathf.LerpUnclamped(startA, endA, u);
+
+            yield return null;
+        }
+
+        if (version != _transitionVersion) yield break;
+
+        _cg.alpha = 0f;
+        _dotRt.gameObject.SetActive(false);
+        _visible = false;
+    }
+
+    IEnumerator Co_SlideTo(Vector2 targetPos, Color targetColor, int version)
+    {
+        float dur = moveDuration <= 0f ? 0.001f : moveDuration;
+
+        Vector2 fromPos = _dotRt.anchoredPosition;
+        Color fromColor = _currentColor;
+        Color toColor = targetColor;
+
+        float t = 0f;
+
+        _cg.alpha = 1f;
+        _dotRt.gameObject.SetActive(true);
+        _visible = true;
+
+        while (t < dur)
+        {
+            if (version != _transitionVersion) yield break;
+
+            t += Time.unscaledDeltaTime;
+
+            float u = Mathf.Clamp01(t / dur);
+            float e = moveCurve != null ? moveCurve.Evaluate(u) : u;
+
+            _dotRt.anchoredPosition = Vector2.LerpUnclamped(fromPos, targetPos, e);
+
+            Color c = Color.LerpUnclamped(fromColor, toColor, e);
+            SetDotColor(c);
+
+            yield return null;
+        }
+
+        if (version != _transitionVersion) yield break;
+
+        _dotRt.anchoredPosition = targetPos;
+        SetDotColor(toColor);
+        _cg.alpha = 1f;
+        _visible = true;
+    }
+
+    void KillTransition()
+    {
+        if (_transitionCo != null)
+            StopCoroutine(_transitionCo);
+
+        _transitionCo = null;
     }
 
     public void NotifyListRebuilt()
