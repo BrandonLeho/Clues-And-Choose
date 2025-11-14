@@ -112,6 +112,7 @@
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceHoverScale.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinSlideInIntro.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceToPlacingPhaseBridge.cs" />
+    <Compile Include="Assets\Scripts\Gameloop\RoundTurnSummaryUI.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\PerimeterGlowEntry.cs" />
     <Compile Include="Assets\Scripts\UI\LobbyUIManager.cs" />
     <Compile Include="Assets\Scripts\Animation\ImpactPulse.cs" />
