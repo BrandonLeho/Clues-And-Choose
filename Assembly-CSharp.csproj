@@ -80,6 +80,7 @@
     <Compile Include="Assets\Scripts\Board\ColorChooser\ConfirmButtonNeonHover.cs" />
     <Compile Include="Assets\Scripts\Gameloop\PhaseController.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\ValidDropSpot.cs" />
+    <Compile Include="Assets\Scripts\Board\PlayerLIst\CoinPlacerDotBadge.cs" />
     <Compile Include="Assets\Scripts\Controller\CursorController\CursorControllerModule.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreRegistryNetBridge.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\Lock\CoinLockIconAnimator.cs" />
