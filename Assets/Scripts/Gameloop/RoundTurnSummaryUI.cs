@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
@@ -6,21 +5,16 @@ public class RoundTurnSummaryUI : MonoBehaviour
 {
     [SerializeField] TMP_Text label;
 
-    int _currentPlacementCycleIndex = 1;
-    int _currentTurnNumber = 0;
-    int _lastNonCluePlayerCount = 0;
-
-    readonly HashSet<uint> _placersThisCycle = new HashSet<uint>();
-    uint _currentPlacerNetId = 0;
-
-    int _lastRoundCycleIndex = -1;
-    int _lastMaxFullCycles = -1;
-    int _lastShownPlacementCycleIndex = -1;
-    int _lastShownTurnNumber = -1;
+    int _lastRoundCycleIndex = int.MinValue;
+    int _lastRoundCycleMax = int.MinValue;
+    int _lastPlacementCycle = int.MinValue;
+    int _lastTurnIndex = int.MinValue;
+    int _lastTurnMax = int.MinValue;
     string _lastClueName;
-    string _lastLabelText;
 
-    const int PlacementCycleMax = 2;
+    int _currentTurnIndex;
+    int _lastSeenPlacementCycle;
+    uint _lastPlacerNetId;
 
     void Awake()
     {
@@ -30,149 +24,105 @@ public class RoundTurnSummaryUI : MonoBehaviour
 
     void OnEnable()
     {
-        ResetCycleState();
-
         CoinPlacementTurnManager.OnPlacerChangedClient += HandlePlacerChanged;
-        RoundManager.Instance?.onRoundChangedClient?.RemoveListener(HandleClientRoundChanged);
-        RoundManager.Instance?.onRoundChangedClient?.AddListener(HandleClientRoundChanged);
     }
 
     void OnDisable()
     {
         CoinPlacementTurnManager.OnPlacerChangedClient -= HandlePlacerChanged;
-        RoundManager.Instance?.onRoundChangedClient?.RemoveListener(HandleClientRoundChanged);
-    }
-
-    void ResetCycleState()
-    {
-        _placersThisCycle.Clear();
-        _currentPlacerNetId = 0;
-        _currentPlacementCycleIndex = 1;
-        _currentTurnNumber = 0;
-        _lastNonCluePlayerCount = 0;
-    }
-
-    void HandleClientRoundChanged(int _, uint __)
-    {
-        ResetCycleState();
     }
 
     void HandlePlacerChanged(uint placerNetId)
     {
-        _currentPlacerNetId = placerNetId;
-
         var rm = RoundManager.Instance;
-        if (!rm)
+        uint clueId = rm ? rm.CurrentClueGiverNetId : 0u;
+
+        if (placerNetId == 0 || placerNetId == clueId)
         {
-            _currentTurnNumber = 0;
+            _lastPlacerNetId = placerNetId;
             return;
         }
 
-        uint clueNetId = rm.CurrentClueGiverNetId;
-
-        if (placerNetId == 0)
+        if (placerNetId != _lastPlacerNetId)
         {
-            _currentTurnNumber = 0;
-            return;
+            _lastPlacerNetId = placerNetId;
+            _currentTurnIndex++;
         }
+    }
 
-        if (clueNetId != 0 && placerNetId == clueNetId)
-        {
-            _currentTurnNumber = 0;
-            return;
-        }
-
-        int playerCount = (RosterStore.Instance != null && RosterStore.Instance.Names != null)
-            ? RosterStore.Instance.Names.Count
-            : 0;
-
-        int nonClueCount = playerCount - (clueNetId != 0 ? 1 : 0);
-        if (nonClueCount < 1)
-            nonClueCount = 0;
-
-        _lastNonCluePlayerCount = nonClueCount;
-
-        bool alreadySeenThisCycle = _placersThisCycle.Contains(placerNetId);
-
-        if (!alreadySeenThisCycle)
-        {
-            _placersThisCycle.Add(placerNetId);
-
-            if (nonClueCount > 0 && _placersThisCycle.Count > nonClueCount)
-            {
-                _currentPlacementCycleIndex = 2;
-                _placersThisCycle.Clear();
-                _placersThisCycle.Add(placerNetId);
-            }
-        }
-
-        _currentTurnNumber = _placersThisCycle.Count;
+    void ResetTurnForNewCycle()
+    {
+        _currentTurnIndex = 0;
+        _lastPlacerNetId = 0;
     }
 
     void Update()
     {
+        if (!label) return;
+
         var rm = RoundManager.Instance;
-        if (!rm || !label) return;
+        if (!rm) return;
 
+        var pc = PhaseController.Instance;
+
+        int fullCycles = rm.FullCyclesCompleted;
         int maxFullCycles = rm.MaxFullCycles;
-        int fullCyclesCompleted = rm.FullCyclesCompleted;
-        int roundCycleIndex = Mathf.Clamp(fullCyclesCompleted + 1, 1, maxFullCycles);
+        int roundCycleIndex = Mathf.Clamp(fullCycles + 1, 1, maxFullCycles);
 
-        string clueName = RosterStore.CurrentClueGiverName;
+        int placementCycle = pc ? pc.CurrentPlacementCycleDisplay : 0;
+        int maxPlacementCycles = pc ? pc.MaxPlacementCyclesDisplay : 2;
+
+        if (placementCycle != _lastSeenPlacementCycle)
+        {
+            _lastSeenPlacementCycle = placementCycle;
+            if (placementCycle >= 1)
+                ResetTurnForNewCycle();
+        }
 
         int playerCount = (RosterStore.Instance != null && RosterStore.Instance.Names != null)
             ? RosterStore.Instance.Names.Count
             : 0;
+        int nonCluePlayers = Mathf.Max(0, playerCount - 1);
 
-        uint clueNetId = rm.CurrentClueGiverNetId;
-        int nonClueCount = playerCount - (clueNetId != 0 ? 1 : 0);
-        if (nonClueCount < 0) nonClueCount = 0;
+        int displayTurnIndex = Mathf.Clamp(_currentTurnIndex, 0, nonCluePlayers);
 
-        _lastNonCluePlayerCount = nonClueCount;
-
-        string roundPart = $"Round {roundCycleIndex}/{maxFullCycles}";
-
-        int placementCycleIdx = Mathf.Clamp(_currentPlacementCycleIndex, 1, PlacementCycleMax);
-        string cyclePart = $"Cycle {placementCycleIdx}/{PlacementCycleMax}";
-
-        string turnPart;
-        if (nonClueCount > 0 && _currentTurnNumber > 0)
-        {
-            int clampedTurn = Mathf.Clamp(_currentTurnNumber, 1, nonClueCount);
-            turnPart = $"Turn {clampedTurn}/{nonClueCount}";
-        }
-        else if (nonClueCount > 0)
-        {
-            turnPart = $"Turn 0/{nonClueCount}";
-        }
-        else
-        {
-            turnPart = "Turn —";
-        }
-
-        string cluePart = string.IsNullOrWhiteSpace(clueName)
-            ? "Clue Giver: —"
-            : $"Clue Giver: {clueName}";
-
-        string text = $"{roundPart} • {cyclePart} • {turnPart} • {cluePart}";
+        string clueName = RosterStore.CurrentClueGiverName;
 
         if (roundCycleIndex == _lastRoundCycleIndex &&
-            maxFullCycles == _lastMaxFullCycles &&
-            placementCycleIdx == _lastShownPlacementCycleIndex &&
-            _currentTurnNumber == _lastShownTurnNumber &&
-            clueName == _lastClueName &&
-            text == _lastLabelText)
+            maxFullCycles == _lastRoundCycleMax &&
+            placementCycle == _lastPlacementCycle &&
+            displayTurnIndex == _lastTurnIndex &&
+            nonCluePlayers == _lastTurnMax &&
+            clueName == _lastClueName)
         {
             return;
         }
 
         _lastRoundCycleIndex = roundCycleIndex;
-        _lastMaxFullCycles = maxFullCycles;
-        _lastShownPlacementCycleIndex = placementCycleIdx;
-        _lastShownTurnNumber = _currentTurnNumber;
+        _lastRoundCycleMax = maxFullCycles;
+        _lastPlacementCycle = placementCycle;
+        _lastTurnIndex = displayTurnIndex;
+        _lastTurnMax = nonCluePlayers;
         _lastClueName = clueName;
-        _lastLabelText = text;
 
-        label.text = text;
+        string roundPart = $"Round {roundCycleIndex}/{maxFullCycles}";
+
+        string cyclePart = placementCycle > 0
+            ? $"Cycle {placementCycle}/{maxPlacementCycles}"
+            : $"Cycle -/{maxPlacementCycles}";
+
+        string turnPart;
+        if (nonCluePlayers > 0 && displayTurnIndex > 0)
+            turnPart = $"Turn {displayTurnIndex}/{nonCluePlayers}";
+        else if (nonCluePlayers > 0)
+            turnPart = $"Turn -/{nonCluePlayers}";
+        else
+            turnPart = "Turn -/-";
+
+        string cluePart = string.IsNullOrWhiteSpace(clueName)
+            ? "Clue Giver: —"
+            : $"Clue Giver: {clueName}";
+
+        label.text = $"{roundPart} • {cyclePart} • {turnPart} • {cluePart}";
     }
 }
