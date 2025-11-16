@@ -31,16 +31,13 @@ public sealed class PhaseController : NetworkBehaviour
     void Awake() => Instance = this;
 
     [SyncVar] int cyclesCompleted = 0;
-    [SyncVar] int placementCycleDisplay = 0;
     [SyncVar] int targetCol = -1;
     [SyncVar] int targetRow = -1;
     [SyncVar] Color targetColor = Color.white;
 
-    public int CurrentPlacementCycleDisplay => placementCycleDisplay;
-    public int MaxPlacementCyclesDisplay => 2;
-
     public static event System.Action<int, int, Color> OnClientTargetChosen;
     public bool ClientHasTarget => targetCol >= 0 && targetRow >= 0;
+    public static event System.Action<bool> OnClientRoundDecision;
 
     [Header("Debug")]
     [SerializeField] bool debugLogsEnabled = true;
@@ -85,7 +82,6 @@ public sealed class PhaseController : NetworkBehaviour
     public void CmdStartPlacingPhase()
     {
         cyclesCompleted = 0;
-        placementCycleDisplay = 1;
 
         targetCol = -1;
         targetRow = -1;
@@ -135,12 +131,10 @@ public sealed class PhaseController : NetworkBehaviour
 
         if (endNow)
         {
-            placementCycleDisplay = 0;
             ServerBeginScoring();
         }
         else
         {
-            placementCycleDisplay = 2;
             if (CoinPlacementTurnManager.Instance)
                 CoinPlacementTurnManager.Instance.ServerBeginCycleAtFirst(reverseSecondCycleEnabled);
 
@@ -201,6 +195,7 @@ public sealed class PhaseController : NetworkBehaviour
     void RpcAnnounceRoundDecision(bool endNow)
     {
         DLog(endNow ? "[Phase] Clue giver chose: END ROUND" : "[Phase] Clue giver chose: ANOTHER CYCLE");
+        OnClientRoundDecision?.Invoke(endNow);
     }
 
     [Server]
@@ -213,7 +208,6 @@ public sealed class PhaseController : NetworkBehaviour
         _ringsRevealFinished = false;
         _pendingAwards.Clear();
         _pendingClueGiverBonus = 0;
-        placementCycleDisplay = 0;
         RpcShowScoringBanner();
 
         if (targetCol < 0 || targetRow < 0)
