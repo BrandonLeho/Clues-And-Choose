@@ -221,11 +221,14 @@ public class RoundManager : NetworkBehaviour
         onClueGiverChangedClient?.Invoke(newNetId);
         RosterStore.SetCurrentClueGiverByNetId(newNetId);
 
+        if (CurrentRoundIndex <= 0 && _roundIndex <= 0)
+            return;
+
         var tn = FindFirstObjectByType<TurnNotification>();
         if (tn)
         {
             string name = RosterStore.CurrentClueGiverName;
-            tn.PlaySystemMessage($"CLUE GIVER\n{name}");
+            tn.PlaySystemMessage($"<size=80%>CLUE GIVER</size>\n{name}");
         }
     }
 
