@@ -220,6 +220,13 @@ public class RoundManager : NetworkBehaviour
     {
         onClueGiverChangedClient?.Invoke(newNetId);
         RosterStore.SetCurrentClueGiverByNetId(newNetId);
+
+        var tn = FindFirstObjectByType<TurnNotification>();
+        if (tn)
+        {
+            string name = RosterStore.CurrentClueGiverName;
+            tn.PlaySystemMessage($"CLUE GIVER\n{name}");
+        }
     }
 
     [ClientRpc]
