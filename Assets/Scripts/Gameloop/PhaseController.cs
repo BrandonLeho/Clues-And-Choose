@@ -291,7 +291,7 @@ public sealed class PhaseController : NetworkBehaviour
     void RpcShowScoringBanner()
     {
         var tn = FindFirstObjectByType<TurnNotification>();
-        if (tn) tn.PlaySystemMessage("SCORING");
+        if (tn) tn.PlaySystemMessage("SCORING", true);
         GridDimmerOverlay.Instance?.FadeInDuringScoring();
 
         if (ScorePop.Instance)

@@ -59,6 +59,7 @@ public sealed class TurnNotification : MonoBehaviour
 
     bool _testPrev;
     bool _playingSystemMessage;
+    bool _isScoringBanner;
 
     void Reset()
     {
@@ -165,9 +166,10 @@ public sealed class TurnNotification : MonoBehaviour
         root.anchoredPosition = new Vector2(+halfW + offscreenPadding, _startPos.y);
     }
 
-    public void PlaySystemMessage(string text)
+    public void PlaySystemMessage(string text, bool isScoringBanner = false)
     {
         _playingSystemMessage = true;
+        _isScoringBanner = isScoringBanner;
 
         if (label) label.text = text;
         if (cg) cg.alpha = 1f;
@@ -257,12 +259,18 @@ public sealed class TurnNotification : MonoBehaviour
         if (_playingSystemMessage)
         {
             _playingSystemMessage = false;
-            GridDimmerOverlay.Instance?.OnScoringBannerFinished();
-            var phase = PhaseController.Instance;
-            if (phase)
+
+            if (_isScoringBanner)
             {
-                phase.CmdNotifyScoringBannerFinished();
+                GridDimmerOverlay.Instance?.OnScoringBannerFinished();
+                var phase = PhaseController.Instance;
+                if (phase)
+                {
+                    phase.CmdNotifyScoringBannerFinished();
+                }
             }
+
+            _isScoringBanner = false;
         }
     }
 
