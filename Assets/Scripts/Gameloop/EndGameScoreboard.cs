@@ -1,36 +1,44 @@
 using System.Collections.Generic;
 using System.Linq;
-using Mirror;
+using TMPro;
 using UnityEngine;
 
-public class EndGameScoreboardConsole : NetworkBehaviour
+public class EndGameScoreboardUI : MonoBehaviour
 {
+    [Header("Layout")]
+    [SerializeField] Transform listParent;
+    [SerializeField] GameObject rowPrefab;
+
+    [Header("Bar Sizing")]
+    [SerializeField] float minBarWidth = 20f;
+    [SerializeField] float maxBarWidth = 400f;
+
+    [Header("Winner Display")]
+    [SerializeField] TextMeshProUGUI winnerLabel;
+
     [Header("Options")]
-    [SerializeField] bool autoPrintOnCyclesFinished = true;
-    [SerializeField] bool debugLogsEnabled = true;
+    [SerializeField] bool autoRefreshOnEnable = true;
+    [SerializeField] bool autoRefreshOnScoreChanged = false;
+    [SerializeField] bool debugLogsEnabled = false;
 
     void OnEnable()
     {
-        if (autoPrintOnCyclesFinished)
-            RoundManager.OnServerClueGiverCyclesFinished += HandleCyclesFinished;
+        if (autoRefreshOnScoreChanged)
+            ScoreRegistry.OnScoreChanged += HandleScoreChanged;
+
+        if (autoRefreshOnEnable)
+            Refresh();
     }
 
     void OnDisable()
     {
-        if (autoPrintOnCyclesFinished)
-            RoundManager.OnServerClueGiverCyclesFinished -= HandleCyclesFinished;
+        if (autoRefreshOnScoreChanged)
+            ScoreRegistry.OnScoreChanged -= HandleScoreChanged;
     }
 
-    [Server]
-    void HandleCyclesFinished()
+    void HandleScoreChanged(string _, int __)
     {
-        PrintScoreboardToConsole();
-    }
-
-    [ContextMenu("Debug Print Scoreboard")]
-    public void DebugPrintScoreboardContextMenu()
-    {
-        PrintScoreboardToConsole();
+        Refresh();
     }
 
     void DLog(object msg)
@@ -38,20 +46,42 @@ public class EndGameScoreboardConsole : NetworkBehaviour
         if (debugLogsEnabled) Debug.Log(msg);
     }
 
-    public void PrintScoreboardToConsole()
+    [ContextMenu("Refresh Scoreboard")]
+    public void Refresh()
     {
-        var allScores = ScoreRegistry.GetAll();
-        if (allScores == null || allScores.Count == 0)
+        if (!listParent || !rowPrefab)
         {
-            DLog("[Scoreboard] No scores recorded.");
+            DLog("[ScoreboardUI] Missing listParent or rowPrefab.");
+            return;
+        }
+
+        for (int i = listParent.childCount - 1; i >= 0; i--)
+            Destroy(listParent.GetChild(i).gameObject);
+
+        var names = new List<string>();
+
+        if (RosterStore.Instance != null && RosterStore.Instance.Names != null && RosterStore.Instance.Names.Count > 0)
+        {
+            names.AddRange(RosterStore.Instance.Names);
+        }
+        else
+        {
+            var scoresDict = ScoreRegistry.GetAll();
+            if (scoresDict != null)
+                names.AddRange(scoresDict.Keys);
+        }
+
+        if (names.Count == 0)
+        {
+            DLog("[ScoreboardUI] No player names found.");
+            if (winnerLabel) winnerLabel.text = "No players.";
             return;
         }
 
         var entries = new List<ScoreEntry>();
-        foreach (var kv in allScores)
+        foreach (var name in names)
         {
-            string name = kv.Key;
-            int score = kv.Value;
+            int score = ScoreRegistry.GetScore(name);
             Color color;
             if (!RegistryNameColorLookup.TryGetColorForName(name, out color))
                 color = Color.white;
@@ -69,52 +99,45 @@ public class EndGameScoreboardConsole : NetworkBehaviour
             .ThenBy(e => e.Name)
             .ToList();
 
-        int roundIndex = RoundManager.Instance ? RoundManager.Instance.CurrentRoundIndex : -1;
-        DLog("==================================");
-        DLog("[Scoreboard] FINAL SCORES");
+        int maxScore = 0;
+        foreach (var e in entries)
+            if (e.Score > maxScore) maxScore = e.Score;
+        if (maxScore <= 0) maxScore = 1;
 
-        if (roundIndex >= 0)
-            DLog("[Scoreboard] Final Round Index: " + roundIndex);
-
-        DLog("[Scoreboard] Players: " + entries.Count);
-        DLog("----------------------------------");
-
-        int rank = 1;
         foreach (var e in entries)
         {
-            string hex = ColorUtility.ToHtmlStringRGB(e.Color);
-            int r = Mathf.RoundToInt(e.Color.r * 255f);
-            int g = Mathf.RoundToInt(e.Color.g * 255f);
-            int b = Mathf.RoundToInt(e.Color.b * 255f);
+            float t = Mathf.Clamp01((float)e.Score / maxScore);
+            float width = Mathf.Lerp(minBarWidth, maxBarWidth, t);
 
-            DLog(
-                $"{rank,2}. {e.Name,-16} " +
-                $"Score: {e.Score,3}  " +
-                $"Color: #{hex} (RGB {r},{g},{b})"
-            );
-            rank++;
+            var rowObj = Instantiate(rowPrefab, listParent);
+            var row = rowObj.GetComponent<EndGameScoreboardRow>();
+            if (!row)
+            {
+                DLog("[ScoreboardUI] Row prefab missing EndGameScoreboardRow component.");
+                continue;
+            }
+
+            row.Bind(e.Name, e.Score, e.Color, width);
         }
 
-        if (entries.Count > 0)
+        if (winnerLabel)
         {
             int bestScore = entries[0].Score;
             var winners = entries.Where(e => e.Score == bestScore).ToList();
 
-            DLog("----------------------------------");
             if (winners.Count == 1)
             {
                 var w = winners[0];
-                string hex = ColorUtility.ToHtmlStringRGB(w.Color);
-                DLog($"[Scoreboard] WINNER: {w.Name} with {bestScore} pts (#{hex})");
+                winnerLabel.text = $"Winner: {w.Name} ({w.Score})";
+                winnerLabel.color = w.Color;
             }
             else
             {
-                var names = string.Join(", ", winners.Select(w => w.Name));
-                DLog($"[Scoreboard] TIE WINNERS ({bestScore} pts): {names}");
+                string namesJoined = string.Join(", ", winners.Select(w => w.Name));
+                winnerLabel.text = $"Winners: {namesJoined} ({bestScore})";
+                winnerLabel.color = Color.white;
             }
         }
-
-        DLog("==================================");
     }
 
     struct ScoreEntry
