@@ -50,7 +50,6 @@ public sealed class TurnNotification : MonoBehaviour
     [SerializeField] string testDisplayName = "Test Player";
     [SerializeField] bool testBypassGates = true;
 
-
     bool _targetChosen;
     uint _pendingPlacerId;
 
@@ -60,6 +59,7 @@ public sealed class TurnNotification : MonoBehaviour
     bool _testPrev;
     bool _playingSystemMessage;
     bool _isScoringBanner;
+    bool _isGameFinishedBanner;
 
     void Reset()
     {
@@ -111,7 +111,6 @@ public sealed class TurnNotification : MonoBehaviour
             _testPrev = false;
         }
     }
-
 
     void HandlePlacerChanged(uint placerNetId)
     {
@@ -166,10 +165,11 @@ public sealed class TurnNotification : MonoBehaviour
         root.anchoredPosition = new Vector2(+halfW + offscreenPadding, _startPos.y);
     }
 
-    public void PlaySystemMessage(string text, bool isScoringBanner = false)
+    public void PlaySystemMessage(string text, bool isScoringBanner = false, bool isGameFinishedBanner = false)
     {
         _playingSystemMessage = true;
         _isScoringBanner = isScoringBanner;
+        _isGameFinishedBanner = isGameFinishedBanner;
 
         if (label) label.text = text;
         if (cg) cg.alpha = 1f;
@@ -270,7 +270,17 @@ public sealed class TurnNotification : MonoBehaviour
                 }
             }
 
+            if (_isGameFinishedBanner)
+            {
+                var reveal = FindFirstObjectByType<ScoreboardReveal>();
+                if (reveal)
+                {
+                    reveal.ShowScoreboardNow();
+                }
+            }
+
             _isScoringBanner = false;
+            _isGameFinishedBanner = false;
         }
     }
 
@@ -345,5 +355,4 @@ public sealed class TurnNotification : MonoBehaviour
         if (label) label.text = $"{textPrefix} {(!string.IsNullOrWhiteSpace(testDisplayName) ? testDisplayName : "Player")}";
         RestartPlay();
     }
-
 }

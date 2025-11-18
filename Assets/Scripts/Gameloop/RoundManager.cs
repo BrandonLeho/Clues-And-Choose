@@ -228,7 +228,7 @@ public class RoundManager : NetworkBehaviour
         if (tn)
         {
             string name = RosterStore.CurrentClueGiverName;
-            tn.PlaySystemMessage($"<size=80%>CLUE GIVER</size>\n{name}");
+            tn.PlaySystemMessage($"<size=65%>CLUE GIVER</size>\n{name}");
         }
     }
 

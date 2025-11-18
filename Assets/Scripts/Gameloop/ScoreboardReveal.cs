@@ -23,6 +23,19 @@ public class ScoreboardReveal : NetworkBehaviour
     [ClientRpc]
     void RpcShowScoreboard()
     {
+        var tn = FindFirstObjectByType<TurnNotification>();
+        if (tn != null)
+        {
+            tn.PlaySystemMessage("GAME FINISHED", false, true);
+        }
+        else
+        {
+            ShowScoreboardNow();
+        }
+    }
+
+    public void ShowScoreboardNow()
+    {
         if (scoreboardUI)
             scoreboardUI.SetActive(true);
 
