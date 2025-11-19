@@ -166,10 +166,6 @@ public sealed class CoinPlacerDotBadge : MonoBehaviour
 
         var dotGo = new GameObject("CoinPlacerDot", typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
         dotGo.transform.SetParent(_listParentRt ? _listParentRt : transform as RectTransform, false);
-
-        var layoutElement = dotGo.AddComponent<LayoutElement>();
-        layoutElement.ignoreLayout = true;
-
         _dotRt = (RectTransform)dotGo.transform;
         _dotImg = dotGo.GetComponent<Image>();
         _cg = dotGo.GetComponent<CanvasGroup>();
@@ -273,7 +269,7 @@ public sealed class CoinPlacerDotBadge : MonoBehaviour
         {
             KillTransition();
             _dotRt.gameObject.SetActive(true);
-            _dotRt.anchoredPosition = targetPos;
+            _dotRt.localPosition = new Vector3(targetPos.x, targetPos.y, _dotRt.localPosition.z);
             _cg.alpha = 1f;
             SetDotColor(targetColor);
             _visible = true;
@@ -324,7 +320,7 @@ public sealed class CoinPlacerDotBadge : MonoBehaviour
     IEnumerator Co_PopIn(Vector2 targetPos, Color targetColor, int version)
     {
         _dotRt.gameObject.SetActive(true);
-        _dotRt.anchoredPosition = targetPos;
+        _dotRt.localPosition = new Vector3(targetPos.x, targetPos.y, _dotRt.localPosition.z);
 
         float dur = popFadeDuration <= 0f ? 0.001f : popFadeDuration;
 
@@ -386,7 +382,7 @@ public sealed class CoinPlacerDotBadge : MonoBehaviour
     {
         float dur = moveDuration <= 0f ? 0.001f : moveDuration;
 
-        Vector2 fromPos = _dotRt.anchoredPosition;
+        Vector2 fromPos = new Vector2(_dotRt.localPosition.x, _dotRt.localPosition.y);
         Color fromColor = _currentColor;
         Color toColor = targetColor;
 
@@ -405,7 +401,8 @@ public sealed class CoinPlacerDotBadge : MonoBehaviour
             float u = Mathf.Clamp01(t / dur);
             float e = moveCurve != null ? moveCurve.Evaluate(u) : u;
 
-            _dotRt.anchoredPosition = Vector2.LerpUnclamped(fromPos, targetPos, e);
+            Vector2 newPos = Vector2.LerpUnclamped(fromPos, targetPos, e);
+            _dotRt.localPosition = new Vector3(newPos.x, newPos.y, _dotRt.localPosition.z);
 
             Color c = Color.LerpUnclamped(fromColor, toColor, e);
             SetDotColor(c);
@@ -415,7 +412,7 @@ public sealed class CoinPlacerDotBadge : MonoBehaviour
 
         if (version != _transitionVersion) yield break;
 
-        _dotRt.anchoredPosition = targetPos;
+        _dotRt.localPosition = new Vector3(targetPos.x, targetPos.y, _dotRt.localPosition.z);
         SetDotColor(toColor);
         _cg.alpha = 1f;
         _visible = true;
