@@ -166,6 +166,10 @@ public sealed class CoinPlacerDotBadge : MonoBehaviour
 
         var dotGo = new GameObject("CoinPlacerDot", typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
         dotGo.transform.SetParent(_listParentRt ? _listParentRt : transform as RectTransform, false);
+
+        var layoutElement = dotGo.AddComponent<LayoutElement>();
+        layoutElement.ignoreLayout = true;
+
         _dotRt = (RectTransform)dotGo.transform;
         _dotImg = dotGo.GetComponent<Image>();
         _cg = dotGo.GetComponent<CanvasGroup>();
