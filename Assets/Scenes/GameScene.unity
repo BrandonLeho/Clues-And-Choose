@@ -3762,7 +3762,6 @@ RectTransform:
   - {fileID: 1884722873}
   - {fileID: 1977132911}
   - {fileID: 809318053}
-  - {fileID: 1839183468}
   m_Father: {fileID: 712268032}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
@@ -12833,7 +12832,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 0.66735995
+    x: 1.7747365
     y: 0
     width: 10
     height: 10
@@ -26743,7 +26742,7 @@ MonoBehaviour:
   onClueGiverChangedClient:
     m_PersistentCalls:
       m_Calls: []
-  maxFullCycles: 2
+  maxFullCycles: 1
   debugLogsEnabled: 0
 --- !u!4 &495439634
 Transform:
@@ -39915,6 +39914,7 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0
   scoreboardUI: {fileID: 1839183467}
+  gridOutroAnimator: {fileID: 1936569675}
 --- !u!1 &712268028
 GameObject:
   m_ObjectHideFlags: 0
@@ -40014,6 +40014,7 @@ RectTransform:
   - {fileID: 244676291}
   - {fileID: 70659502}
   - {fileID: 1327322917}
+  - {fileID: 794928390}
   - {fileID: 1564397205}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -44822,6 +44823,55 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 787002947}
   m_CullTransparentMesh: 1
+--- !u!1 &794928389
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 794928390}
+  - component: {fileID: 794928391}
+  m_Layer: 5
+  m_Name: EndGameScoreboard
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!224 &794928390
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 794928389}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1839183468}
+  m_Father: {fileID: 712268032}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!225 &794928391
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 794928389}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!224 &796938494 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 3337803732932086652, guid: 96c2c7455eef99f46961f53ff646d8a6, type: 3}
@@ -106957,12 +107007,12 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1839183467}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 70659502}
+  m_Father: {fileID: 794928390}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -112467,6 +112517,7 @@ GameObject:
   - component: {fileID: 1936569670}
   - component: {fileID: 1936569671}
   - component: {fileID: 1936569672}
+  - component: {fileID: 1936569675}
   - component: {fileID: 1936569673}
   - component: {fileID: 1936569674}
   m_Layer: 5
@@ -113195,6 +113246,148 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnableHoverAfterFlyIn
   gridRoot: {fileID: 1936569665}
   flyIn: {fileID: 120796077}
+--- !u!114 &1936569675
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1936569664}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69a91d44a094cf84fa7e0bf0e00652e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ColorGridOutroAnimator
+  gridRoot: {fileID: 1936569665}
+  autoCollect: 1
+  cellRects: []
+  perCellDuration: 1.5
+  totalDuration: 5
+  useUnscaledTime: 1
+  endScale: 2
+  scaleCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  fadeCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  offsetMode: 0
+  distanceOffsetScaleX: 1
+  distanceOffsetScaleY: 1
+  maxOffsetX: 400
+  maxOffsetY: 200
+  extraDownOffset: 0
+  offsetCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  gridCanvasGroup: {fileID: 70659501}
+  scoreboardCanvasGroup: {fileID: 794928391}
+  canvasFadeDelay: 1
+  canvasFadeDuration: 3.5
+  canvasFadeCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  fadeCoinLockIconWithGrid: 1
+  coinLockIconRenderer: {fileID: 38887940}
+  coinLockBackgroundRenderer: {fileID: 1128015561}
+  fadeCoinsWithGrid: 1
+  coinsRoot: {fileID: 1607850558}
+  coinShrinkDuration: 0.5
+  destroyCoinsOnShrinkComplete: 1
+  freezeLayoutDuringAnimation: 1
+  freezeByDisablingGrid: 1
+  lockAllCellHoversOnPlay: 1
+  unlockHoversOnComplete: 0
+  disableRaycasts: 1
+  randomizeSeed: 1
+  seed: 12345
+  OnAnimationComplete:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1001 &1936751886
 PrefabInstance:
   m_ObjectHideFlags: 0

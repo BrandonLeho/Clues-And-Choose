@@ -66,6 +66,7 @@
     <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverRoulette\RouletteText.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorLockRegistry.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardMarker.cs" />
+    <Compile Include="Assets\Scripts\Board\ColorBoard\ColorGridOutroAnimator.cs" />
     <Compile Include="Assets\Scripts\Gameloop\ClueGiverState.cs" />
     <Compile Include="Assets\Scripts\Board\EndRoundPrompt\EndRoundOptionHover.cs" />
     <Compile Include="Assets\Scripts\Background\UVScroller.cs" />
@@ -83,7 +84,6 @@
     <Compile Include="Assets\Scripts\Board\PlayerLIst\CoinPlacerDotBadge.cs" />
     <Compile Include="Assets\Scripts\Controller\CursorController\CursorControllerModule.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreRegistryNetBridge.cs" />
-    <Compile Include="Assets\Scripts\Board\Coins\Lock\CoinLockIconAnimator.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerNameSync.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\PaletteGrid.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerListBinder.cs" />
@@ -113,6 +113,7 @@
     <Compile Include="Assets\Scripts\Board\Coins\Arrow\CoinPlacementProbe.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerNameColorBinder.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceHoverScale.cs" />
+    <Compile Include="Assets\Scripts\Board\Coins\Lock\CoinLockIconGroupAnimator.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinSlideInIntro.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\ChoiceToPlacingPhaseBridge.cs" />
     <Compile Include="Assets\Scripts\Gameloop\RoundTurnSummaryUI.cs" />

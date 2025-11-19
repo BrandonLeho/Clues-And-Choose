@@ -4,6 +4,9 @@ using UnityEngine;
 public class ScoreboardReveal : NetworkBehaviour
 {
     [SerializeField] GameObject scoreboardUI;
+    [SerializeField] ColorGridOutroAnimator gridOutroAnimator;
+
+    bool _waitingForOutro;
 
     void OnEnable()
     {
@@ -13,6 +16,11 @@ public class ScoreboardReveal : NetworkBehaviour
     void OnDisable()
     {
         RoundManager.OnServerClueGiverCyclesFinished -= HandleGameEnded;
+
+        if (gridOutroAnimator != null)
+        {
+            gridOutroAnimator.OnAnimationComplete.RemoveListener(HandleGridOutroComplete);
+        }
     }
 
     void HandleGameEnded()
@@ -32,6 +40,30 @@ public class ScoreboardReveal : NetworkBehaviour
         {
             ShowScoreboardNow();
         }
+    }
+
+    public void OnGameFinishedBannerComplete()
+    {
+        if (gridOutroAnimator != null)
+        {
+            if (!_waitingForOutro)
+            {
+                _waitingForOutro = true;
+                gridOutroAnimator.OnAnimationComplete.RemoveListener(HandleGridOutroComplete);
+                gridOutroAnimator.OnAnimationComplete.AddListener(HandleGridOutroComplete);
+                gridOutroAnimator.Play();
+            }
+        }
+        else
+        {
+            ShowScoreboardNow();
+        }
+    }
+
+    void HandleGridOutroComplete()
+    {
+        _waitingForOutro = false;
+        ShowScoreboardNow();
     }
 
     public void ShowScoreboardNow()

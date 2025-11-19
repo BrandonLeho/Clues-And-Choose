@@ -275,7 +275,7 @@ public sealed class TurnNotification : MonoBehaviour
                 var reveal = FindFirstObjectByType<ScoreboardReveal>();
                 if (reveal)
                 {
-                    reveal.ShowScoreboardNow();
+                    reveal.OnGameFinishedBannerComplete();
                 }
             }
 

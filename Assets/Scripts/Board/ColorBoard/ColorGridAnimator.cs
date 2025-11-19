@@ -48,7 +48,7 @@ public class ColorGridAnimator : MonoBehaviour
     ContentSizeFitter _fitter;
     bool _gridWasEnabled, _fitterWasEnabled;
 
-    struct CellState
+    class CellState
     {
         public RectTransform rt;
         public Vector2 basePos;
@@ -92,7 +92,11 @@ public class ColorGridAnimator : MonoBehaviour
     IEnumerator Co_Play()
     {
         if (waitOneFrameForLayout) yield return null;
-        if (extraLayoutFrames > 0) for (int i = 0; i < extraLayoutFrames; i++) yield return null;
+        if (extraLayoutFrames > 0)
+        {
+            for (int i = 0; i < extraLayoutFrames; i++)
+                yield return null;
+        }
 
         Canvas.ForceUpdateCanvases();
         if (gridRoot) LayoutRebuilder.ForceRebuildLayoutImmediate(gridRoot);
@@ -108,20 +112,20 @@ public class ColorGridAnimator : MonoBehaviour
         _activeCount = _cells.Count;
 
         float endAt = Now() + GetWindow() + dropDuration + 0.05f;
-        while (_running && Now() < endAt) yield return null;
+        while (_running && Now() < endAt)
+            yield return null;
 
         for (int i = 0; i < _cells.Count; i++)
         {
             var s = _cells[i];
-            RestoreCanvas(ref s);
-            RestoreLayoutElement(ref s);
+            RestoreCanvas(s);
+            RestoreLayoutElement(s);
             if (s.cg)
             {
                 s.cg.alpha = 1f;
                 s.cg.interactable = true;
                 s.cg.blocksRaycasts = true;
             }
-            _cells[i] = s;
         }
 
         EndFreezeLayout();
@@ -169,7 +173,7 @@ public class ColorGridAnimator : MonoBehaviour
             var basePos = rt.anchoredPosition;
             var baseScale = rt.localScale;
 
-            Vector2 dir = (basePos - _center);
+            Vector2 dir = basePos - _center;
             float dist = dir.magnitude;
             Vector2 dirN = dist > 1e-3f ? dir / dist : Vector2.zero;
 
@@ -207,7 +211,7 @@ public class ColorGridAnimator : MonoBehaviour
                 le.ignoreLayout = true;
             }
 
-            CellState s = new CellState
+            var s = new CellState
             {
                 rt = rt,
                 basePos = basePos,
@@ -275,12 +279,12 @@ public class ColorGridAnimator : MonoBehaviour
             for (int k = 0; k < n; k++)
             {
                 int i = order[k];
-                float d = (n == 1) ? 0f : (window * k) / (n - 1);
                 var s = _cells[i];
+
+                float d = (n == 1) ? 0f : (window * k) / (n - 1);
                 s.startTime = now + d;
                 s.endTime = s.startTime + dropDuration;
                 s.fadeEndTime = s.startTime + (fadeInDuringDrop ? (fadeInTime > 0f ? fadeInTime : dropDuration) : 0f);
-                _cells[i] = s;
             }
         }
         else
@@ -288,12 +292,12 @@ public class ColorGridAnimator : MonoBehaviour
             for (int k = 0; k < n; k++)
             {
                 int i = order[k];
-                float d = (float)rng.NextDouble() * window;
                 var s = _cells[i];
+
+                float d = (float)rng.NextDouble() * window;
                 s.startTime = now + d;
                 s.endTime = s.startTime + dropDuration;
                 s.fadeEndTime = s.startTime + (fadeInDuringDrop ? (fadeInTime > 0f ? fadeInTime : dropDuration) : 0f);
-                _cells[i] = s;
             }
             if (scheduleMode == ScheduleMode.TotalDurationRandom && n > 0)
             {
@@ -302,7 +306,6 @@ public class ColorGridAnimator : MonoBehaviour
                 s.startTime = now + window;
                 s.endTime = s.startTime + dropDuration;
                 s.fadeEndTime = s.startTime + (fadeInDuringDrop ? (fadeInTime > 0f ? fadeInTime : dropDuration) : 0f);
-                _cells[last] = s;
             }
         }
     }
@@ -334,6 +337,7 @@ public class ColorGridAnimator : MonoBehaviour
             {
                 if (now < s.startTime) continue;
                 s.started = true;
+
                 if (bringToFrontWithCanvas)
                 {
                     var existing = s.rt.GetComponent<Canvas>();
@@ -358,7 +362,9 @@ public class ColorGridAnimator : MonoBehaviour
                 {
                     s.rt.SetAsLastSibling();
                 }
-                if (hideUntilDropStart && !fadeInDuringDrop && s.cg) s.cg.alpha = 1f;
+
+                if (hideUntilDropStart && !fadeInDuringDrop && s.cg)
+                    s.cg.alpha = 1f;
             }
 
             anyActive = true;
@@ -371,7 +377,9 @@ public class ColorGridAnimator : MonoBehaviour
 
             if (hideUntilDropStart && fadeInDuringDrop && s.cg)
             {
-                float fp = s.fadeEndTime > s.startTime ? Mathf.Clamp01((now - s.startTime) / (s.fadeEndTime - s.startTime)) : 1f;
+                float fp = s.fadeEndTime > s.startTime
+                    ? Mathf.Clamp01((now - s.startTime) / (s.fadeEndTime - s.startTime))
+                    : 1f;
                 s.cg.alpha = fp;
             }
 
@@ -385,23 +393,23 @@ public class ColorGridAnimator : MonoBehaviour
                     s.cg.interactable = true;
                     s.cg.blocksRaycasts = true;
                 }
-                RestoreCanvas(ref s);
-                RestoreLayoutElement(ref s);
+                RestoreCanvas(s);
+                RestoreLayoutElement(s);
                 s.finished = true;
                 _activeCount--;
             }
-
-            _cells[i] = s;
         }
 
-        if (!anyActive || _activeCount <= 0) _running = false;
+        if (!anyActive || _activeCount <= 0)
+            _running = false;
     }
 
-    void RestoreCanvas(ref CellState s)
+    void RestoreCanvas(CellState s)
     {
         if (!bringToFrontWithCanvas || s.rt == null) return;
         var c = s.tempCanvas;
         if (!c) return;
+
         if (s.hadCanvasBefore)
         {
             c.overrideSorting = s.prevOverrideSorting;
@@ -414,7 +422,7 @@ public class ColorGridAnimator : MonoBehaviour
         s.tempCanvas = null;
     }
 
-    void RestoreLayoutElement(ref CellState s)
+    void RestoreLayoutElement(CellState s)
     {
         if (!freezeLayoutDuringAnimation || freezeByDisablingGrid) return;
         if (!s.rt) return;
