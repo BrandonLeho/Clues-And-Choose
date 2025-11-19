@@ -115,7 +115,10 @@ public sealed class TurnNotification : MonoBehaviour
     void HandlePlacerChanged(uint placerNetId)
     {
         if (_playingSystemMessage)
+        {
+            _pendingPlacerId = placerNetId;
             return;
+        }
 
         if (requireCardChoice && !_targetChosen)
         {
