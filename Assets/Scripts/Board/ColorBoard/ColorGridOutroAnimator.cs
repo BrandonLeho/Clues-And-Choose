@@ -359,14 +359,17 @@ public class ColorGridOutroAnimator : MonoBehaviour
         float shrinkDuration = Mathf.Max(0.01f, coinShrinkDuration);
 
         float t0 = Now();
-        float totalDuration = Mathf.Max(fadeDuration, shrinkDuration);
-        float endTime = t0 + totalDuration;
+        float fadeEnd = t0 + fadeDuration;
+        float shrinkEnd = t0 + shrinkDuration;
+        float endTime = Mathf.Max(fadeEnd, shrinkEnd);
+
+        bool coinsDestroyedOnShrink = false;
 
         while (Now() < endTime)
         {
-            float elapsed = Now() - t0;
+            float now = Now();
+            float elapsed = now - t0;
 
-            // Grid + icon fade use fadeDuration
             float fadeT = Mathf.Clamp01(elapsed / fadeDuration);
             float a = canvasFadeCurve.Evaluate(fadeT);
 
@@ -387,7 +390,6 @@ public class ColorGridOutroAnimator : MonoBehaviour
                 coinLockBackgroundRenderer.color = c;
             }
 
-            // Coins shrink using their own duration
             if (coinTransforms != null && coinBaseScales != null)
             {
                 float shrinkT = Mathf.Clamp01(elapsed / shrinkDuration);
@@ -401,12 +403,19 @@ public class ColorGridOutroAnimator : MonoBehaviour
                     var baseScale = coinBaseScales[i];
                     tf.localScale = baseScale * shrinkFactor;
                 }
+
+                if (!coinsDestroyedOnShrink && shrinkT >= 1f && destroyCoinsOnShrinkComplete)
+                {
+                    coinsDestroyedOnShrink = true;
+
+                    if (coinsRoot)
+                        Destroy(coinsRoot.gameObject);
+                }
             }
 
             yield return null;
         }
 
-        // Snap to fully invisible / hidden at the end
         if (gridCanvasGroup)
         {
             gridCanvasGroup.alpha = 0f;
@@ -429,7 +438,7 @@ public class ColorGridOutroAnimator : MonoBehaviour
             coinLockBackgroundRenderer.color = c;
         }
 
-        if (fadeCoinsWithGrid && coinsRoot)
+        if (fadeCoinsWithGrid && coinsRoot && !destroyCoinsOnShrinkComplete)
         {
             var coinVisuals = new List<CoinVisual>();
             coinsRoot.GetComponentsInChildren(true, coinVisuals);
@@ -440,9 +449,6 @@ public class ColorGridOutroAnimator : MonoBehaviour
                 if (!cv) continue;
 
                 cv.transform.localScale = Vector3.zero;
-
-                if (destroyCoinsOnShrinkComplete)
-                    Destroy(cv.gameObject);
             }
         }
 

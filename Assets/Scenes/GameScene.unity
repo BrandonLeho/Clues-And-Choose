@@ -12832,7 +12832,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 0.21226634
+    x: 11.085388
     y: 0
     width: 10
     height: 10
@@ -39880,7 +39880,7 @@ MonoBehaviour:
   winnerLabel: {fileID: 0}
   autoRefreshOnEnable: 1
   autoRefreshOnScoreChanged: 0
-  debugLogsEnabled: 1
+  debugLogsEnabled: 0
 --- !u!114 &705955803
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -44834,7 +44834,7 @@ GameObject:
   - component: {fileID: 794928390}
   - component: {fileID: 794928391}
   m_Layer: 5
-  m_Name: EndGameScoreboard
+  m_Name: EndGameScoreboardCanvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -106999,7 +106999,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1839183468
 RectTransform:
   m_ObjectHideFlags: 0
