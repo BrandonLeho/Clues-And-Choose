@@ -83,8 +83,10 @@
     <Compile Include="Assets\Scripts\Gameloop\PhaseController.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\ValidDropSpot.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\CoinPlacerDotBadge.cs" />
+    <Compile Include="Assets\Scripts\Gameloop\End Game Scoreboard\ScoreHistoryRecorder.cs" />
     <Compile Include="Assets\Scripts\Controller\CursorController\CursorControllerModule.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreRegistryNetBridge.cs" />
+    <Compile Include="Assets\Scripts\Gameloop\End Game Scoreboard\ScoreProgressGraph.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerNameSync.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\PaletteGrid.cs" />
     <Compile Include="Assets\Scripts\Gameloop\End Game Scoreboard\ScoreboardEntryAnimator.cs" />

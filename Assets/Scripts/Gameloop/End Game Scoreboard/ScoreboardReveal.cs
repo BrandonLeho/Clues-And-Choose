@@ -68,6 +68,11 @@ public class ScoreboardReveal : NetworkBehaviour
 
     public void ShowScoreboardNow()
     {
+        if (ScoreHistoryRecorder.Instance != null)
+        {
+            ScoreHistoryRecorder.Instance.RecordSnapshotNow();
+        }
+
         if (scoreboardUI)
             scoreboardUI.SetActive(true);
 
