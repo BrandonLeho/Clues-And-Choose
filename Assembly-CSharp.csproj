@@ -64,6 +64,7 @@
     <Compile Include="Assets\Scripts\Board\Coins\CoinPulseController.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\ColorBoard2D.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverRoulette\RouletteText.cs" />
+    <Compile Include="Assets\Scripts\Gameloop\End Game Scoreboard\EndGameScoreboardRow.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorLockRegistry.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardMarker.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\ColorGridOutroAnimator.cs" />
@@ -86,6 +87,7 @@
     <Compile Include="Assets\Scripts\Board\Scoreboard\ScoreRegistryNetBridge.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerNameSync.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\PaletteGrid.cs" />
+    <Compile Include="Assets\Scripts\Gameloop\End Game Scoreboard\ScoreboardEntryAnimator.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\PlayerListBinder.cs" />
     <Compile Include="Assets\Scripts\GameNetworking\NetworkChat.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinPlacementGuard.cs" />
@@ -95,15 +97,13 @@
     <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverRoulette\RouletteRosterBinder.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardFlip.cs" />
     <Compile Include="Assets\Scripts\Gameloop\RoundManager.cs" />
-    <Compile Include="Assets\Scripts\Gameloop\ScoreboardReveal.cs" />
     <Compile Include="Assets\Scripts\Controller\CursorController\CursorSpriteAligner.cs" />
+    <Compile Include="Assets\Scripts\Gameloop\End Game Scoreboard\ScoreboardReveal.cs" />
     <Compile Include="Assets\Scripts\Board\GameChat\ChatUI.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardFrontHoverTilt.cs" />
     <Compile Include="Assets\Scripts\Board\EndRoundPrompt\EndRoundPromptChoiceBridge.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardChoiceSelectController.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinVisual.cs" />
-    <Compile Include="Assets\Scripts\Gameloop\EndGameScoreboardRow.cs" />
-    <Compile Include="Assets\Scripts\Gameloop\EndGameScoreboard.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinDropSnap.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\ColorChoosingPhaseController.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\BoardSpotNet.cs" />
@@ -119,6 +119,7 @@
     <Compile Include="Assets\Scripts\Gameloop\RoundTurnSummaryUI.cs" />
     <Compile Include="Assets\Scripts\Board\ColorBoard\PerimeterGlowEntry.cs" />
     <Compile Include="Assets\Scripts\UI\LobbyUIManager.cs" />
+    <Compile Include="Assets\Scripts\Gameloop\End Game Scoreboard\EndGameScoreboard.cs" />
     <Compile Include="Assets\Scripts\Animation\ImpactPulse.cs" />
     <Compile Include="Assets\Scripts\Board\Scoreboard\BannerGlowController.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\Lock\CoinLockedState.cs" />
