@@ -12953,7 +12953,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 314.84088
+    x: 0.72517496
     y: 0
     width: 10
     height: 10
@@ -46296,6 +46296,9 @@ MonoBehaviour:
   hideGameWhileChoosing: 1
   deactivateGameWhileChoosing: 1
   letEntryAnimatorControlVisibility: 1
+  endGameGroup: {fileID: 794928391}
+  hideEndGameWhileChoosing: 1
+  deactivateEndGameWhileChoosing: 1
   activateGameRootsOnEnd: 0
   gameRoots: []
   onPhaseStarted:
@@ -109834,7 +109837,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1874504209
 Transform:
   m_ObjectHideFlags: 0
@@ -110230,7 +110233,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1881240174
 MonoBehaviour:
   m_ObjectHideFlags: 0

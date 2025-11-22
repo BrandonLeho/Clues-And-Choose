@@ -22,6 +22,11 @@ public class ColorChoosingPhaseController : NetworkBehaviour
     public bool deactivateGameWhileChoosing = false;
     public bool letEntryAnimatorControlVisibility = true;
 
+    [Header("End Game Group (disabled during choosing)")]
+    public CanvasGroup endGameGroup;
+    public bool hideEndGameWhileChoosing = true;
+    public bool deactivateEndGameWhileChoosing = false;
+
     [Header("Handoff (legacy toggle)")]
     public bool activateGameRootsOnEnd = false;
     public GameObject[] gameRoots;
@@ -189,6 +194,19 @@ public class ColorChoosingPhaseController : NetworkBehaviour
 
         if (deactivateGameWhileChoosing)
             gameGroup.gameObject.SetActive(false);
+
+        if (endGameGroup)
+        {
+            if (!endGameGroup.gameObject.activeSelf && !deactivateEndGameWhileChoosing)
+                endGameGroup.gameObject.SetActive(true);
+
+            if (hideEndGameWhileChoosing) endGameGroup.alpha = 0f;
+            endGameGroup.interactable = false;
+            endGameGroup.blocksRaycasts = false;
+
+            if (deactivateEndGameWhileChoosing)
+                endGameGroup.gameObject.SetActive(false);
+        }
     }
 
     void EnableGameGroup()
@@ -212,6 +230,18 @@ public class ColorChoosingPhaseController : NetworkBehaviour
         }
     }
 
+    void EnableEndGameGroup()
+    {
+        if (!endGameGroup) return;
+
+        if (!endGameGroup.gameObject.activeSelf)
+            endGameGroup.gameObject.SetActive(true);
+
+        if (hideEndGameWhileChoosing) endGameGroup.alpha = 0f;
+
+        endGameGroup.interactable = false;
+        endGameGroup.blocksRaycasts = false;
+    }
 
     Vector2 OffscreenBelow(Vector2 home)
     {
