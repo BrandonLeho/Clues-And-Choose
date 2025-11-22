@@ -12953,7 +12953,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 2.5374067
+    x: 0.75847536
     y: 0
     width: 10
     height: 10
@@ -50717,9 +50717,9 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 254, y: -220}
+  m_AnchoredPosition: {x: -120.99997, y: -420}
   m_SizeDelta: {x: 750, y: 400}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_Pivot: {x: 0, y: 0}
 --- !u!114 &912989953
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -50733,10 +50733,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ScoreProgressGraph
   graphContainer: {fileID: 912989952}
-  leftPadding: 40
-  rightPadding: 10
-  topPadding: 10
-  bottomPadding: 30
+  leftPadding: 0
+  rightPadding: 0
+  topPadding: 0
+  bottomPadding: 0
   pointPrefab: {fileID: 1624735621288950153, guid: 85f3ddc0bd768ac428f0209808e5f63e, type: 3}
   linePrefab: {fileID: 7269880817367986543, guid: fd22b43fc1da76d40a3cacdc09b22719, type: 3}
   autoRefreshOnEnable: 1

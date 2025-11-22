@@ -80,10 +80,13 @@ public class ScoreProgressGraph : MonoBehaviour
         for (int i = 0; i < series.scores.Count; i++)
         {
             float tX = (roundCount > 1) ? (float)i / (roundCount - 1) : 0.5f;
-            float x = leftPadding + tX * width;
-
             float tY = (maxScore > 0) ? (float)series.scores[i] / maxScore : 0f;
-            float y = bottomPadding + tY * height;
+
+            float originX = 0f + leftPadding;
+            float originY = 0f + bottomPadding;
+
+            float x = originX + tX * width;
+            float y = originY + tY * height;
 
             Vector2 pointPos = new Vector2(x, y);
 
@@ -104,6 +107,10 @@ public class ScoreProgressGraph : MonoBehaviour
         _spawnedObjects.Add(obj);
 
         var rt = obj.GetComponent<RectTransform>();
+
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.zero;
+
         rt.anchoredPosition = anchoredPos;
 
         var img = obj.GetComponent<Image>();
@@ -128,6 +135,10 @@ public class ScoreProgressGraph : MonoBehaviour
         _spawnedObjects.Add(obj);
 
         var rt = obj.GetComponent<RectTransform>();
+
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.zero;
+        rt.pivot = new Vector2(0.5f, 0.5f);
 
         Vector2 dir = (end - start);
         float length = dir.magnitude;
