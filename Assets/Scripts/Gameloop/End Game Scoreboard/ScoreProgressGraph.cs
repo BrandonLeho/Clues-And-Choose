@@ -19,12 +19,30 @@ public class ScoreProgressGraph : MonoBehaviour
     [SerializeField] bool autoRefreshOnEnable = true;
     [SerializeField] bool clearOnRefresh = true;
 
+    [Header("Reveal Animation")]
+    [SerializeField] bool animateLines = true;
+    [SerializeField, Min(0f)] float lineRevealDuration = 0.6f;
+    [SerializeField] AnimationCurve lineRevealCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+    [SerializeField] bool useUnscaledTime = true;
+
     readonly List<GameObject> _spawnedObjects = new List<GameObject>();
+    readonly List<Image> _lineImages = new List<Image>();
+
+    Coroutine _revealRoutine;
 
     void OnEnable()
     {
         if (autoRefreshOnEnable)
             Refresh();
+    }
+
+    void OnDisable()
+    {
+        if (_revealRoutine != null)
+        {
+            StopCoroutine(_revealRoutine);
+            _revealRoutine = null;
+        }
     }
 
     public void Refresh()
@@ -34,6 +52,8 @@ public class ScoreProgressGraph : MonoBehaviour
 
         if (clearOnRefresh)
             ClearGraph();
+        else
+            ClearLineListOnly();
 
         var history = ScoreHistoryRecorder.Instance;
         var roundIndices = history.GetRoundIndices();
@@ -64,6 +84,24 @@ public class ScoreProgressGraph : MonoBehaviour
         foreach (var series in allSeries)
         {
             DrawSeries(series, roundCount, maxScore, width, height);
+        }
+
+        if (animateLines && lineRevealDuration > 0f && _lineImages.Count > 0)
+        {
+            if (_revealRoutine != null)
+            {
+                StopCoroutine(_revealRoutine);
+                _revealRoutine = null;
+            }
+            _revealRoutine = StartCoroutine(CoRevealLines());
+        }
+        else
+        {
+            for (int i = 0; i < _lineImages.Count; i++)
+            {
+                if (_lineImages[i])
+                    _lineImages[i].fillAmount = 1f;
+            }
         }
     }
 
@@ -149,7 +187,15 @@ public class ScoreProgressGraph : MonoBehaviour
 
         var img = obj.GetComponent<Image>();
         if (img != null)
+        {
             img.color = color;
+            img.type = Image.Type.Filled;
+            img.fillMethod = Image.FillMethod.Horizontal;
+            img.fillOrigin = 0;
+            img.fillAmount = animateLines && lineRevealDuration > 0f ? 0f : 1f;
+
+            _lineImages.Add(img);
+        }
     }
 
     GameObject CreateDefaultLine()
@@ -161,13 +207,60 @@ public class ScoreProgressGraph : MonoBehaviour
         return obj;
     }
 
+    System.Collections.IEnumerator CoRevealLines()
+    {
+        for (int i = 0; i < _lineImages.Count; i++)
+        {
+            if (_lineImages[i])
+                _lineImages[i].fillAmount = 0f;
+        }
+
+        float elapsed = 0f;
+
+        while (elapsed < lineRevealDuration)
+        {
+            elapsed += useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
+
+            float t = (lineRevealDuration > 0f) ? Mathf.Clamp01(elapsed / lineRevealDuration) : 1f;
+            float curveT = (lineRevealCurve != null) ? lineRevealCurve.Evaluate(t) : t;
+
+            for (int i = 0; i < _lineImages.Count; i++)
+            {
+                if (_lineImages[i])
+                    _lineImages[i].fillAmount = curveT;
+            }
+
+            yield return null;
+        }
+
+        for (int i = 0; i < _lineImages.Count; i++)
+        {
+            if (_lineImages[i])
+                _lineImages[i].fillAmount = 1f;
+        }
+
+        _revealRoutine = null;
+    }
+
     public void ClearGraph()
     {
+        if (_revealRoutine != null)
+        {
+            StopCoroutine(_revealRoutine);
+            _revealRoutine = null;
+        }
+
         for (int i = 0; i < _spawnedObjects.Count; i++)
         {
             if (_spawnedObjects[i])
                 Destroy(_spawnedObjects[i]);
         }
         _spawnedObjects.Clear();
+        _lineImages.Clear();
+    }
+
+    void ClearLineListOnly()
+    {
+        _lineImages.Clear();
     }
 }
