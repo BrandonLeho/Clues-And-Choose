@@ -25,8 +25,33 @@ public class ScoreProgressGraph : MonoBehaviour
     [SerializeField] AnimationCurve lineRevealCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
     [SerializeField] bool useUnscaledTime = true;
 
+    [Header("Line Visuals")]
+    [SerializeField] float startPadding = 2f;
+    [SerializeField] float endPadding = 2f;
+
+    class LineSegmentData
+    {
+        public Image image;
+        public float start;
+        public float length;
+    }
+
+    class PointData
+    {
+        public GameObject go;
+        public Image image;
+        public float distance;
+    }
+
+    class SeriesLineData
+    {
+        public readonly List<LineSegmentData> segments = new List<LineSegmentData>();
+        public readonly List<PointData> points = new List<PointData>();
+        public float totalLength;
+    }
+
     readonly List<GameObject> _spawnedObjects = new List<GameObject>();
-    readonly List<Image> _lineImages = new List<Image>();
+    readonly List<SeriesLineData> _seriesLines = new List<SeriesLineData>();
 
     Coroutine _revealRoutine;
 
@@ -86,7 +111,17 @@ public class ScoreProgressGraph : MonoBehaviour
             DrawSeries(series, roundCount, maxScore, width, height);
         }
 
-        if (animateLines && lineRevealDuration > 0f && _lineImages.Count > 0)
+        bool hasAnySegments = false;
+        for (int i = 0; i < _seriesLines.Count; i++)
+        {
+            if (_seriesLines[i].segments.Count > 0)
+            {
+                hasAnySegments = true;
+                break;
+            }
+        }
+
+        if (animateLines && lineRevealDuration > 0f && hasAnySegments)
         {
             if (_revealRoutine != null)
             {
@@ -97,10 +132,28 @@ public class ScoreProgressGraph : MonoBehaviour
         }
         else
         {
-            for (int i = 0; i < _lineImages.Count; i++)
+            for (int i = 0; i < _seriesLines.Count; i++)
             {
-                if (_lineImages[i])
-                    _lineImages[i].fillAmount = 1f;
+                var seriesLines = _seriesLines[i];
+
+                for (int j = 0; j < seriesLines.segments.Count; j++)
+                {
+                    if (seriesLines.segments[j].image)
+                        seriesLines.segments[j].image.fillAmount = 1f;
+                }
+
+                for (int j = 0; j < seriesLines.points.Count; j++)
+                {
+                    var p = seriesLines.points[j];
+                    if (p.go)
+                        p.go.SetActive(true);
+                    if (p.image)
+                    {
+                        var c = p.image.color;
+                        c.a = 1f;
+                        p.image.color = c;
+                    }
+                }
             }
         }
     }
@@ -114,29 +167,72 @@ public class ScoreProgressGraph : MonoBehaviour
         if (!RegistryNameColorLookup.TryGetColorForName(series.name, out color))
             color = Color.white;
 
+        var seriesLines = new SeriesLineData();
+        float cumulativeLength = 0f;
+
         Vector2? lastPos = null;
+
         for (int i = 0; i < series.scores.Count; i++)
         {
             float tX = (roundCount > 1) ? (float)i / (roundCount - 1) : 0.5f;
             float tY = (maxScore > 0) ? (float)series.scores[i] / maxScore : 0f;
 
-            float originX = 0f + leftPadding;
-            float originY = 0f + bottomPadding;
+            float originX = leftPadding;
+            float originY = bottomPadding;
 
             float x = originX + tX * width;
             float y = originY + tY * height;
 
             Vector2 pointPos = new Vector2(x, y);
 
-            var point = CreatePoint(pointPos, color);
-
-            if (lastPos.HasValue)
+            if (i == 0)
             {
-                CreateLine(lastPos.Value, pointPos, color);
+                var pointGO = CreatePoint(pointPos, color);
+                var pointImg = pointGO.GetComponent<Image>();
+                seriesLines.points.Add(new PointData
+                {
+                    go = pointGO,
+                    image = pointImg,
+                    distance = 0f
+                });
+
+                lastPos = pointPos;
+                continue;
             }
+
+            float segLen = Vector2.Distance(lastPos.Value, pointPos);
+            if (segLen > 0.0001f)
+            {
+                var img = CreateLine(lastPos.Value, pointPos, color);
+                if (img != null)
+                {
+                    var seg = new LineSegmentData
+                    {
+                        image = img,
+                        start = cumulativeLength,
+                        length = segLen
+                    };
+                    seriesLines.segments.Add(seg);
+                    cumulativeLength += segLen;
+                }
+            }
+
+            var currentPointGO = CreatePoint(pointPos, color);
+            var currentPointImg = currentPointGO.GetComponent<Image>();
+            seriesLines.points.Add(new PointData
+            {
+                go = currentPointGO,
+                image = currentPointImg,
+                distance = cumulativeLength
+            });
 
             lastPos = pointPos;
         }
+
+        seriesLines.totalLength = cumulativeLength;
+
+        if (seriesLines.segments.Count > 0 && seriesLines.totalLength > 0f)
+            _seriesLines.Add(seriesLines);
     }
 
     GameObject CreatePoint(Vector2 anchoredPos, Color color)
@@ -148,12 +244,25 @@ public class ScoreProgressGraph : MonoBehaviour
 
         rt.anchorMin = Vector2.zero;
         rt.anchorMax = Vector2.zero;
-
         rt.anchoredPosition = anchoredPos;
 
         var img = obj.GetComponent<Image>();
         if (img != null)
+        {
             img.color = color;
+
+            if (animateLines && lineRevealDuration > 0f)
+            {
+                var c = img.color;
+                c.a = 0f;
+                img.color = c;
+            }
+        }
+
+        if (animateLines && lineRevealDuration > 0f)
+        {
+            obj.SetActive(false);
+        }
 
         return obj;
     }
@@ -167,7 +276,7 @@ public class ScoreProgressGraph : MonoBehaviour
         return obj;
     }
 
-    void CreateLine(Vector2 start, Vector2 end, Color color)
+    Image CreateLine(Vector2 start, Vector2 end, Color color)
     {
         GameObject obj = linePrefab ? Instantiate(linePrefab, graphContainer) : CreateDefaultLine();
         _spawnedObjects.Add(obj);
@@ -179,10 +288,14 @@ public class ScoreProgressGraph : MonoBehaviour
         rt.pivot = new Vector2(0.5f, 0.5f);
 
         Vector2 dir = (end - start);
-        float length = dir.magnitude;
+        float geoLength = dir.magnitude;
 
-        rt.sizeDelta = new Vector2(length, rt.sizeDelta.y <= 0f ? 2f : rt.sizeDelta.y);
-        rt.anchoredPosition = (start + end) * 0.5f;
+        float visualLength = geoLength + startPadding + endPadding;
+        Vector2 midpoint = (start + end) * 0.5f;
+        Vector2 paddingShift = dir.normalized * ((endPadding - startPadding) * 0.5f);
+
+        rt.sizeDelta = new Vector2(visualLength, rt.sizeDelta.y <= 0f ? 2f : rt.sizeDelta.y);
+        rt.anchoredPosition = midpoint + paddingShift;
         rt.localRotation = Quaternion.FromToRotation(Vector3.right, dir.normalized);
 
         var img = obj.GetComponent<Image>();
@@ -193,9 +306,9 @@ public class ScoreProgressGraph : MonoBehaviour
             img.fillMethod = Image.FillMethod.Horizontal;
             img.fillOrigin = 0;
             img.fillAmount = animateLines && lineRevealDuration > 0f ? 0f : 1f;
-
-            _lineImages.Add(img);
         }
+
+        return img;
     }
 
     GameObject CreateDefaultLine()
@@ -209,10 +322,23 @@ public class ScoreProgressGraph : MonoBehaviour
 
     System.Collections.IEnumerator CoRevealLines()
     {
-        for (int i = 0; i < _lineImages.Count; i++)
+        for (int i = 0; i < _seriesLines.Count; i++)
         {
-            if (_lineImages[i])
-                _lineImages[i].fillAmount = 0f;
+            var seriesLines = _seriesLines[i];
+
+            for (int j = 0; j < seriesLines.segments.Count; j++)
+            {
+                var seg = seriesLines.segments[j];
+                if (seg.image)
+                    seg.image.fillAmount = 0f;
+            }
+
+            for (int j = 0; j < seriesLines.points.Count; j++)
+            {
+                var p = seriesLines.points[j];
+                if (p.go)
+                    p.go.SetActive(false);
+            }
         }
 
         float elapsed = 0f;
@@ -224,19 +350,86 @@ public class ScoreProgressGraph : MonoBehaviour
             float t = (lineRevealDuration > 0f) ? Mathf.Clamp01(elapsed / lineRevealDuration) : 1f;
             float curveT = (lineRevealCurve != null) ? lineRevealCurve.Evaluate(t) : t;
 
-            for (int i = 0; i < _lineImages.Count; i++)
+            for (int i = 0; i < _seriesLines.Count; i++)
             {
-                if (_lineImages[i])
-                    _lineImages[i].fillAmount = curveT;
+                var seriesLines = _seriesLines[i];
+                float totalLen = seriesLines.totalLength;
+                if (totalLen <= 0f) continue;
+
+                float drawDistance = totalLen * curveT;
+
+                for (int j = 0; j < seriesLines.segments.Count; j++)
+                {
+                    var seg = seriesLines.segments[j];
+                    if (!seg.image || seg.length <= 0f)
+                        continue;
+
+                    float segStart = seg.start;
+                    float segEnd = seg.start + seg.length;
+
+                    float fill;
+                    if (drawDistance <= segStart)
+                    {
+                        fill = 0f;
+                    }
+                    else if (drawDistance >= segEnd)
+                    {
+                        fill = 1f;
+                    }
+                    else
+                    {
+                        fill = (drawDistance - segStart) / seg.length;
+                    }
+
+                    seg.image.fillAmount = Mathf.Clamp01(fill);
+                }
+
+                for (int j = 0; j < seriesLines.points.Count; j++)
+                {
+                    var p = seriesLines.points[j];
+                    if (p.go == null) continue;
+
+                    if (drawDistance >= p.distance)
+                    {
+                        if (!p.go.activeSelf)
+                            p.go.SetActive(true);
+
+                        if (p.image)
+                        {
+                            var c = p.image.color;
+                            c.a = 1f;
+                            p.image.color = c;
+                        }
+                    }
+                }
             }
 
             yield return null;
         }
 
-        for (int i = 0; i < _lineImages.Count; i++)
+        for (int i = 0; i < _seriesLines.Count; i++)
         {
-            if (_lineImages[i])
-                _lineImages[i].fillAmount = 1f;
+            var seriesLines = _seriesLines[i];
+
+            for (int j = 0; j < seriesLines.segments.Count; j++)
+            {
+                var seg = seriesLines.segments[j];
+                if (seg.image)
+                    seg.image.fillAmount = 1f;
+            }
+
+            for (int j = 0; j < seriesLines.points.Count; j++)
+            {
+                var p = seriesLines.points[j];
+                if (p.go)
+                    p.go.SetActive(true);
+                if (p.image)
+                {
+                    var c = p.image.color;
+                    c.a = 1f;
+                    p.image.color = c;
+                }
+            }
         }
 
         _revealRoutine = null;
@@ -256,11 +449,11 @@ public class ScoreProgressGraph : MonoBehaviour
                 Destroy(_spawnedObjects[i]);
         }
         _spawnedObjects.Clear();
-        _lineImages.Clear();
+        _seriesLines.Clear();
     }
 
     void ClearLineListOnly()
     {
-        _lineImages.Clear();
+        _seriesLines.Clear();
     }
 }
