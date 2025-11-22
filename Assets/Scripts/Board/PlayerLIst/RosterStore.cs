@@ -117,4 +117,14 @@ public class RosterStore : MonoBehaviour
         //Debug.Log(name);
         SetCurrentClueGiver(name);
     }
+
+    public static void Reset()
+    {
+        EnsureInstance();
+        Instance.Names.Clear();
+        _idToName.Clear();
+        LocalPlayerName = null;
+        CurrentClueGiverName = null;
+        OnClueGiverChanged = null;
+    }
 }

@@ -132,29 +132,39 @@ namespace SteamLobbySpace
             CSteamID currentOwner = SteamMatchmaking.GetLobbyOwner(new CSteamID(lobbyID));
             CSteamID me = SteamUser.GetSteamID();
             var lobby = new CSteamID(lobbyID);
-            List<CSteamID> members = new List<CSteamID>();
 
-            int count = SteamMatchmaking.GetNumLobbyMembers(lobby);
-
-            for (int i = 0; i < count; i++)
-            {
-                members.Add(SteamMatchmaking.GetLobbyMemberByIndex(lobby, i));
-            }
+            Debug.Log("Player is leaving the lobby. Lobby ID: " + lobbyID);
 
             if (lobbyID != 0)
             {
-                SteamMatchmaking.LeaveLobby(new CSteamID(lobbyID));
+                if (currentOwner == me)
+                {
+                    Debug.Log("Host is leaving the lobby. Making lobby non-joinable.");
+                    SteamMatchmaking.SetLobbyJoinable(lobby, false);
+                }
+
+                SteamMatchmaking.LeaveLobby(lobby);
                 lobbyID = 0;
             }
 
             if (NetworkServer.active && currentOwner == me)
             {
+                Debug.Log("Host leaving lobby. Stopping host.");
                 NetworkManager.singleton.StopHost();
             }
             else if (NetworkClient.isConnected)
             {
+                Debug.Log("Client leaving lobby. Stopping client.");
                 NetworkManager.singleton.StopClient();
             }
+
+            NetworkServer.Shutdown();
+            NetworkClient.Shutdown();
+            if (Transport.active != null)
+                Transport.active.Shutdown();
+
+            RosterStore.Reset();
+
 
             panelSwapper.gameObject.SetActive(true);
             this.gameObject.SetActive(true);
