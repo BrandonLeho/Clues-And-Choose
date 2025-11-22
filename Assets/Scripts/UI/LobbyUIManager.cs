@@ -13,7 +13,6 @@ namespace SteamLobbySpace
     public class LobbyUIManager : NetworkBehaviour
     {
         public static LobbyUIManager Instance;
-
         public Transform playerListParent;
         public List<TextMeshProUGUI> playerNameTexts = new List<TextMeshProUGUI>();
         public List<PlayerLobbyHandler> playerLobbyHandlers = new List<PlayerLobbyHandler>();
@@ -21,6 +20,7 @@ namespace SteamLobbySpace
 
         public IReadOnlyList<PlayerLobbyHandler> CurrentPlayers => playerLobbyHandlers;
         public IReadOnlyList<string> CurrentPlayerNames => playerNameTexts.ConvertAll(t => t.text);
+
 
         void Awake()
         {
@@ -35,107 +35,52 @@ namespace SteamLobbySpace
             }
         }
 
-        void OnDestroy()
-        {
-            if (Instance == this)
-                Instance = null;
-        }
-
         void Start()
         {
-            if (playGameButton != null)
-                playGameButton.interactable = false;
-        }
-
-        public void ResetLobbyUI()
-        {
-            playerNameTexts.Clear();
-            playerLobbyHandlers.Clear();
-
-            if (playerListParent != null)
-            {
-                foreach (Transform child in playerListParent)
-                {
-                    var txt = child.GetComponentInChildren<TextMeshProUGUI>();
-                    if (txt) txt.text = string.Empty;
-
-                    var handler = child.GetComponent<PlayerLobbyHandler>();
-                    if (handler)
-                    {
-                        handler.isReady = false;
-                    }
-                }
-            }
-
-            if (playGameButton != null)
-                playGameButton.interactable = false;
+            playGameButton.interactable = false;
         }
 
         public void UpdatePlayerLobbyUI()
         {
-            if (SteamLobby.Instance == null || SteamLobby.Instance.lobbyID == 0 || playerListParent == null)
-            {
-                ResetLobbyUI();
-                return;
-            }
+            playerNameTexts.Clear();
+            playerLobbyHandlers.Clear();
 
             var lobby = new CSteamID(SteamLobby.Instance.lobbyID);
             int memberCount = SteamMatchmaking.GetNumLobbyMembers(lobby);
 
-            if (memberCount <= 0)
+            CSteamID hostID = new CSteamID(ulong.Parse(SteamMatchmaking.GetLobbyData(lobby, "HostAddress")));
+            List<CSteamID> orderedMembers = new List<CSteamID>();
+
+            if (memberCount == 0)
             {
-                ResetLobbyUI();
+                Debug.LogWarning("Lobby has no members.. retrying...");
+                StartCoroutine(RetryUpdate());
                 return;
             }
 
-            CSteamID hostID = new CSteamID(ulong.Parse(SteamMatchmaking.GetLobbyData(lobby, "HostAddress")));
-            List<CSteamID> orderedMembers = new List<CSteamID> { hostID };
+            orderedMembers.Add(hostID);
 
             for (int i = 0; i < memberCount; i++)
             {
                 CSteamID memberID = SteamMatchmaking.GetLobbyMemberByIndex(lobby, i);
                 if (memberID != hostID)
+                {
                     orderedMembers.Add(memberID);
+                }
             }
 
-            int uiCount = playerListParent.childCount;
-            if (uiCount == 0)
+            int j = 0;
+            foreach (var member in orderedMembers)
             {
-                StartCoroutine(RetryUpdate());
-                return;
-            }
+                TextMeshProUGUI txtMesh = playerListParent.GetChild(j).GetChild(0).GetComponent<TextMeshProUGUI>();
+                PlayerLobbyHandler playerLobbyHandler = playerListParent.GetChild(j).GetComponent<PlayerLobbyHandler>();
 
-            playerLobbyHandlers.Clear();
-            for (int i = 0; i < uiCount; i++)
-            {
-                var handler = playerListParent.GetChild(i).GetComponent<PlayerLobbyHandler>();
-                if (handler)
-                    playerLobbyHandlers.Add(handler);
-            }
-
-            playerNameTexts.Clear();
-
-            int assignCount = Mathf.Min(uiCount, orderedMembers.Count);
-
-            for (int i = 0; i < assignCount; i++)
-            {
-                var member = orderedMembers[i];
-                var child = playerListParent.GetChild(i);
-
-                TextMeshProUGUI txtMesh = child.GetComponentInChildren<TextMeshProUGUI>();
-                if (!txtMesh) continue;
+                playerLobbyHandlers.Add(playerLobbyHandler);
+                playerNameTexts.Add(txtMesh);
 
                 string playerName = SteamFriends.GetFriendPersonaName(member);
-                txtMesh.text = playerName;
-                playerNameTexts.Add(txtMesh);
-            }
-
-            for (int i = assignCount; i < uiCount; i++)
-            {
-                var child = playerListParent.GetChild(i);
-                var txtMesh = child.GetComponentInChildren<TextMeshProUGUI>();
-                if (txtMesh)
-                    txtMesh.text = string.Empty;
+                playerNameTexts[j].text = playerName;
+                j++;
             }
         }
 
@@ -189,9 +134,6 @@ namespace SteamLobbySpace
 
         public void RegisterPlayer(PlayerLobbyHandler player)
         {
-            if (playerListParent == null || player == null)
-                return;
-
             player.transform.SetParent(playerListParent, false);
             UpdatePlayerLobbyUI();
         }
@@ -213,8 +155,7 @@ namespace SteamLobbySpace
         [ClientRpc]
         void RpcSetPlayButtonInteractable(bool truthStatus)
         {
-            if (playGameButton != null)
-                playGameButton.interactable = truthStatus;
+            playGameButton.interactable = truthStatus;
         }
 
         private IEnumerator RetryUpdate()
@@ -222,5 +163,6 @@ namespace SteamLobbySpace
             yield return new WaitForSeconds(1f);
             UpdatePlayerLobbyUI();
         }
+
     }
 }

@@ -38,14 +38,6 @@ namespace SteamLobbySpace
             LobbyUIManager.Instance.RegisterPlayer(this);
         }
 
-        void OnDestroy()
-        {
-            if (LobbyUIManager.Instance != null)
-            {
-                LobbyUIManager.Instance.UpdatePlayerLobbyUI();
-            }
-        }
-
         [Command]
         void CmdSetReady()
         {
