@@ -50,6 +50,9 @@ namespace SteamLobbySpace
 
         public void HostLobby()
         {
+            if (LobbyUIManager.Instance != null)
+                LobbyUIManager.Instance.ResetLobbyUI();
+
             SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypeFriendsOnly, networkManager.maxConnections);
         }
 
@@ -159,6 +162,17 @@ namespace SteamLobbySpace
             panelSwapper.gameObject.SetActive(true);
             this.gameObject.SetActive(true);
             panelSwapper.SwapPanel("MainPanel");
+
+            if (LobbyUIManager.Instance != null)
+                LobbyUIManager.Instance.ResetLobbyUI();
+
+            RosterStore.SaveRoster(null, null);
+        }
+
+        void OnDestroy()
+        {
+            if (Instance == this)
+                Instance = null;
         }
     }
 }

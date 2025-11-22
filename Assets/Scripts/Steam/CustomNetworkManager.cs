@@ -256,7 +256,11 @@ public class CustomNetworkManager : NetworkManager
     /// <summary>
     /// This is called when a host is stopped.
     /// </summary>
-    public override void OnStopHost() { }
+    public override void OnStopHost()
+    {
+        base.OnStopHost();
+        RosterStore.SaveRoster(null, null);
+    }
 
     /// <summary>
     /// This is called when a server is stopped - including when a host is stopped.
@@ -266,7 +270,10 @@ public class CustomNetworkManager : NetworkManager
     /// <summary>
     /// This is called when a client is stopped.
     /// </summary>
-    public override void OnStopClient() { }
-
+    public override void OnStopClient()
+    {
+        base.OnStopClient();
+        RosterStore.SaveRoster(null, null);
+    }
     #endregion
 }

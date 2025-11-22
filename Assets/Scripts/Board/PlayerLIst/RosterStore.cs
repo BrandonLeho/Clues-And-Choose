@@ -29,12 +29,19 @@ public class RosterStore : MonoBehaviour
     {
         EnsureInstance();
         _idToName.Clear();
-        if (names != null) Instance.Names = new List<string>(names);
-        if (netIds == null || names == null) return;
+        Instance.Names.Clear();
+
+        if (netIds == null || names == null)
+            return;
 
         int count = Mathf.Min(netIds.Count, names.Count);
         for (int i = 0; i < count; i++)
-            _idToName[netIds[i]] = names[i];
+        {
+            uint id = netIds[i];
+            string name = names[i];
+            _idToName[id] = name;
+            Instance.Names.Add(name);
+        }
     }
 
     public static void SaveOrUpdateName(uint netId, string name)
@@ -114,7 +121,6 @@ public class RosterStore : MonoBehaviour
         EnsureInstance();
         if (netId == 0) { SetCurrentClueGiver(null); return; }
         if (!TryGetNameByNetId(netId, out var name)) name = $"NetId:{netId}";
-        //Debug.Log(name);
         SetCurrentClueGiver(name);
     }
 }
