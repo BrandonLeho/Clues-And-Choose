@@ -50,6 +50,14 @@ namespace SteamLobbySpace
 
         public void HostLobby()
         {
+            if (NetworkServer.active || NetworkClient.active || NetworkClient.isConnected)
+            {
+                Debug.LogWarning("HostLobby called while Mirror still active. Cleaning up first.");
+                NetworkManager.singleton.StopHost();
+                NetworkClient.Shutdown();
+                NetworkServer.Shutdown();
+            }
+
             SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypeFriendsOnly, networkManager.maxConnections);
         }
 
@@ -149,15 +157,21 @@ namespace SteamLobbySpace
 
             if (NetworkServer.active && currentOwner == me)
             {
+                Debug.Log("Leaving lobby as host. Stopping host + shutting down Mirror.");
                 NetworkManager.singleton.StopHost();
+
+                NetworkClient.Shutdown();
+                NetworkServer.Shutdown();
             }
-            else if (NetworkClient.isConnected)
+            else if (NetworkClient.isConnected || NetworkClient.active)
             {
+                Debug.Log("Leaving lobby as client. Stopping client + shutting down Mirror.");
                 NetworkManager.singleton.StopClient();
+                NetworkClient.Shutdown();
             }
 
             panelSwapper.gameObject.SetActive(true);
-            this.gameObject.SetActive(true);
+            gameObject.SetActive(true);
             panelSwapper.SwapPanel("MainPanel");
         }
     }

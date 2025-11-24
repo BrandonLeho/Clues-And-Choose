@@ -12,7 +12,7 @@ namespace Mirror
         // packet queue
         internal readonly Queue<NetworkWriterPooled> queue = new Queue<NetworkWriterPooled>();
 
-        public LocalConnectionToClient() : base(LocalConnectionId) {}
+        public LocalConnectionToClient() : base(LocalConnectionId) { }
 
         internal override void Send(ArraySegment<byte> segment, int channelId = Channels.Reliable)
         {
@@ -31,7 +31,7 @@ namespace Mirror
         internal override bool IsAlive(float timeout) => true;
 
         // don't ping host client in host mode
-        protected override void UpdatePing() {}
+        protected override void UpdatePing() { }
 
         internal override void Update()
         {
