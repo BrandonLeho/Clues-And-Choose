@@ -50,15 +50,36 @@ namespace SteamLobbySpace
 
         public void HostLobby()
         {
+            StartCoroutine(Co_HostLobby());
+        }
+
+        private IEnumerator Co_HostLobby()
+        {
             if (NetworkServer.active || NetworkClient.active || NetworkClient.isConnected)
             {
-                Debug.LogWarning("HostLobby called while Mirror still active. Cleaning up first.");
-                NetworkManager.singleton.StopHost();
+                if (NetworkServer.active && NetworkClient.activeHost)
+                    NetworkManager.singleton.StopHost();
+                else if (NetworkServer.active)
+                    NetworkManager.singleton.StopServer();
+                else
+                    NetworkManager.singleton.StopClient();
+
+                while (NetworkServer.active || NetworkClient.active || NetworkClient.isConnected)
+                    yield return null;
+
                 NetworkClient.Shutdown();
                 NetworkServer.Shutdown();
+
+                if (Transport.active != null)
+                {
+                    Debug.Log("[SteamLobby] Transport.Shutdown() before creating new lobby");
+                    Transport.active.Shutdown();
+                }
             }
 
-            SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypeFriendsOnly, networkManager.maxConnections);
+            SteamMatchmaking.CreateLobby(
+                ELobbyType.k_ELobbyTypeFriendsOnly,
+                networkManager.maxConnections);
         }
 
         void OnLobbyCreated(LobbyCreated_t callback)
@@ -69,10 +90,20 @@ namespace SteamLobbySpace
                 return;
             }
 
+            if (NetworkServer.active || NetworkClient.active)
+            {
+                Debug.LogWarning("OnLobbyCreated called while Mirror still active, aborting StartHost.");
+                return;
+            }
+
             Debug.Log("Lobby successfully created. Lobby ID: " + callback.m_ulSteamIDLobby);
             networkManager.StartHost();
 
-            SteamMatchmaking.SetLobbyData(new CSteamID(callback.m_ulSteamIDLobby), HostAddressKey, SteamUser.GetSteamID().ToString());
+            SteamMatchmaking.SetLobbyData(
+                new CSteamID(callback.m_ulSteamIDLobby),
+                HostAddressKey,
+                SteamUser.GetSteamID().ToString());
+
             lobbyID = callback.m_ulSteamIDLobby;
         }
 
@@ -84,7 +115,7 @@ namespace SteamLobbySpace
             {
                 Debug.Log("NetworkClient is active or connected. Disconnecting before joining new lobby");
                 NetworkManager.singleton.StopClient();
-                NetworkClient.Shutdown();
+                //NetworkClient.Shutdown();
             }
             SteamMatchmaking.JoinLobby(callback.m_steamIDLobby);
         }
@@ -159,15 +190,17 @@ namespace SteamLobbySpace
             {
                 Debug.Log("Leaving lobby as host. Stopping host + shutting down Mirror.");
                 NetworkManager.singleton.StopHost();
-
-                NetworkClient.Shutdown();
-                NetworkServer.Shutdown();
             }
             else if (NetworkClient.isConnected || NetworkClient.active)
             {
                 Debug.Log("Leaving lobby as client. Stopping client + shutting down Mirror.");
                 NetworkManager.singleton.StopClient();
-                NetworkClient.Shutdown();
+            }
+
+            if (Transport.active != null)
+            {
+                Debug.Log("[SteamLobby] Transport.Shutdown() after leaving lobby");
+                Transport.active.Shutdown();
             }
 
             panelSwapper.gameObject.SetActive(true);
