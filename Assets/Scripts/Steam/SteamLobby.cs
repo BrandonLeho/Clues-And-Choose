@@ -111,12 +111,27 @@ namespace SteamLobbySpace
         {
             Debug.Log("Join request received for lobby: " + callback.m_steamIDLobby);
 
-            if (NetworkClient.isConnected || NetworkClient.active)
+            if (NetworkServer.active || NetworkClient.active || NetworkClient.isConnected)
             {
-                Debug.Log("NetworkClient is active or connected. Disconnecting before joining new lobby");
-                NetworkManager.singleton.StopClient();
-                //NetworkClient.Shutdown();
+                Debug.Log("Mirror is active. Disconnecting before joining new lobby");
+
+                if (NetworkServer.active && NetworkClient.activeHost)
+                    NetworkManager.singleton.StopHost();
+                else if (NetworkServer.active)
+                    NetworkManager.singleton.StopServer();
+                else
+                    NetworkManager.singleton.StopClient();
+
+                NetworkClient.Shutdown();
+                NetworkServer.Shutdown();
+
+                if (Transport.active != null)
+                {
+                    Debug.Log("[SteamLobby] Transport.Shutdown() before joining new lobby");
+                    Transport.active.Shutdown();
+                }
             }
+
             SteamMatchmaking.JoinLobby(callback.m_steamIDLobby);
         }
 
@@ -171,10 +186,9 @@ namespace SteamLobbySpace
             CSteamID currentOwner = SteamMatchmaking.GetLobbyOwner(new CSteamID(lobbyID));
             CSteamID me = SteamUser.GetSteamID();
             var lobby = new CSteamID(lobbyID);
-            List<CSteamID> members = new List<CSteamID>();
 
             int count = SteamMatchmaking.GetNumLobbyMembers(lobby);
-
+            List<CSteamID> members = new List<CSteamID>();
             for (int i = 0; i < count; i++)
             {
                 members.Add(SteamMatchmaking.GetLobbyMemberByIndex(lobby, i));
@@ -188,14 +202,17 @@ namespace SteamLobbySpace
 
             if (NetworkServer.active && currentOwner == me)
             {
-                Debug.Log("Leaving lobby as host. Stopping host + shutting down Mirror.");
+                Debug.Log("Leaving lobby as host. Stopping host.");
                 NetworkManager.singleton.StopHost();
             }
             else if (NetworkClient.isConnected || NetworkClient.active)
             {
-                Debug.Log("Leaving lobby as client. Stopping client + shutting down Mirror.");
+                Debug.Log("Leaving lobby as client. Stopping client.");
                 NetworkManager.singleton.StopClient();
             }
+
+            NetworkClient.Shutdown();
+            NetworkServer.Shutdown();
 
             if (Transport.active != null)
             {
