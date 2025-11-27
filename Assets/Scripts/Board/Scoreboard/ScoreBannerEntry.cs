@@ -153,38 +153,45 @@ public class ScoreBannerEntry : MonoBehaviour
 
     void HandleScoreChanged(string name, int newScore)
     {
-        if (string.IsNullOrEmpty(ownerName) || name != ownerName) return;
+        if (string.IsNullOrEmpty(ownerName) || name != ownerName)
+            return;
 
+        if (NetworkServer.active && ScoreRegistry.IsNetworkApplying)
+            return;
+
+        int delta = newScore - _authoritativeScore;
         _authoritativeScore = newScore;
 
-        if (_pendingDeltas.Count == 0)
+        if (delta > 0)
         {
-            if (_countCo != null) StopCoroutine(_countCo);
+            _pendingDeltas.Enqueue(delta);
 
-            if (_displayedScore != _authoritativeScore)
-                _countCo = StartCoroutine(CoAnimateToAuthoritative(_authoritativeScore));
-            else
-                _countCo = null;
+            if (_countCo == null)
+                _countCo = StartCoroutine(CoProcessQueue());
+        }
+        else
+        {
+            _pendingDeltas.Clear();
+
+            if (_countCo != null)
+                StopCoroutine(_countCo);
+
+            _countCo = StartCoroutine(CoAnimateToAuthoritative(_authoritativeScore));
         }
     }
 
     void HandleFlyArrived(string name, int delta)
     {
-        if (string.IsNullOrEmpty(ownerName) || name != ownerName) return;
-        if (delta <= 0) return;
+        if (string.IsNullOrEmpty(ownerName) || name != ownerName)
+            return;
+        if (delta <= 0)
+            return;
 
         if (glowOnCount && !_glowArmed)
         {
             _glowArmed = true;
             TriggerGlowPulse();
         }
-
-        if (!NetworkServer.active) return;
-
-        _pendingDeltas.Enqueue(delta);
-
-        if (_countCo == null)
-            _countCo = StartCoroutine(CoProcessQueue());
     }
 
     public void RefreshColor()
@@ -281,6 +288,7 @@ public class ScoreBannerEntry : MonoBehaviour
     {
         int from = _displayedScore;
         float dur = countDuration;
+
         yield return CoCountTo(from, target, dur);
         _displayedScore = target;
 
@@ -291,15 +299,8 @@ public class ScoreBannerEntry : MonoBehaviour
             _displayedScore = _authoritativeScore;
         }
 
-        if (_pendingDeltas.Count > 0)
-        {
-            _countCo = StartCoroutine(CoProcessQueue());
-        }
-        else
-        {
-            _glowArmed = false;
-            _countCo = null;
-        }
+        _glowArmed = false;
+        _countCo = null;
     }
 
     void TriggerGlowPulse()
