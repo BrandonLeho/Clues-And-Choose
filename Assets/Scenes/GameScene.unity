@@ -12954,7 +12954,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 7.5218654
+    x: 0.831176
     y: 0
     width: 10
     height: 10
@@ -62342,9 +62342,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CoinPlacementTimerUI
   timeLabelUI: {fileID: 0}
   timeLabelTMP: {fileID: 1094468468}
-  prefix: TIME
+  prefix: 'TIME '
   hideWhenNotActive: 0
   turnDurationSeconds: 15
+  debugLogs: 0
 --- !u!1001 &1101031511
 PrefabInstance:
   m_ObjectHideFlags: 0
