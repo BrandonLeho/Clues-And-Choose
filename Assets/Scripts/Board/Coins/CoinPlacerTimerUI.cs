@@ -17,9 +17,6 @@ public class CoinPlacementTimerUI : MonoBehaviour
     [Header("Debug")]
     [SerializeField] bool debugLogs = false;
 
-    bool _hasTargetGate;
-    uint _currentPlacerNetId;
-
     float _remaining;
     bool _running;
 
@@ -41,12 +38,17 @@ public class CoinPlacementTimerUI : MonoBehaviour
             RoundManager.Instance.onClueGiverChangedClient.AddListener(HandleClueGiverChanged);
         }
 
-        if (CoinPlacementTurnManager.Instance)
-            _currentPlacerNetId = CoinPlacementTurnManager.Instance.currentPlacerNetId;
+        UpdateLabel(active: false, remainingSeconds: 0f);
 
-        _hasTargetGate = PhaseController.Instance && PhaseController.Instance.ClientHasTarget;
-
-        UpdateTimerState(immediate: true);
+        var tm = CoinPlacementTurnManager.Instance;
+        if (tm != null)
+        {
+            HandlePlacerChanged(tm.currentPlacerNetId);
+        }
+        else
+        {
+            TryStartTimerIfReady();
+        }
     }
 
     void OnDisable()
@@ -81,33 +83,26 @@ public class CoinPlacementTimerUI : MonoBehaviour
         }
     }
 
-    void HandlePlacerChanged(uint netId)
+    void HandlePlacerChanged(uint newPlacerNetId)
     {
-        _currentPlacerNetId = netId;
-        if (debugLogs) Log($"[Timer] Placer changed → {_currentPlacerNetId}");
+        if (debugLogs)
+            Log($"[Timer] PlacerChanged → newPlacerNetId={newPlacerNetId}");
 
-        UpdateTimerState(immediate: false);
+        if (newPlacerNetId == 0)
+        {
+            StopTimer();
+            return;
+        }
+
+        TryStartTimerIfReady();
     }
 
     void HandleTargetChosen(int col, int row, Color color)
     {
-        _hasTargetGate = true;
-        if (debugLogs) Log("[Timer] Target chosen → gate enabled");
-        UpdateTimerState(immediate: false);
-    }
+        if (debugLogs)
+            Log($"[Timer] TargetChosen → col={col}, row={row}");
 
-    void HandleRoundChanged(int _, uint __)
-    {
-        _hasTargetGate = false;
-        if (debugLogs) Log("[Timer] Round changed → gate reset / stop");
-        UpdateTimerState(immediate: false);
-    }
-
-    void HandleClueGiverChanged(uint ___)
-    {
-        _hasTargetGate = false;
-        if (debugLogs) Log("[Timer] Clue giver changed → gate reset / stop");
-        UpdateTimerState(immediate: false);
+        TryStartTimerIfReady();
     }
 
     void HandleRoundDecision(bool endNow)
@@ -118,30 +113,53 @@ public class CoinPlacementTimerUI : MonoBehaviour
         StopTimer();
     }
 
-    void UpdateTimerState(bool immediate)
+    void HandleRoundChanged(int _, uint __)
     {
-        if (!_hasTargetGate || _currentPlacerNetId == 0)
-        {
-            if (debugLogs)
-                Log($"[Timer] UpdateTimerState → inactive (hasTargetGate={_hasTargetGate}, placer={_currentPlacerNetId})");
+        if (debugLogs)
+            Log("[Timer] RoundChanged → stop & reset timer.");
+        StopTimer();
+    }
 
+    void HandleClueGiverChanged(uint ___)
+    {
+        if (debugLogs)
+            Log("[Timer] ClueGiverChanged → stop & reset timer.");
+        StopTimer();
+    }
+
+    void TryStartTimerIfReady()
+    {
+        var pc = PhaseController.Instance;
+        var tm = CoinPlacementTurnManager.Instance;
+
+        if (!pc || !tm)
+        {
+            Log("[Timer] TryStartTimerIfReady → missing PhaseController or CoinPlacementTurnManager.");
             StopTimer();
             return;
         }
 
-        if (!_running || immediate)
+        bool hasTarget = pc.ClientHasTarget;
+        bool hasPlacer = tm.currentPlacerNetId != 0;
+
+        if (debugLogs)
+            Log($"[Timer] TryStartTimerIfReady → hasTarget={hasTarget}, hasPlacer={hasPlacer}");
+
+        if (!hasTarget || !hasPlacer)
         {
-            _remaining = turnDurationSeconds;
-            _running = true;
+            StopTimer();
+            return;
         }
+
+        _remaining = turnDurationSeconds;
+        _running = true;
+        UpdateLabel(active: true, remainingSeconds: _remaining);
 
         if (debugLogs)
         {
             bool isLocalTurn = CoinPlacementTurnManager.IsLocalPlayersTurn();
-            Log($"[Timer] START/CONTINUE → placerNetId={_currentPlacerNetId}, isLocalTurn={isLocalTurn}, remaining={_remaining:0.00}s");
+            Log($"[Timer] START for placerNetId={tm.currentPlacerNetId}, isLocalTurn={isLocalTurn}");
         }
-
-        UpdateLabel(active: true, remainingSeconds: _remaining);
     }
 
     void StopTimer()
@@ -162,6 +180,7 @@ public class CoinPlacementTimerUI : MonoBehaviour
     void OnTimerExpired()
     {
         bool isLocalTurn = CoinPlacementTurnManager.IsLocalPlayersTurn();
+
         if (isLocalTurn)
         {
             if (debugLogs)
@@ -189,8 +208,8 @@ public class CoinPlacementTimerUI : MonoBehaviour
             return;
         }
 
-        uint placer = _currentPlacerNetId;
-        if (placer == 0)
+        uint placerAtExpiry = tm.currentPlacerNetId;
+        if (placerAtExpiry == 0)
         {
             if (debugLogs)
                 Log("[Timer] OnTimerExpired → no active placer on server.");
@@ -198,9 +217,40 @@ public class CoinPlacementTimerUI : MonoBehaviour
         }
 
         if (debugLogs)
-            Log($"[Timer] OnTimerExpired → server forcing advance for placer {placer} (counts even if coin is invalid/home).");
+            Log($"[Timer] OnTimerExpired → scheduling forced advance check for placer {placerAtExpiry}.");
 
-        tm.ServerNoteSuccessfulPlacement(placer);
+        StartCoroutine(Co_ServerAdvanceAfterDelay(placerAtExpiry));
+    }
+
+    System.Collections.IEnumerator Co_ServerAdvanceAfterDelay(uint placerAtExpiry)
+    {
+        yield return new WaitForSeconds(0.25f);
+
+        if (!NetworkServer.active)
+            yield break;
+
+        var tm = CoinPlacementTurnManager.Instance;
+        if (!tm)
+            yield break;
+
+        if (tm.currentPlacerNetId != placerAtExpiry)
+        {
+            if (debugLogs)
+                Log($"[Timer] Co_ServerAdvanceAfterDelay → placer changed from {placerAtExpiry} to {tm.currentPlacerNetId}, skipping forced advance.");
+            yield break;
+        }
+
+        if (placerAtExpiry == 0)
+        {
+            if (debugLogs)
+                Log("[Timer] Co_ServerAdvanceAfterDelay → placer became 0, nothing to do.");
+            yield break;
+        }
+
+        if (debugLogs)
+            Log($"[Timer] Co_ServerAdvanceAfterDelay → still same placer {placerAtExpiry}, forcing advance (counts even if coin is invalid/home).");
+
+        tm.ServerNoteSuccessfulPlacement(placerAtExpiry);
     }
 
     void UpdateLabel(bool active, float remainingSeconds)
