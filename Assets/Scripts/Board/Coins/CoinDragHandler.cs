@@ -316,4 +316,12 @@ public class CoinDragHandler : MonoBehaviour
     {
         if (useFixedCursorAnchor && anchorOverridesGrabOffset) preserveGrabOffset = false;
     }
+
+    public static void ForceDropIfDragging()
+    {
+        if (s_CurrentDragging != null)
+        {
+            s_CurrentDragging.EndDrag();
+        }
+    }
 }

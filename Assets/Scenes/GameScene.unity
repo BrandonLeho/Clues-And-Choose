@@ -12954,7 +12954,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 5.100497
+    x: 7.5218654
     y: 0
     width: 10
     height: 10
@@ -62202,6 +62202,7 @@ GameObject:
   - component: {fileID: 1094468467}
   - component: {fileID: 1094468469}
   - component: {fileID: 1094468468}
+  - component: {fileID: 1094468470}
   m_Layer: 5
   m_Name: Timer
   m_TagString: Untagged
@@ -62327,6 +62328,23 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1094468466}
   m_CullTransparentMesh: 1
+--- !u!114 &1094468470
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1094468466}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f917683a8eeb4c42b386030ce23ee56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CoinPlacementTimerUI
+  timeLabelUI: {fileID: 0}
+  timeLabelTMP: {fileID: 1094468468}
+  prefix: TIME
+  hideWhenNotActive: 0
+  turnDurationSeconds: 15
 --- !u!1001 &1101031511
 PrefabInstance:
   m_ObjectHideFlags: 0
