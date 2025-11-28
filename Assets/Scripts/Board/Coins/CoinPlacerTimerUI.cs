@@ -61,7 +61,7 @@ public class CoinPlacementTimerUI : MonoBehaviour
         if (_remaining <= 0f)
         {
             _remaining = 0f;
-            Log("[Timer] Expired → attempting auto-drop.");
+            Log("[Timer] Expired → attempting auto-drop and turn advance.");
             OnTimerExpired();
             StopTimer();
         }
@@ -153,17 +153,47 @@ public class CoinPlacementTimerUI : MonoBehaviour
 
     void OnTimerExpired()
     {
-        if (!CoinPlacementTurnManager.IsLocalPlayersTurn())
+        bool isLocalTurn = CoinPlacementTurnManager.IsLocalPlayersTurn();
+
+        if (isLocalTurn)
         {
             if (debugLogs)
-                Log("[Timer] OnTimerExpired → not local player's turn, ignoring.");
+                Log("[Timer] OnTimerExpired → local player's turn, forcing coin drop if dragging.");
+
+            CoinDragHandler.ForceDropIfDragging();
+        }
+        else if (debugLogs)
+        {
+            Log("[Timer] OnTimerExpired → not local player's turn, skip local force-drop.");
+        }
+
+        if (!NetworkServer.active)
+        {
+            if (debugLogs)
+                Log("[Timer] OnTimerExpired → not server, skipping ServerNoteSuccessfulPlacement.");
+            return;
+        }
+
+        var tm = CoinPlacementTurnManager.Instance;
+        if (!tm)
+        {
+            if (debugLogs)
+                Log("[Timer] OnTimerExpired → no CoinPlacementTurnManager on server.");
+            return;
+        }
+
+        uint placer = tm.currentPlacerNetId;
+        if (placer == 0)
+        {
+            if (debugLogs)
+                Log("[Timer] OnTimerExpired → no active placer on server.");
             return;
         }
 
         if (debugLogs)
-            Log("[Timer] OnTimerExpired → forcing coin drop if dragging.");
+            Log($"[Timer] OnTimerExpired → server forcing advance for placer {placer} (counts even if coin is invalid/home).");
 
-        CoinDragHandler.ForceDropIfDragging();
+        tm.ServerNoteSuccessfulPlacement(placer);
     }
 
     void UpdateLabel(bool active, float remainingSeconds)
