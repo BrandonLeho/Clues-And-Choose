@@ -73,7 +73,6 @@ public class CoinPlacementTimerUI : MonoBehaviour
         if (_remaining <= 0f)
         {
             _remaining = 0f;
-            Log("[Timer] Expired → attempting auto-drop and turn advance.");
             OnTimerExpired();
             StopTimer();
         }
@@ -102,31 +101,21 @@ public class CoinPlacementTimerUI : MonoBehaviour
 
     void HandleTargetChosen(int col, int row, Color color)
     {
-        if (debugLogs)
-            Log($"[Timer] TargetChosen → col={col}, row={row}");
-
         TryStartTimerIfReady();
     }
 
     void HandleRoundDecision(bool endNow)
     {
-        if (debugLogs)
-            Log($"[Timer] RoundDecision → endNow={endNow} (stop timer).");
-
         StopTimer();
     }
 
     void HandleRoundChanged(int _, uint __)
     {
-        if (debugLogs)
-            Log("[Timer] RoundChanged → stop & reset timer.");
         StopTimer();
     }
 
     void HandleClueGiverChanged(uint ___)
     {
-        if (debugLogs)
-            Log("[Timer] ClueGiverChanged → stop & reset timer.");
         StopTimer();
     }
 
@@ -137,18 +126,13 @@ public class CoinPlacementTimerUI : MonoBehaviour
 
         if (!pc || !tm)
         {
-            Log("[Timer] TryStartTimerIfReady → missing PhaseController or CoinPlacementTurnManager.");
             StopTimer();
             return;
         }
 
         bool hasTarget = pc.ClientHasTarget;
-        bool hasPlacer = tm.currentPlacerNetId != 0;
 
-        if (debugLogs)
-            Log($"[Timer] TryStartTimerIfReady → hasTarget={hasTarget}, hasPlacer={hasPlacer}");
-
-        if (!hasTarget || !hasPlacer)
+        if (!hasTarget)
         {
             StopTimer();
             return;
@@ -157,13 +141,6 @@ public class CoinPlacementTimerUI : MonoBehaviour
         _remaining = turnDurationSeconds;
         _running = true;
         UpdateLabel(active: true, remainingSeconds: _remaining);
-
-        if (debugLogs)
-        {
-            bool isLocalTurn = CoinPlacementTurnManager.IsLocalPlayersTurn();
-            string name = ResolvePlacerName(tm.currentPlacerNetId);
-            Log($"[Timer] START → Name={name}, NetId={tm.currentPlacerNetId}, isLocalTurn={isLocalTurn}");
-        }
     }
 
     void StopTimer()
@@ -173,9 +150,6 @@ public class CoinPlacementTimerUI : MonoBehaviour
             UpdateLabel(active: false, remainingSeconds: 0f);
             return;
         }
-
-        if (debugLogs)
-            Log("[Timer] StopTimer.");
 
         _running = false;
         UpdateLabel(active: false, remainingSeconds: 0f);
@@ -187,36 +161,23 @@ public class CoinPlacementTimerUI : MonoBehaviour
 
         if (isLocalTurn)
         {
-            if (debugLogs)
-                Log("[Timer] OnTimerExpired → local player's turn, forcing coin drop if dragging (local).");
-
             CoinDragHandler.ForceDropIfDragging();
-        }
-        else if (debugLogs)
-        {
-            Log("[Timer] OnTimerExpired → not local player's turn (local check).");
         }
 
         if (!NetworkServer.active)
         {
-            if (debugLogs)
-                Log("[Timer] OnTimerExpired → not server, skipping forced advance.");
             return;
         }
 
         var tm = CoinPlacementTurnManager.Instance;
         if (!tm)
         {
-            if (debugLogs)
-                Log("[Timer] OnTimerExpired → no CoinPlacementTurnManager on server.");
             return;
         }
 
         uint placerAtExpiry = tm.currentPlacerNetId;
         if (placerAtExpiry == 0)
         {
-            if (debugLogs)
-                Log("[Timer] OnTimerExpired → no active placer on server.");
             return;
         }
 
@@ -251,14 +212,8 @@ public class CoinPlacementTimerUI : MonoBehaviour
 
         if (placerAtExpiry == 0)
         {
-            if (debugLogs)
-                Log("[Timer] Co_ServerAdvanceAfterDelay → placer became 0, nothing to do.");
             yield break;
         }
-
-        string name = ResolvePlacerName(placerAtExpiry);
-        Log($"[Timer] Co_ServerAdvanceAfterDelay → forcing advance → Name={name}, NetId={placerAtExpiry}");
-
 
         tm.ServerNoteSuccessfulPlacement(placerAtExpiry);
     }
