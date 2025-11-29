@@ -86,7 +86,10 @@ public class CoinPlacementTimerUI : MonoBehaviour
     void HandlePlacerChanged(uint newPlacerNetId)
     {
         if (debugLogs)
-            Log($"[Timer] PlacerChanged → newPlacerNetId={newPlacerNetId}");
+        {
+            string name = ResolvePlacerName(newPlacerNetId);
+            Log($"[Timer] PlacerChanged → NetId={newPlacerNetId}, Name={name}");
+        }
 
         if (newPlacerNetId == 0)
         {
@@ -158,7 +161,8 @@ public class CoinPlacementTimerUI : MonoBehaviour
         if (debugLogs)
         {
             bool isLocalTurn = CoinPlacementTurnManager.IsLocalPlayersTurn();
-            Log($"[Timer] START for placerNetId={tm.currentPlacerNetId}, isLocalTurn={isLocalTurn}");
+            string name = ResolvePlacerName(tm.currentPlacerNetId);
+            Log($"[Timer] START → Name={name}, NetId={tm.currentPlacerNetId}, isLocalTurn={isLocalTurn}");
         }
     }
 
@@ -184,19 +188,19 @@ public class CoinPlacementTimerUI : MonoBehaviour
         if (isLocalTurn)
         {
             if (debugLogs)
-                Log("[Timer] OnTimerExpired → local player's turn, forcing coin drop if dragging.");
+                Log("[Timer] OnTimerExpired → local player's turn, forcing coin drop if dragging (local).");
 
             CoinDragHandler.ForceDropIfDragging();
         }
         else if (debugLogs)
         {
-            Log("[Timer] OnTimerExpired → not local player's turn, skip local force-drop.");
+            Log("[Timer] OnTimerExpired → not local player's turn (local check).");
         }
 
         if (!NetworkServer.active)
         {
             if (debugLogs)
-                Log("[Timer] OnTimerExpired → not server, skipping ServerNoteSuccessfulPlacement.");
+                Log("[Timer] OnTimerExpired → not server, skipping forced advance.");
             return;
         }
 
@@ -216,8 +220,13 @@ public class CoinPlacementTimerUI : MonoBehaviour
             return;
         }
 
+        tm.ServerForceDropOnCurrentPlacer();
+
         if (debugLogs)
-            Log($"[Timer] OnTimerExpired → scheduling forced advance check for placer {placerAtExpiry}.");
+        {
+            string name = ResolvePlacerName(placerAtExpiry);
+            Log($"[Timer] OnTimerExpired → scheduling forced advance → Name={name}, NetId={placerAtExpiry}");
+        }
 
         StartCoroutine(Co_ServerAdvanceAfterDelay(placerAtExpiry));
     }
@@ -247,8 +256,9 @@ public class CoinPlacementTimerUI : MonoBehaviour
             yield break;
         }
 
-        if (debugLogs)
-            Log($"[Timer] Co_ServerAdvanceAfterDelay → still same placer {placerAtExpiry}, forcing advance (counts even if coin is invalid/home).");
+        string name = ResolvePlacerName(placerAtExpiry);
+        Log($"[Timer] Co_ServerAdvanceAfterDelay → forcing advance → Name={name}, NetId={placerAtExpiry}");
+
 
         tm.ServerNoteSuccessfulPlacement(placerAtExpiry);
     }
@@ -298,5 +308,15 @@ public class CoinPlacementTimerUI : MonoBehaviour
             : "[no-network]";
 
         Debug.Log($"{who} {msg}");
+    }
+
+    string ResolvePlacerName(uint netId)
+    {
+        if (netId == 0) return "<none>";
+
+        if (RosterStore.TryGetNameByNetId(netId, out var name))
+            return name;
+
+        return $"NetId:{netId}";
     }
 }

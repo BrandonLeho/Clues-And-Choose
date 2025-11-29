@@ -183,4 +183,30 @@ public class CoinPlacementTurnManager : NetworkBehaviour
         var me = NetworkClient.connection?.identity;
         return me && Instance && Instance.currentPlacerNetId != 0 && me.netId == Instance.currentPlacerNetId;
     }
+
+    [Server]
+    public void ServerForceDropOnCurrentPlacer()
+    {
+        if (currentPlacerNetId == 0) return;
+
+        if (!NetworkServer.spawned.TryGetValue(currentPlacerNetId, out var identity) || !identity)
+            return;
+
+        var conn = identity.connectionToClient;
+        if (conn == null) return;
+
+        if (debugLogs)
+            Log($"[Turn] ServerForceDropOnCurrentPlacer → sending drop request to {Fmt(currentPlacerNetId)}");
+
+        TargetForceDropIfDragging(conn);
+    }
+
+    [TargetRpc]
+    void TargetForceDropIfDragging(NetworkConnection target)
+    {
+        if (debugLogs)
+            Log("[Turn] TargetForceDropIfDragging → CoinDragHandler.ForceDropIfDragging() on client");
+
+        CoinDragHandler.ForceDropIfDragging();
+    }
 }
