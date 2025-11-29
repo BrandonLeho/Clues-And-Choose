@@ -31,6 +31,9 @@ public class CoinPlacementTimerUI : MonoBehaviour
         CoinPlacementTurnManager.OnPlacerChangedClient -= HandlePlacerChanged;
         CoinPlacementTurnManager.OnPlacerChangedClient += HandlePlacerChanged;
 
+        CoinRoundLockManager.OnUnlocked -= HandleCoinsUnlocked;
+        CoinRoundLockManager.OnUnlocked += HandleCoinsUnlocked;
+
         UpdateLabel(active: false, remainingSeconds: 0f);
 
         var tm = CoinPlacementTurnManager.Instance;
@@ -43,6 +46,7 @@ public class CoinPlacementTimerUI : MonoBehaviour
     void OnDisable()
     {
         CoinPlacementTurnManager.OnPlacerChangedClient -= HandlePlacerChanged;
+        CoinRoundLockManager.OnUnlocked -= HandleCoinsUnlocked;
     }
 
     void Update()
@@ -80,30 +84,28 @@ public class CoinPlacementTimerUI : MonoBehaviour
         TryStartTimerIfReady();
     }
 
+    void HandleCoinsUnlocked()
+    {
+        TryStartTimerIfReady();
+    }
+
     void TryStartTimerIfReady()
     {
         var tm = CoinPlacementTurnManager.Instance;
-
         if (!tm || tm.currentPlacerNetId == 0)
         {
-            if (debugLogs)
-                Log("[Timer] TryStartTimerIfReady → no active placer, stopping timer.");
             StopTimer();
             return;
         }
 
         var pc = PhaseController.Instance;
-        if (pc)
+        bool hasTarget = pc && pc.ClientHasTarget;
+
+        bool coinsUnlocked = !CoinRoundLockManager.IsLocked;
+
+        if (!hasTarget || !coinsUnlocked)
         {
-            bool hasTarget = pc.ClientHasTarget;
-            if (!hasTarget && debugLogs)
-            {
-                Log("[Timer] TryStartTimerIfReady → ClientHasTarget=false, starting anyway so *everyone* sees the countdown (host included).");
-            }
-        }
-        else if (debugLogs)
-        {
-            Log("[Timer] TryStartTimerIfReady → no PhaseController, starting anyway.");
+            return;
         }
 
         _remaining = turnDurationSeconds;
@@ -113,7 +115,8 @@ public class CoinPlacementTimerUI : MonoBehaviour
         if (debugLogs)
         {
             string placerName = ResolvePlacerName(tm.currentPlacerNetId);
-            Log($"[Timer] TryStartTimerIfReady → START for placer {placerName} ({tm.currentPlacerNetId}), duration={turnDurationSeconds}s");
+            Log($"[Timer] TryStartTimerIfReady → START for placer " +
+                $"{placerName} ({tm.currentPlacerNetId}), duration={turnDurationSeconds}s");
         }
     }
 
