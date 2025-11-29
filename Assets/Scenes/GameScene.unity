@@ -12954,7 +12954,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 4.601237
+    x: 0.46564785
     y: 0
     width: 10
     height: 10
@@ -62249,7 +62249,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Time - '
+  m_text: 'Time: '
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 5672e8f67ed02a648b930aa466bd24c8, type: 2}
   m_sharedMaterial: {fileID: 2112342169740030493, guid: 5672e8f67ed02a648b930aa466bd24c8, type: 2}
@@ -62342,7 +62342,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CoinPlacementTimerUI
   timeLabelUI: {fileID: 0}
   timeLabelTMP: {fileID: 1094468468}
-  prefix: 'TIME - '
+  prefix: 'TIME: '
   hideWhenNotActive: 0
   turnDurationSeconds: 15
   debugLogs: 1
@@ -77560,8 +77560,8 @@ MonoBehaviour:
     - serializedVersion: 3
       time: 1
       value: 1
-      inSlope: 0
-      outSlope: 0
+      inSlope: 2
+      outSlope: 2
       tangentMode: 0
       weightedMode: 0
       inWeight: 0

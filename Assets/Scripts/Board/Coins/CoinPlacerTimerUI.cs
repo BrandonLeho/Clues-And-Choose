@@ -28,15 +28,8 @@ public class CoinPlacementTimerUI : MonoBehaviour
 
     void OnEnable()
     {
+        CoinPlacementTurnManager.OnPlacerChangedClient -= HandlePlacerChanged;
         CoinPlacementTurnManager.OnPlacerChangedClient += HandlePlacerChanged;
-        PhaseController.OnClientTargetChosen += HandleTargetChosen;
-        PhaseController.OnClientRoundDecision += HandleRoundDecision;
-
-        if (RoundManager.Instance)
-        {
-            RoundManager.Instance.onRoundChangedClient.AddListener(HandleRoundChanged);
-            RoundManager.Instance.onClueGiverChangedClient.AddListener(HandleClueGiverChanged);
-        }
 
         UpdateLabel(active: false, remainingSeconds: 0f);
 
@@ -45,23 +38,11 @@ public class CoinPlacementTimerUI : MonoBehaviour
         {
             HandlePlacerChanged(tm.currentPlacerNetId);
         }
-        else
-        {
-            TryStartTimerIfReady();
-        }
     }
 
     void OnDisable()
     {
         CoinPlacementTurnManager.OnPlacerChangedClient -= HandlePlacerChanged;
-        PhaseController.OnClientTargetChosen -= HandleTargetChosen;
-        PhaseController.OnClientRoundDecision -= HandleRoundDecision;
-
-        if (RoundManager.Instance)
-        {
-            RoundManager.Instance.onRoundChangedClient.RemoveListener(HandleRoundChanged);
-            RoundManager.Instance.onClueGiverChangedClient.RemoveListener(HandleClueGiverChanged);
-        }
     }
 
     void Update()
@@ -99,29 +80,8 @@ public class CoinPlacementTimerUI : MonoBehaviour
         TryStartTimerIfReady();
     }
 
-    void HandleTargetChosen(int col, int row, Color color)
-    {
-        TryStartTimerIfReady();
-    }
-
-    void HandleRoundDecision(bool endNow)
-    {
-        StopTimer();
-    }
-
-    void HandleRoundChanged(int _, uint __)
-    {
-        StopTimer();
-    }
-
-    void HandleClueGiverChanged(uint ___)
-    {
-        StopTimer();
-    }
-
     void TryStartTimerIfReady()
     {
-        var pc = PhaseController.Instance;
         var tm = CoinPlacementTurnManager.Instance;
 
         if (!tm || tm.currentPlacerNetId == 0)
@@ -132,12 +92,13 @@ public class CoinPlacementTimerUI : MonoBehaviour
             return;
         }
 
+        var pc = PhaseController.Instance;
         if (pc)
         {
             bool hasTarget = pc.ClientHasTarget;
             if (!hasTarget && debugLogs)
             {
-                Log("[Timer] TryStartTimerIfReady → ClientHasTarget=false, starting anyway so everyone sees the countdown.");
+                Log("[Timer] TryStartTimerIfReady → ClientHasTarget=false, starting anyway so *everyone* sees the countdown (host included).");
             }
         }
         else if (debugLogs)
