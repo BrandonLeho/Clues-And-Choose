@@ -20,6 +20,8 @@ public class CoinPlacementTimerUI : MonoBehaviour
     float _remaining;
     bool _running;
 
+    bool _placingPhaseActive;
+
     void Awake()
     {
         if (!timeLabelUI) timeLabelUI = GetComponent<Text>();
@@ -31,8 +33,12 @@ public class CoinPlacementTimerUI : MonoBehaviour
         CoinPlacementTurnManager.OnPlacerChangedClient -= HandlePlacerChanged;
         CoinPlacementTurnManager.OnPlacerChangedClient += HandlePlacerChanged;
 
-        CoinRoundLockManager.OnUnlocked -= HandleCoinsUnlocked;
-        CoinRoundLockManager.OnUnlocked += HandleCoinsUnlocked;
+        PhaseController.OnClientPlacingPhaseStarted -= HandlePlacingPhaseStarted;
+        PhaseController.OnClientPlacingPhaseStarted += HandlePlacingPhaseStarted;
+        PhaseController.OnClientPlacingPhaseEnded -= HandlePlacingPhaseEnded;
+        PhaseController.OnClientPlacingPhaseEnded += HandlePlacingPhaseEnded;
+
+        _placingPhaseActive = PhaseController.ClientPlacingPhaseActive;
 
         UpdateLabel(active: false, remainingSeconds: 0f);
 
@@ -46,7 +52,8 @@ public class CoinPlacementTimerUI : MonoBehaviour
     void OnDisable()
     {
         CoinPlacementTurnManager.OnPlacerChangedClient -= HandlePlacerChanged;
-        CoinRoundLockManager.OnUnlocked -= HandleCoinsUnlocked;
+        PhaseController.OnClientPlacingPhaseStarted -= HandlePlacingPhaseStarted;
+        PhaseController.OnClientPlacingPhaseEnded -= HandlePlacingPhaseEnded;
     }
 
     void Update()
@@ -72,10 +79,10 @@ public class CoinPlacementTimerUI : MonoBehaviour
         if (debugLogs)
         {
             string name = ResolvePlacerName(newPlacerNetId);
-            Log($"[Timer] PlacerChanged → NetId={newPlacerNetId}, Name={name}");
+            Log($"[Timer] PlacerChanged → NetId={newPlacerNetId}, Name={name}, placingPhaseActive={_placingPhaseActive}");
         }
 
-        if (newPlacerNetId == 0)
+        if (newPlacerNetId == 0 || !_placingPhaseActive)
         {
             StopTimer();
             return;
@@ -84,27 +91,39 @@ public class CoinPlacementTimerUI : MonoBehaviour
         TryStartTimerIfReady();
     }
 
-    void HandleCoinsUnlocked()
+    void HandlePlacingPhaseStarted()
     {
+        _placingPhaseActive = true;
+
+        if (debugLogs)
+            Log("[Timer] Placing phase STARTED → checking if timer should start.");
+
         TryStartTimerIfReady();
+    }
+
+    void HandlePlacingPhaseEnded()
+    {
+        _placingPhaseActive = false;
+
+        if (debugLogs)
+            Log("[Timer] Placing phase ENDED → stopping timer.");
+
+        StopTimer();
     }
 
     void TryStartTimerIfReady()
     {
         var tm = CoinPlacementTurnManager.Instance;
+
         if (!tm || tm.currentPlacerNetId == 0)
         {
             StopTimer();
             return;
         }
 
-        var pc = PhaseController.Instance;
-        bool hasTarget = pc && pc.ClientHasTarget;
-
-        bool coinsUnlocked = !CoinRoundLockManager.IsLocked;
-
-        if (!hasTarget || !coinsUnlocked)
+        if (!_placingPhaseActive)
         {
+            StopTimer();
             return;
         }
 
@@ -115,8 +134,7 @@ public class CoinPlacementTimerUI : MonoBehaviour
         if (debugLogs)
         {
             string placerName = ResolvePlacerName(tm.currentPlacerNetId);
-            Log($"[Timer] TryStartTimerIfReady → START for placer " +
-                $"{placerName} ({tm.currentPlacerNetId}), duration={turnDurationSeconds}s");
+            Log($"[Timer] TryStartTimerIfReady → START for placer {placerName} ({tm.currentPlacerNetId}), duration={turnDurationSeconds}s");
         }
     }
 

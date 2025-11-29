@@ -39,6 +39,10 @@ public sealed class PhaseController : NetworkBehaviour
     public bool ClientHasTarget => targetCol >= 0 && targetRow >= 0;
     public static event System.Action<bool> OnClientRoundDecision;
 
+    public static event System.Action OnClientPlacingPhaseStarted;
+    public static event System.Action OnClientPlacingPhaseEnded;
+    public static bool ClientPlacingPhaseActive { get; private set; }
+
     [Header("Debug")]
     [SerializeField] bool debugLogsEnabled = true;
 
@@ -101,6 +105,25 @@ public sealed class PhaseController : NetworkBehaviour
         if (mgr) mgr.LockAllCoins();
     }
 
+    static void ClientSetPlacingPhaseActive(bool active)
+    {
+        if (ClientPlacingPhaseActive == active)
+            return;
+
+        ClientPlacingPhaseActive = active;
+        if (active) OnClientPlacingPhaseStarted?.Invoke();
+        else OnClientPlacingPhaseEnded?.Invoke();
+    }
+
+    [ClientRpc]
+    void RpcEnablePerTurnLocks()
+    {
+        ClientSetPlacingPhaseActive(true);
+
+        var binder = FindFirstObjectByType<CoinTurnLockBinder>();
+        if (binder) binder.SetModeActive(true);
+    }
+
     [Server]
     void HandleServerCycleCompleted()
     {
@@ -160,13 +183,6 @@ public sealed class PhaseController : NetworkBehaviour
     }
 
     [ClientRpc]
-    void RpcEnablePerTurnLocks()
-    {
-        var binder = FindFirstObjectByType<CoinTurnLockBinder>();
-        if (binder) binder.SetModeActive(true);
-    }
-
-    [ClientRpc]
     void RpcEndFirstCycle_LockAll()
     {
         var binder = FindFirstObjectByType<CoinTurnLockBinder>();
@@ -174,6 +190,8 @@ public sealed class PhaseController : NetworkBehaviour
 
         var mgr = CoinRoundLockManager.Instance;
         if (mgr) mgr.LockAllCoins();
+
+        ClientSetPlacingPhaseActive(false);
 
         DLog("[Phase] First placement cycle finished → All players locked. Waiting for clue giver decision…");
     }
@@ -202,6 +220,8 @@ public sealed class PhaseController : NetworkBehaviour
     void ServerBeginScoring()
     {
         DLog("[Phase] Begin SCORING");
+
+        RpcNotifyPlacingPhaseEnded();
 
         _waitingForScoringBanner = true;
         _coinsReturnedThisRound = false;
@@ -285,6 +305,12 @@ public sealed class PhaseController : NetworkBehaviour
 
         uint cgId = RoundManager.Instance ? RoundManager.Instance.ServerGetClueGiverNetIdUnsafe() : 0u;
         RpcClueGiverSlideOutCardAndRespawn(cgId);
+    }
+
+    [ClientRpc]
+    void RpcNotifyPlacingPhaseEnded()
+    {
+        ClientSetPlacingPhaseActive(false);
     }
 
     [ClientRpc]
@@ -440,7 +466,6 @@ public sealed class PhaseController : NetworkBehaviour
 
         RpcNotifyTargetChosen(targetCol, targetRow, targetColor);
     }
-
 
     static string RowLetters(int idx)
     {
