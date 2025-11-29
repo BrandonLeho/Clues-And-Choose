@@ -124,23 +124,36 @@ public class CoinPlacementTimerUI : MonoBehaviour
         var pc = PhaseController.Instance;
         var tm = CoinPlacementTurnManager.Instance;
 
-        if (!pc || !tm)
+        if (!tm || tm.currentPlacerNetId == 0)
         {
+            if (debugLogs)
+                Log("[Timer] TryStartTimerIfReady → no active placer, stopping timer.");
             StopTimer();
             return;
         }
 
-        bool hasTarget = pc.ClientHasTarget;
-
-        if (!hasTarget)
+        if (pc)
         {
-            StopTimer();
-            return;
+            bool hasTarget = pc.ClientHasTarget;
+            if (!hasTarget && debugLogs)
+            {
+                Log("[Timer] TryStartTimerIfReady → ClientHasTarget=false, starting anyway so everyone sees the countdown.");
+            }
+        }
+        else if (debugLogs)
+        {
+            Log("[Timer] TryStartTimerIfReady → no PhaseController, starting anyway.");
         }
 
         _remaining = turnDurationSeconds;
         _running = true;
         UpdateLabel(active: true, remainingSeconds: _remaining);
+
+        if (debugLogs)
+        {
+            string placerName = ResolvePlacerName(tm.currentPlacerNetId);
+            Log($"[Timer] TryStartTimerIfReady → START for placer {placerName} ({tm.currentPlacerNetId}), duration={turnDurationSeconds}s");
+        }
     }
 
     void StopTimer()
@@ -153,6 +166,9 @@ public class CoinPlacementTimerUI : MonoBehaviour
 
         _running = false;
         UpdateLabel(active: false, remainingSeconds: 0f);
+
+        if (debugLogs)
+            Log("[Timer] StopTimer → timer stopped and hidden.");
     }
 
     void OnTimerExpired()
