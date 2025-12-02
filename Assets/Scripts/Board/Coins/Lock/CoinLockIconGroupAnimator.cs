@@ -51,14 +51,27 @@ public sealed class CoinLockIconGroupAnimator : MonoBehaviour
         CoinNetworkSpawner.OnInitialSpawnSettled += HandleSpawnSettled;
         GameRuleSettings.OnLockAllCoinsChanged += HandleRuleFlip;
 
-        if (GameRuleSettings.IsLockAllEnabled)
+        var mgr = CoinRoundLockManager.Instance;
+        bool isLocked = mgr && CoinRoundLockManager.IsLocked;
+
+        if (_spawnSettled)
         {
-            if (_spawnSettled) PlayLockedIn();
-            else _pendingLockShow = true;
+            if (isLocked)
+                PlayLockedIn();
+            else
+                HandleUnlocked();
         }
         else
         {
-            gameObject.SetActive(false);
+            _pendingLockShow = isLocked;
+
+            if (!isLocked)
+            {
+                if (iconGO) iconGO.SetActive(false);
+                if (backgroundGO) backgroundGO.SetActive(false);
+                SetIconAlpha(0f);
+                SetBgAlpha(0f);
+            }
         }
     }
 
@@ -95,6 +108,7 @@ public sealed class CoinLockIconGroupAnimator : MonoBehaviour
     void HandleUnlocked()
     {
         _pendingLockShow = false;
+
         if (_anim != null) StopCoroutine(_anim);
         _anim = StartCoroutine(AnimateOut());
     }
@@ -185,26 +199,60 @@ public sealed class CoinLockIconGroupAnimator : MonoBehaviour
         return Mathf.Lerp(u, s, bias);
     }
 
-    void SetIconAlpha(float a) { if (!iconRenderer) return; var c = iconRenderer.color; c.a = Mathf.Clamp01(a); iconRenderer.color = c; }
-    void SetBgAlpha(float a) { if (!backgroundRenderer) return; var c = backgroundRenderer.color; c.a = Mathf.Clamp01(a); backgroundRenderer.color = c; }
-    void SetIconScale(float s) { if (iconGO) iconGO.transform.localScale = new Vector3(s, s, 1f); }
-    float GetIconScaleX() { return iconGO ? iconGO.transform.localScale.x : iconBaseScale; }
+    void SetIconAlpha(float a)
+    {
+        if (!iconRenderer) return;
+        var c = iconRenderer.color;
+        c.a = Mathf.Clamp01(a);
+        iconRenderer.color = c;
+    }
+
+    void SetBgAlpha(float a)
+    {
+        if (!backgroundRenderer) return;
+        var c = backgroundRenderer.color;
+        c.a = Mathf.Clamp01(a);
+        backgroundRenderer.color = c;
+    }
+
+    void SetIconScale(float s)
+    {
+        if (iconGO) iconGO.transform.localScale = new Vector3(s, s, 1f);
+    }
+
+    float GetIconScaleX()
+    {
+        return iconGO ? iconGO.transform.localScale.x : iconBaseScale;
+    }
 
 #if UNITY_EDITOR
-    [ContextMenu("Preview: Locked (In)")] void _PreviewIn() { _spawnSettled = true; HandleLocked(); }
-    [ContextMenu("Preview: Unlocked (Out)")] void _PreviewOut() { HandleUnlocked(); }
+    [ContextMenu("Preview: Locked (In)")]
+    void _PreviewIn()
+    {
+        _spawnSettled = true;
+        HandleLocked();
+    }
+
+    [ContextMenu("Preview: Unlocked (Out)")]
+    void _PreviewOut()
+    {
+        HandleUnlocked();
+    }
 #endif
 
-    void HandleRuleFlip(bool enabled)
+    void HandleRuleFlip(bool _enabled)
     {
-        if (enabled)
+        bool isLocked = CoinRoundLockManager.IsLocked;
+
+        if (!_spawnSettled)
         {
-            if (_spawnSettled) PlayLockedIn();
-            else _pendingLockShow = true;
+            _pendingLockShow = isLocked;
+            return;
         }
+
+        if (isLocked)
+            PlayLockedIn();
         else
-        {
             HandleUnlocked();
-        }
     }
 }
