@@ -32,7 +32,6 @@ public class CoinPlacementTurnManager : NetworkBehaviour
     {
         _firstCycleComplete = false;
         _placedThisCycle.Clear();
-
         _currentCyclePlacedOrder.Clear();
 
         if (useReverseOfLast && _lastCompletedOrder != null && _lastCompletedOrder.Count > 0)
@@ -55,6 +54,14 @@ public class CoinPlacementTurnManager : NetworkBehaviour
             return;
         }
 
+        if (!GameRuleSettings.IsLockAllEnabled)
+        {
+            _idx = -1;
+            SetPlacer(0);
+            LogOrder("begin (simultaneous)");
+            return;
+        }
+
         _idx = 0;
         SetPlacer(_order[_idx]);
         LogOrder("begin");
@@ -63,6 +70,42 @@ public class CoinPlacementTurnManager : NetworkBehaviour
     [Server]
     public void ServerNoteSuccessfulPlacement(uint playerNetId)
     {
+        if (!GameRuleSettings.IsLockAllEnabled)
+        {
+            if (_firstCycleComplete) return;
+
+            if (_order.Count == 0)
+            {
+                Log("[Turn] NotePlacement (simultaneous): empty order.");
+                return;
+            }
+
+            if (_order.Contains(playerNetId))
+            {
+                _placedThisCycle.Add(playerNetId);
+                if (!_currentCyclePlacedOrder.Contains(playerNetId))
+                    _currentCyclePlacedOrder.Add(playerNetId);
+
+                if (NetworkServer.spawned.TryGetValue(playerNetId, out var identity) && identity != null)
+                {
+                    var conn = identity.connectionToClient;
+                    if (conn != null)
+                        TargetLockAllCoinsForLocalPlayer(conn);
+                }
+            }
+
+            if (_placedThisCycle.Count >= _order.Count)
+            {
+                _firstCycleComplete = true;
+                _lastCompletedOrder = new List<uint>(_currentCyclePlacedOrder);
+                Log("[Turn] First cycle COMPLETE (simultaneous).");
+                SetPlacer(0);
+                OnServerFirstCycleCompleted?.Invoke();
+            }
+
+            return;
+        }
+
         if (_firstCycleComplete) return;
 
         if (_order.Count == 0)
@@ -110,7 +153,19 @@ public class CoinPlacementTurnManager : NetworkBehaviour
 
     [Server]
     public bool ServerCanPlayerPlace(uint playerNetId)
-        => !_firstCycleComplete && _order.Count > 0 && playerNetId == currentPlacerNetId;
+    {
+        if (!GameRuleSettings.IsLockAllEnabled)
+        {
+            if (_firstCycleComplete) return false;
+            if (_order.Count == 0) return false;
+            if (!_order.Contains(playerNetId)) return false;
+            if (_placedThisCycle.Contains(playerNetId)) return false;
+
+            return true;
+        }
+
+        return !_firstCycleComplete && _order.Count > 0 && playerNetId == currentPlacerNetId;
+    }
 
     public override void OnStartServer()
     {
@@ -136,8 +191,23 @@ public class CoinPlacementTurnManager : NetworkBehaviour
         _lastCompletedOrder = null;
 
         BuildOrder();
-        if (_order.Count == 0) SetPlacer(0);
-        else { _idx = 0; SetPlacer(_order[_idx]); }
+        if (_order.Count == 0)
+        {
+            SetPlacer(0);
+        }
+        else
+        {
+            if (GameRuleSettings.IsLockAllEnabled)
+            {
+                _idx = 0;
+                SetPlacer(_order[_idx]);
+            }
+            else
+            {
+                _idx = -1;
+                SetPlacer(0);
+            }
+        }
         LogOrder("rebuild/reset");
     }
 
@@ -208,5 +278,15 @@ public class CoinPlacementTurnManager : NetworkBehaviour
             Log("[Turn] TargetForceDropIfDragging → CoinDragHandler.ForceDropIfDragging() on client");
 
         CoinDragHandler.ForceDropIfDragging();
+    }
+
+    [TargetRpc]
+    void TargetLockAllCoinsForLocalPlayer(NetworkConnection target)
+    {
+        if (debugLogs)
+            Log("[Turn] TargetLockAllCoinsForLocalPlayer → CoinRoundLockManager.LockAllCoins() on client");
+
+        var mgr = CoinRoundLockManager.Instance;
+        if (mgr) mgr.LockAllCoins();
     }
 }

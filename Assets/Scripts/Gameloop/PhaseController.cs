@@ -94,8 +94,16 @@ public sealed class PhaseController : NetworkBehaviour
         if (CoinPlacementTurnManager.Instance)
             CoinPlacementTurnManager.Instance.ServerBeginCycleAtFirst(false);
 
-        RpcEnablePerTurnLocks();
-        RpcForceLockAllCoins();
+        if (GameRuleSettings.IsLockAllEnabled)
+        {
+            RpcEnablePerTurnLocks();
+            RpcForceLockAllCoins();
+        }
+        else
+        {
+            RpcEnablePerTurnLocks();
+            RpcUnlockNonClueGiversForSimultaneousMode();
+        }
     }
 
     [ClientRpc]
@@ -120,8 +128,34 @@ public sealed class PhaseController : NetworkBehaviour
     {
         ClientSetPlacingPhaseActive(true);
 
-        var binder = FindFirstObjectByType<CoinTurnLockBinder>();
+        if (!GameRuleSettings.IsLockAllEnabled)
+            return;
+
+        var binder = Object.FindFirstObjectByType<CoinTurnLockBinder>();
         if (binder) binder.SetModeActive(true);
+    }
+
+    [ClientRpc]
+    void RpcUnlockNonClueGiversForSimultaneousMode()
+    {
+        if (!GameRuleSettings.IsLockAllEnabled)
+            DLog("[Phase] Simultaneous mode → unlock all non–clue givers.");
+
+        if (!GameRuleSettings.IsLockAllEnabled)
+        {
+            var mgr = CoinRoundLockManager.Instance;
+            if (!mgr) return;
+
+            bool amClueGiver = ClueGiverState.IsLocalPlayerClueGiver();
+            if (amClueGiver)
+            {
+                mgr.LockAllCoins();
+            }
+            else
+            {
+                mgr.UnlockAllCoins();
+            }
+        }
     }
 
     [Server]
@@ -161,7 +195,16 @@ public sealed class PhaseController : NetworkBehaviour
             if (CoinPlacementTurnManager.Instance)
                 CoinPlacementTurnManager.Instance.ServerBeginCycleAtFirst(reverseSecondCycleEnabled);
 
-            RpcEnablePerTurnLocks();
+            if (GameRuleSettings.IsLockAllEnabled)
+            {
+                RpcEnablePerTurnLocks();
+                RpcForceLockAllCoins();
+            }
+            else
+            {
+                RpcEnablePerTurnLocks();
+                RpcUnlockNonClueGiversForSimultaneousMode();
+            }
         }
     }
 
@@ -185,7 +228,7 @@ public sealed class PhaseController : NetworkBehaviour
     [ClientRpc]
     void RpcEndFirstCycle_LockAll()
     {
-        var binder = FindFirstObjectByType<CoinTurnLockBinder>();
+        var binder = Object.FindFirstObjectByType<CoinTurnLockBinder>();
         if (binder) binder.SetModeActive(false);
 
         var mgr = CoinRoundLockManager.Instance;
