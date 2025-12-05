@@ -85,10 +85,18 @@ public sealed class CoinTurnLockBinder : MonoBehaviour
             return;
         }
 
-        var me = NetworkClient.connection?.identity;
-        bool myTurn = me && currentPlacerNetId != 0 && me.netId == currentPlacerNetId;
-        if (myTurn) UnlockAllLocal();
-        else LockAllLocal();
+        var me = NetworkClient.localPlayer;
+        uint myId = me ? me.netId : 0;
+
+        bool myTurn = myId != 0 && currentPlacerNetId != 0 && myId == currentPlacerNetId;
+
+        if (debugLogs)
+            Debug.Log($"[TurnLock] PlacerChanged: currentPlacer={currentPlacerNetId}, local={myId}, myTurn={myTurn}");
+
+        if (myTurn)
+            UnlockAllLocal();
+        else
+            LockAllLocal();
     }
 
     static void LockAllLocal() { var mgr = CoinRoundLockManager.Instance; if (mgr) mgr.LockAllCoins(); }

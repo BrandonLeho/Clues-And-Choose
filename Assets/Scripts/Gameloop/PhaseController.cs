@@ -96,8 +96,8 @@ public sealed class PhaseController : NetworkBehaviour
 
         if (GameRuleSettings.IsLockAllEnabled)
         {
-            RpcForceLockAllCoins();
             RpcEnablePerTurnLocks();
+            RpcForceLockAllCoins();
         }
         else
         {
@@ -197,8 +197,8 @@ public sealed class PhaseController : NetworkBehaviour
 
             if (GameRuleSettings.IsLockAllEnabled)
             {
-                RpcForceLockAllCoins();
                 RpcEnablePerTurnLocks();
+                RpcForceLockAllCoins();
             }
             else
             {
