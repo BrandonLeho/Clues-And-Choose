@@ -1,11 +1,14 @@
 using Mirror;
 using UnityEngine;
+using System.Collections;
 
 public sealed class CoinTurnLockBinder : MonoBehaviour
 {
     [SerializeField] bool debugLogs = true;
     bool _modeActive;
     bool _hasTargetOverride;
+
+    Coroutine _delayedRefreshCo;
 
     void OnEnable()
     {
@@ -34,6 +37,12 @@ public sealed class CoinTurnLockBinder : MonoBehaviour
         }
 
         _hasTargetOverride = false;
+
+        if (_delayedRefreshCo != null)
+        {
+            StopCoroutine(_delayedRefreshCo);
+            _delayedRefreshCo = null;
+        }
     }
 
     public void SetModeActive(bool active)
@@ -43,9 +52,22 @@ public sealed class CoinTurnLockBinder : MonoBehaviour
 
         if (_modeActive) _hasTargetOverride = false;
 
-        if (!_modeActive) { UnlockAllLocal(); return; }
+        if (_delayedRefreshCo != null)
+        {
+            StopCoroutine(_delayedRefreshCo);
+            _delayedRefreshCo = null;
+        }
+
+        if (!_modeActive)
+        {
+            UnlockAllLocal();
+            return;
+        }
+
         if (CoinPlacementTurnManager.Instance)
             HandlePlacerChanged(CoinPlacementTurnManager.Instance.currentPlacerNetId);
+
+        _delayedRefreshCo = StartCoroutine(CoDelayedRefreshPlacer());
     }
 
     void HandleTargetChosen(int col, int row, Color color)
@@ -85,18 +107,32 @@ public sealed class CoinTurnLockBinder : MonoBehaviour
             return;
         }
 
-        var me = NetworkClient.localPlayer;
-        uint myId = me ? me.netId : 0;
+        var me = NetworkClient.connection?.identity;
+        bool myTurn = me && currentPlacerNetId != 0 && me.netId == currentPlacerNetId;
+        if (myTurn) UnlockAllLocal();
+        else LockAllLocal();
+    }
 
-        bool myTurn = myId != 0 && currentPlacerNetId != 0 && myId == currentPlacerNetId;
+    IEnumerator CoDelayedRefreshPlacer()
+    {
+        yield return null;
 
-        if (debugLogs)
-            Debug.Log($"[TurnLock] PlacerChanged: currentPlacer={currentPlacerNetId}, local={myId}, myTurn={myTurn}");
+        if (!_modeActive)
+        {
+            _delayedRefreshCo = null;
+            yield break;
+        }
 
-        if (myTurn)
-            UnlockAllLocal();
-        else
-            LockAllLocal();
+        var mgr = CoinPlacementTurnManager.Instance;
+        if (mgr != null)
+        {
+            if (debugLogs)
+                Debug.Log($"[TurnLock] Delayed refresh → currentPlacerNetId={mgr.currentPlacerNetId}");
+
+            HandlePlacerChanged(mgr.currentPlacerNetId);
+        }
+
+        _delayedRefreshCo = null;
     }
 
     static void LockAllLocal() { var mgr = CoinRoundLockManager.Instance; if (mgr) mgr.LockAllCoins(); }
