@@ -40,6 +40,10 @@ public class CoinPlacementTimerUI : MonoBehaviour
 
         _placingPhaseActive = PhaseController.ClientPlacingPhaseActive;
 
+        GameRuleSettings.OnTurnDurationChanged -= HandleRuleTurnDurationChanged;
+        GameRuleSettings.OnTurnDurationChanged += HandleRuleTurnDurationChanged;
+        ApplyRuleTurnDuration();
+
         UpdateLabel(active: false, remainingSeconds: 0f);
 
         var tm = CoinPlacementTurnManager.Instance;
@@ -54,6 +58,7 @@ public class CoinPlacementTimerUI : MonoBehaviour
         CoinPlacementTurnManager.OnPlacerChangedClient -= HandlePlacerChanged;
         PhaseController.OnClientPlacingPhaseStarted -= HandlePlacingPhaseStarted;
         PhaseController.OnClientPlacingPhaseEnded -= HandlePlacingPhaseEnded;
+        GameRuleSettings.OnTurnDurationChanged -= HandleRuleTurnDurationChanged;
     }
 
     void Update()
@@ -72,6 +77,29 @@ public class CoinPlacementTimerUI : MonoBehaviour
         {
             UpdateLabel(active: true, remainingSeconds: _remaining);
         }
+    }
+
+    void ApplyRuleTurnDuration()
+    {
+        if (GameRuleSettings.Instance != null)
+        {
+            float ruleSeconds = GameRuleSettings.CurrentTurnDurationSeconds;
+            turnDurationSeconds = Mathf.Max(0.5f, ruleSeconds);
+        }
+    }
+
+    void HandleRuleTurnDurationChanged(float newSeconds)
+    {
+        turnDurationSeconds = Mathf.Max(0.5f, newSeconds);
+
+        if (_running)
+        {
+            _remaining = Mathf.Min(_remaining, turnDurationSeconds);
+            UpdateLabel(active: true, remainingSeconds: _remaining);
+        }
+
+        if (debugLogs)
+            Log($"[Timer] Rule duration updated → {turnDurationSeconds}s");
     }
 
     void HandlePlacerChanged(uint newPlacerNetId)
@@ -126,6 +154,8 @@ public class CoinPlacementTimerUI : MonoBehaviour
             StopTimer();
             return;
         }
+
+        ApplyRuleTurnDuration();
 
         _remaining = turnDurationSeconds;
         _running = true;
