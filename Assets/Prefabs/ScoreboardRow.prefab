@@ -109,7 +109,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  tipGlowFadeOutDuration: 0.25
+  tipGlowFadeOutDuration: 1
 --- !u!114 &5552500402594581433
 MonoBehaviour:
   m_ObjectHideFlags: 0
