@@ -19,6 +19,7 @@ public class EndGameScoreboardRow : MonoBehaviour
     [Header("Tip Glow")]
     [SerializeField] Image tipGlowImage;
     [SerializeField] bool animateTipGlow = true;
+    [SerializeField, Range(0f, 5f)] float maxGlowIntensity = 1f;
     [SerializeField] AnimationCurve tipGlowAlphaCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
     [SerializeField, Min(0f)] float tipGlowFadeOutDuration = 0.25f;
 
@@ -120,15 +121,19 @@ public class EndGameScoreboardRow : MonoBehaviour
         if (!animateTipGlow)
         {
             var c = tipGlowImage.color;
-            c.a = 1f;
+            c.a = maxGlowIntensity;
             tipGlowImage.color = c;
             return;
         }
 
-        float alpha = tipGlowAlphaCurve != null ? tipGlowAlphaCurve.Evaluate(normalizedFill) : 1f;
+        float curveValue = tipGlowAlphaCurve != null
+            ? tipGlowAlphaCurve.Evaluate(normalizedFill)
+            : 1f;
+
+        float intensity = Mathf.Clamp01(curveValue) * maxGlowIntensity;
 
         var col = tipGlowImage.color;
-        col.a = alpha;
+        col.a = intensity;
         tipGlowImage.color = col;
     }
 
