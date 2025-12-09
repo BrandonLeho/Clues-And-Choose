@@ -5,13 +5,22 @@ using System;
 public sealed class GameRuleSettings : NetworkBehaviour
 {
     public static GameRuleSettings Instance { get; private set; }
+
     public static event Action<bool> OnLockAllCoinsChanged;
     public static event Action<float> OnTurnDurationChanged;
+    public static event Action<int> OnMaxFullCyclesChanged;
+
     [SyncVar(hook = nameof(OnLockAllCoinsChangedHook))]
     public bool lockAllCoinsEnabled;
+
     [SyncVar(hook = nameof(OnTurnDurationChangedHook))]
     public float turnDurationSeconds = 15f;
+
+    [SyncVar(hook = nameof(OnMaxFullCyclesChangedHook))]
+    public int maxFullCycles = 2;
+
     const float DefaultTurnDurationSeconds = 15f;
+    const int DefaultMaxFullCycles = 2;
 
     void Awake()
     {
@@ -30,6 +39,11 @@ public sealed class GameRuleSettings : NetworkBehaviour
         OnTurnDurationChanged?.Invoke(newValue);
     }
 
+    void OnMaxFullCyclesChangedHook(int _, int newValue)
+    {
+        OnMaxFullCyclesChanged?.Invoke(newValue);
+    }
+
     [Command(requiresAuthority = false)]
     public void CmdSetLockAllCoinsEnabled(bool value)
     {
@@ -43,8 +57,18 @@ public sealed class GameRuleSettings : NetworkBehaviour
         turnDurationSeconds = clamped;
     }
 
+    [Command(requiresAuthority = false)]
+    public void CmdSetMaxFullCycles(int value)
+    {
+        int clamped = Mathf.Clamp(value, 1, 20);
+        maxFullCycles = clamped;
+    }
+
     public static bool IsLockAllEnabled => Instance && Instance.lockAllCoinsEnabled;
 
     public static float CurrentTurnDurationSeconds =>
         Instance ? Instance.turnDurationSeconds : DefaultTurnDurationSeconds;
+
+    public static int CurrentMaxFullCycles =>
+        Instance ? Mathf.Max(1, Instance.maxFullCycles) : DefaultMaxFullCycles;
 }

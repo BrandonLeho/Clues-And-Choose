@@ -29,10 +29,20 @@ public class RoundManager : NetworkBehaviour
     [SyncVar] int _fullCyclesCompleted = 0;
     [SyncVar] int _cycleStartIndex = -1;
 
+    int EffectiveMaxFullCycles
+    {
+        get
+        {
+            if (GameRuleSettings.Instance)
+                return Mathf.Max(1, GameRuleSettings.CurrentMaxFullCycles);
+            return Mathf.Max(1, maxFullCycles);
+        }
+    }
+
     public int CurrentRoundIndex => _roundIndex;
     public uint CurrentClueGiverNetId => _clueGiverNetId;
     public int FullCyclesCompleted => _fullCyclesCompleted;
-    public int MaxFullCycles => maxFullCycles;
+    public int MaxFullCycles => EffectiveMaxFullCycles;
 
     public static event Action OnServerRosterChanged;
     public static event Action<uint> OnServerClueGiverChanged;
@@ -149,7 +159,8 @@ public class RoundManager : NetworkBehaviour
     public void ServerAdvanceRound()
     {
         if (_roster.Count == 0) return;
-        if (_fullCyclesCompleted >= maxFullCycles)
+
+        if (_fullCyclesCompleted >= EffectiveMaxFullCycles)
         {
             DLog("[Round] Clue-giver cycles finished; not advancing.");
             OnServerClueGiverCyclesFinished?.Invoke();
@@ -164,10 +175,10 @@ public class RoundManager : NetworkBehaviour
         if (_cycleStartIndex >= 0 && _clueGiverRosterIndex == _cycleStartIndex)
         {
             _fullCyclesCompleted++;
-            OnServerFullCycleCompleted?.Invoke(_fullCyclesCompleted, maxFullCycles);
-            DLog($"[Round] Full clue-giver cycle completed ({_fullCyclesCompleted}/{maxFullCycles}).");
+            OnServerFullCycleCompleted?.Invoke(_fullCyclesCompleted, EffectiveMaxFullCycles); // CHANGE
+            DLog($"[Round] Full clue-giver cycle completed ({_fullCyclesCompleted}/{EffectiveMaxFullCycles})."); // CHANGE
 
-            if (_fullCyclesCompleted >= maxFullCycles)
+            if (_fullCyclesCompleted >= EffectiveMaxFullCycles)
             {
                 OnServerClueGiverCyclesFinished?.Invoke();
                 DLog("[Round] Max clue-giver cycles reached; rounds will no longer advance.");
