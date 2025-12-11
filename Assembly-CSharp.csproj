@@ -157,6 +157,7 @@
     <Compile Include="Assets\Scripts\Board\PlayerLIst\RegistryNameColorLookup.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\GridHoverRelay.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\Lock\LockAllCoinsToggleUI.cs" />
+    <Compile Include="Assets\Scripts\Gameloop\RouletteModeToggleUI.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinHoverOffset.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinCursorBridge.cs" />
     <Compile Include="Assets\Scripts\Board\ColorChooser\SwatchHoverNeon.cs" />

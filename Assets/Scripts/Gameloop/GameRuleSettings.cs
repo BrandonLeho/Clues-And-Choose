@@ -9,6 +9,7 @@ public sealed class GameRuleSettings : NetworkBehaviour
     public static event Action<bool> OnLockAllCoinsChanged;
     public static event Action<float> OnTurnDurationChanged;
     public static event Action<int> OnMaxFullCyclesChanged;
+    public static event Action<bool> OnRouletteModeChanged;
 
     [SyncVar(hook = nameof(OnLockAllCoinsChangedHook))]
     public bool lockAllCoinsEnabled;
@@ -18,6 +19,9 @@ public sealed class GameRuleSettings : NetworkBehaviour
 
     [SyncVar(hook = nameof(OnMaxFullCyclesChangedHook))]
     public int maxFullCycles = 2;
+
+    [SyncVar(hook = nameof(OnRouletteModeChangedHook))]
+    public bool rouletteModeEnabled;
 
     const float DefaultTurnDurationSeconds = 15f;
     const int DefaultMaxFullCycles = 2;
@@ -44,6 +48,11 @@ public sealed class GameRuleSettings : NetworkBehaviour
         OnMaxFullCyclesChanged?.Invoke(newValue);
     }
 
+    void OnRouletteModeChangedHook(bool _, bool newValue)
+    {
+        OnRouletteModeChanged?.Invoke(newValue);
+    }
+
     [Command(requiresAuthority = false)]
     public void CmdSetLockAllCoinsEnabled(bool value)
     {
@@ -64,6 +73,12 @@ public sealed class GameRuleSettings : NetworkBehaviour
         maxFullCycles = clamped;
     }
 
+    [Command(requiresAuthority = false)]
+    public void CmdSetRouletteModeEnabled(bool value)
+    {
+        rouletteModeEnabled = value;
+    }
+
     public static bool IsLockAllEnabled => Instance && Instance.lockAllCoinsEnabled;
 
     public static float CurrentTurnDurationSeconds =>
@@ -71,4 +86,7 @@ public sealed class GameRuleSettings : NetworkBehaviour
 
     public static int CurrentMaxFullCycles =>
         Instance ? Mathf.Max(1, Instance.maxFullCycles) : DefaultMaxFullCycles;
+
+    public static bool IsRouletteModeEnabled =>
+        Instance && Instance.rouletteModeEnabled;
 }

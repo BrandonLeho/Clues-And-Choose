@@ -12954,7 +12954,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 1.5576475
+    x: 45.332035
     y: 0
     width: 10
     height: 10
@@ -40216,7 +40216,6 @@ MonoBehaviour:
   autoRefreshOnEnable: 1
   autoRefreshOnScoreChanged: 0
   debugLogsEnabled: 0
-  highlightWinners: 1
 --- !u!114 &705955803
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -108049,7 +108048,6 @@ MonoBehaviour:
   autoRefreshOnEnable: 1
   autoRefreshOnScoreChanged: 0
   debugLogsEnabled: 0
-  highlightWinners: 1
 --- !u!114 &1839183470
 MonoBehaviour:
   m_ObjectHideFlags: 0

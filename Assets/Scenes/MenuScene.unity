@@ -653,6 +653,7 @@ MonoBehaviour:
   lockAllCoinsEnabled: 1
   turnDurationSeconds: 15
   maxFullCycles: 2
+  rouletteModeEnabled: 0
 --- !u!4 &163601710
 Transform:
   m_ObjectHideFlags: 0
@@ -1037,7 +1038,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &310378512
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2758,7 +2759,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &976677953
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3616,6 +3617,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1589943308}
   - component: {fileID: 1589943309}
+  - component: {fileID: 1589943310}
   m_Layer: 5
   m_Name: Roulette
   m_TagString: Untagged
@@ -3692,6 +3694,19 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_IsOn: 1
+--- !u!114 &1589943310
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1589943307}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 52da19d6538a2254bba79f723db9544b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RouletteModeToggleUI
+  rouletteToggle: {fileID: 1589943309}
 --- !u!1 &1601394580
 GameObject:
   m_ObjectHideFlags: 0
