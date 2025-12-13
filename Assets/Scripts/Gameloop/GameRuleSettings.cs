@@ -77,6 +77,11 @@ public sealed class GameRuleSettings : NetworkBehaviour
     public void CmdSetRouletteModeEnabled(bool value)
     {
         rouletteModeEnabled = value;
+
+        if (value && lockAllCoinsEnabled)
+        {
+            lockAllCoinsEnabled = false;
+        }
     }
 
     public static bool IsLockAllEnabled => Instance && Instance.lockAllCoinsEnabled;
