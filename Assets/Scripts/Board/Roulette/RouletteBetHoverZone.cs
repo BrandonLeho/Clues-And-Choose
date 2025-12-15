@@ -1,12 +1,15 @@
 using UnityEngine;
 
-[RequireComponent(typeof(Collider2D))]
 [DisallowMultipleComponent]
-public class RouletteBetHoverZone : MonoBehaviour
+public class RouletteBetHoverZones2D : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] BetPanelPopAnimator betPanel;
     [SerializeField] Camera worldCamera;
+
+    [Header("Zones (2D Colliders)")]
+    [SerializeField] Collider2D enterZone;
+    [SerializeField] Collider2D exitZone;
 
     [Header("Pointer Sampling")]
     [SerializeField] float pointerZ = 0f;
@@ -15,14 +18,13 @@ public class RouletteBetHoverZone : MonoBehaviour
     [SerializeField] bool requireRouletteMode = true;
     [SerializeField] bool requireDraggingCoin = true;
 
-    Collider2D _col;
-    bool _inside;
+    bool _panelShown;
 
     void Awake()
     {
-        _col = GetComponent<Collider2D>();
-        if (!_col) _col = gameObject.AddComponent<BoxCollider2D>();
         if (!worldCamera) worldCamera = Camera.main;
+        if (enterZone == null || exitZone == null)
+            Debug.LogWarning($"{nameof(RouletteBetHoverZones2D)} on {name} needs both Enter + Exit zones assigned.");
     }
 
     void Update()
@@ -42,21 +44,34 @@ public class RouletteBetHoverZone : MonoBehaviour
         }
 
         Vector2 worldPoint = GetPointerWorld2D();
-        bool nowInside = _col != null && _col.OverlapPoint(worldPoint);
 
-        if (nowInside != _inside)
+        bool inExit = exitZone != null && exitZone.OverlapPoint(worldPoint);
+        if (inExit)
         {
-            _inside = nowInside;
-            if (_inside) betPanel.Show();
-            else betPanel.Hide();
+            if (_panelShown)
+            {
+                _panelShown = false;
+                betPanel.Hide();
+            }
+            return;
+        }
+
+        bool inEnter = enterZone != null && enterZone.OverlapPoint(worldPoint);
+        if (inEnter)
+        {
+            if (!_panelShown)
+            {
+                _panelShown = true;
+                betPanel.Show();
+            }
         }
     }
 
     void ForceHide()
     {
-        if (_inside)
+        if (_panelShown)
         {
-            _inside = false;
+            _panelShown = false;
             betPanel.Hide();
         }
         else
