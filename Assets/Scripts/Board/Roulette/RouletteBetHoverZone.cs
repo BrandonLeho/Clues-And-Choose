@@ -1,18 +1,14 @@
 using UnityEngine;
 
 [DisallowMultipleComponent]
-public class RouletteBetHoverZones2D : MonoBehaviour
+public class RouletteBetHoverZones_UseProbe : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] BetPanelPopAnimator betPanel;
-    [SerializeField] Camera worldCamera;
 
     [Header("Zones (2D Colliders)")]
     [SerializeField] Collider2D enterZone;
     [SerializeField] Collider2D exitZone;
-
-    [Header("Pointer Sampling")]
-    [SerializeField] float pointerZ = 0f;
 
     [Header("Rules")]
     [SerializeField] bool requireRouletteMode = true;
@@ -22,9 +18,8 @@ public class RouletteBetHoverZones2D : MonoBehaviour
 
     void Awake()
     {
-        if (!worldCamera) worldCamera = Camera.main;
         if (enterZone == null || exitZone == null)
-            Debug.LogWarning($"{nameof(RouletteBetHoverZones2D)} on {name} needs both Enter + Exit zones assigned.");
+            Debug.LogWarning($"{nameof(RouletteBetHoverZones_UseProbe)} on {name} needs Enter + Exit zones assigned.");
     }
 
     void Update()
@@ -37,15 +32,23 @@ public class RouletteBetHoverZones2D : MonoBehaviour
             return;
         }
 
-        if (requireDraggingCoin && !LocalCoinDragStateRelay.IsLocalDraggingAnyCoin)
+        var probe = CoinPlacementProbe.Active;
+
+        if (requireDraggingCoin && probe == null)
         {
             ForceHide();
             return;
         }
 
-        Vector2 worldPoint = GetPointerWorld2D();
+        if (probe == null)
+        {
+            ForceHide();
+            return;
+        }
 
-        bool inExit = exitZone != null && exitZone.OverlapPoint(worldPoint);
+        Vector2 point = (Vector2)probe.GetProbeWorld();
+
+        bool inExit = exitZone != null && exitZone.OverlapPoint(point);
         if (inExit)
         {
             if (_panelShown)
@@ -56,7 +59,7 @@ public class RouletteBetHoverZones2D : MonoBehaviour
             return;
         }
 
-        bool inEnter = enterZone != null && enterZone.OverlapPoint(worldPoint);
+        bool inEnter = enterZone != null && enterZone.OverlapPoint(point);
         if (inEnter)
         {
             if (!_panelShown)
@@ -78,16 +81,5 @@ public class RouletteBetHoverZones2D : MonoBehaviour
         {
             betPanel.Hide();
         }
-    }
-
-    Vector2 GetPointerWorld2D()
-    {
-        if (!worldCamera) worldCamera = Camera.main;
-
-        Vector3 sp = Input.mousePosition;
-        sp.z = Mathf.Abs(worldCamera.transform.position.z - pointerZ);
-
-        Vector3 wp = worldCamera.ScreenToWorldPoint(sp);
-        return new Vector2(wp.x, wp.y);
     }
 }

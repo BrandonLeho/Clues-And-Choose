@@ -13050,7 +13050,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 38.47817
+    x: 46.863518
     y: 0
     width: 10
     height: 10
@@ -49992,10 +49992,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RouletteBetHoverZone
   betPanel: {fileID: 85183700}
-  worldCamera: {fileID: 519420031}
   enterZone: {fileID: 893170854}
   exitZone: {fileID: 251202753}
-  pointerZ: 0
   requireRouletteMode: 1
   requireDraggingCoin: 1
 --- !u!1 &894484801
