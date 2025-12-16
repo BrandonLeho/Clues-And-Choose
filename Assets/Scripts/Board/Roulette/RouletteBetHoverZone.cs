@@ -14,13 +14,10 @@ public class RouletteBetHoverZones_UseProbe : MonoBehaviour
     [SerializeField] bool requireRouletteMode = true;
     [SerializeField] bool requireDraggingCoin = true;
 
-    bool _panelShown;
+    [Header("Debug")]
+    [SerializeField] bool debugLogs = false;
 
-    void Awake()
-    {
-        if (enterZone == null || exitZone == null)
-            Debug.LogWarning($"{nameof(RouletteBetHoverZones_UseProbe)} on {name} needs Enter + Exit zones assigned.");
-    }
+    bool _panelShown;
 
     void Update()
     {
@@ -33,13 +30,11 @@ public class RouletteBetHoverZones_UseProbe : MonoBehaviour
         }
 
         var probe = CoinPlacementProbe.Active;
-
         if (requireDraggingCoin && probe == null)
         {
             ForceHide();
             return;
         }
-
         if (probe == null)
         {
             ForceHide();
@@ -48,18 +43,12 @@ public class RouletteBetHoverZones_UseProbe : MonoBehaviour
 
         Vector2 point = (Vector2)probe.GetProbeWorld();
 
-        bool inExit = exitZone != null && exitZone.OverlapPoint(point);
-        if (inExit)
-        {
-            if (_panelShown)
-            {
-                _panelShown = false;
-                betPanel.Hide();
-            }
-            return;
-        }
-
         bool inEnter = enterZone != null && enterZone.OverlapPoint(point);
+        bool inExit = exitZone != null && exitZone.OverlapPoint(point);
+
+        if (debugLogs)
+            Debug.Log($"[BetZones] inEnter={inEnter} inExit={inExit} shown={_panelShown} point={point}");
+
         if (inEnter)
         {
             if (!_panelShown)
@@ -67,19 +56,22 @@ public class RouletteBetHoverZones_UseProbe : MonoBehaviour
                 _panelShown = true;
                 betPanel.Show();
             }
+            return;
+        }
+
+        if (inExit)
+        {
+            if (_panelShown)
+            {
+                _panelShown = false;
+                betPanel.Hide();
+            }
         }
     }
 
     void ForceHide()
     {
-        if (_panelShown)
-        {
-            _panelShown = false;
-            betPanel.Hide();
-        }
-        else
-        {
-            betPanel.Hide();
-        }
+        if (_panelShown) _panelShown = false;
+        betPanel.Hide();
     }
 }
