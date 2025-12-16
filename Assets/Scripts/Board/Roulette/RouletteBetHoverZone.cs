@@ -17,7 +17,18 @@ public class RouletteBetHoverZones_UseProbe : MonoBehaviour
     [Header("Debug")]
     [SerializeField] bool debugLogs = false;
 
-    bool _panelShown;
+    enum State
+    {
+        WaitingForEnter,
+        TrackingExit
+    }
+
+    State _state;
+
+    void Awake()
+    {
+        ResetToWaitingForEnter();
+    }
 
     void Update()
     {
@@ -25,53 +36,74 @@ public class RouletteBetHoverZones_UseProbe : MonoBehaviour
 
         if (requireRouletteMode && !GameRuleSettings.IsRouletteModeEnabled)
         {
-            ForceHide();
+            ForceHideAndReset();
             return;
         }
 
         var probe = CoinPlacementProbe.Active;
         if (requireDraggingCoin && probe == null)
         {
-            ForceHide();
+            ForceHideAndReset();
             return;
         }
+
         if (probe == null)
         {
-            ForceHide();
+            ForceHideAndReset();
             return;
         }
 
         Vector2 point = (Vector2)probe.GetProbeWorld();
 
-        bool inEnter = enterZone != null && enterZone.OverlapPoint(point);
-        bool inExit = exitZone != null && exitZone.OverlapPoint(point);
+        bool inEnter = enterZone != null && enterZone.enabled && enterZone.OverlapPoint(point);
+        bool inExit = exitZone != null && exitZone.enabled && exitZone.OverlapPoint(point);
 
         if (debugLogs)
-            Debug.Log($"[BetZones] inEnter={inEnter} inExit={inExit} shown={_panelShown} point={point}");
+            Debug.Log($"[BetZones] state={_state} inEnter={inEnter} inExit={inExit} point={point}");
 
-        if (inEnter)
+        switch (_state)
         {
-            if (!_panelShown)
-            {
-                _panelShown = true;
-                betPanel.Show();
-            }
-            return;
-        }
+            case State.WaitingForEnter:
+                {
+                    if (inEnter)
+                    {
+                        betPanel.Show();
+                        ArmExitZone();
+                    }
+                    break;
+                }
 
-        if (inExit)
-        {
-            if (_panelShown)
-            {
-                _panelShown = false;
-                betPanel.Hide();
-            }
+            case State.TrackingExit:
+                {
+                    if (!inExit)
+                    {
+                        betPanel.Hide();
+                        ResetToWaitingForEnter();
+                    }
+                    break;
+                }
         }
     }
 
-    void ForceHide()
+    void ArmExitZone()
     {
-        if (_panelShown) _panelShown = false;
+        _state = State.TrackingExit;
+
+        if (enterZone) enterZone.enabled = false;
+        if (exitZone) exitZone.enabled = true;
+    }
+
+    void ResetToWaitingForEnter()
+    {
+        _state = State.WaitingForEnter;
+
+        if (enterZone) enterZone.enabled = true;
+        if (exitZone) exitZone.enabled = false;
+    }
+
+    void ForceHideAndReset()
+    {
         betPanel.Hide();
+        ResetToWaitingForEnter();
     }
 }
