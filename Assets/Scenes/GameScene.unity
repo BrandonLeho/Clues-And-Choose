@@ -13050,7 +13050,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 10.783506
+    x: 1.626859
     y: 0
     width: 10
     height: 10
@@ -13273,8 +13273,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 251202752}
-  - component: {fileID: 251202753}
   - component: {fileID: 251202754}
+  - component: {fileID: 251202753}
   m_Layer: 5
   m_Name: BetHoverExitZone
   m_TagString: Untagged
@@ -50040,7 +50040,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RouletteBetHoverZone
   betPanel: {fileID: 85183700}
   enterZone: {fileID: 893170854}
-  exitZone: {fileID: 251202753}
+  exitZone: {fileID: 251202754}
   requireRouletteMode: 1
   requireDraggingCoin: 1
 --- !u!1 &894484801
