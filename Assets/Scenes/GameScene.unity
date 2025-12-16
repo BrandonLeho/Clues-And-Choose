@@ -13050,7 +13050,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 2.0735135
+    x: 8.4344015
     y: 0
     width: 10
     height: 10
@@ -24267,6 +24267,7 @@ MonoBehaviour:
   exitZone: {fileID: 251202754}
   requireRouletteMode: 1
   requireDraggingCoin: 1
+  debugLogs: 0
 --- !u!224 &450750910 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 3337803732932086652, guid: 96c2c7455eef99f46961f53ff646d8a6, type: 3}
