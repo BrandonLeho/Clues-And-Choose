@@ -22,6 +22,8 @@ public class CoinPlacementTimerUI : MonoBehaviour
 
     bool _placingPhaseActive;
 
+    bool IsSimultaneousMode() => !GameRuleSettings.IsLockAllEnabled;
+
     void Awake()
     {
         if (!timeLabelUI) timeLabelUI = GetComponent<Text>();
@@ -110,12 +112,20 @@ public class CoinPlacementTimerUI : MonoBehaviour
             Log($"[Timer] PlacerChanged → NetId={newPlacerNetId}, Name={name}, placingPhaseActive={_placingPhaseActive}");
         }
 
+        if (IsSimultaneousMode())
+        {
+            if (_placingPhaseActive)
+                TryStartTimerIfReady();
+            else
+                StopTimer();
+            return;
+        }
+
         if (newPlacerNetId == 0 || !_placingPhaseActive)
         {
             StopTimer();
             return;
         }
-
         TryStartTimerIfReady();
     }
 
@@ -126,7 +136,14 @@ public class CoinPlacementTimerUI : MonoBehaviour
         if (debugLogs)
             Log("[Timer] Placing phase STARTED → checking if timer should start.");
 
-        TryStartTimerIfReady();
+        if (IsSimultaneousMode())
+        {
+            TryStartTimerIfReady();
+        }
+        else
+        {
+            TryStartTimerIfReady();
+        }
     }
 
     void HandlePlacingPhaseEnded()
@@ -143,13 +160,22 @@ public class CoinPlacementTimerUI : MonoBehaviour
     {
         var tm = CoinPlacementTurnManager.Instance;
 
-        if (!tm || tm.currentPlacerNetId == 0)
+        if (IsSimultaneousMode())
         {
-            StopTimer();
+            if (!_placingPhaseActive)
+            {
+                StopTimer();
+                return;
+            }
+
+            ApplyRuleTurnDuration();
+            _remaining = turnDurationSeconds;
+            _running = true;
+            UpdateLabel(true, _remaining);
             return;
         }
 
-        if (!_placingPhaseActive)
+        if (!tm || tm.currentPlacerNetId == 0 || !_placingPhaseActive)
         {
             StopTimer();
             return;
