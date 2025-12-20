@@ -271,46 +271,6 @@ public class CoinPlacementTurnManager : NetworkBehaviour
         TargetForceDropIfDragging(conn);
     }
 
-    [Server]
-    public void ServerForceDropAllSimultaneousPlayers()
-    {
-        if (GameRuleSettings.IsLockAllEnabled)
-            return;
-
-        if (_firstCycleComplete)
-            return;
-
-        if (_order == null || _order.Count == 0)
-        {
-            BuildOrder();
-            if (_order == null || _order.Count == 0)
-            {
-                Log("[Turn] ServerForceDropAllSimultaneousPlayers → no eligible players (empty order).");
-                return;
-            }
-        }
-
-        foreach (var playerId in _order)
-        {
-            if (_placedThisCycle.Contains(playerId))
-                continue;
-
-            if (NetworkServer.spawned.TryGetValue(playerId, out var identity) && identity != null)
-            {
-                var conn = identity.connectionToClient;
-                if (conn != null)
-                {
-                    if (debugLogs)
-                        Log($"[Turn] ServerForceDropAllSimultaneousPlayers → sending drop request to {Fmt(playerId)}");
-
-                    TargetForceDropIfDragging(conn);
-                }
-            }
-
-            ServerNoteSuccessfulPlacement(playerId);
-        }
-    }
-
     [TargetRpc]
     void TargetForceDropIfDragging(NetworkConnection target)
     {
