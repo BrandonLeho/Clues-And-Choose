@@ -214,9 +214,19 @@ public class CoinPlacementTimerUI : MonoBehaviour
         if (IsSimultaneousMode())
         {
             if (debugLogs)
-                Log("[Timer] OnTimerExpired (simultaneous mode) → forcing local drop on any dragging coin.");
+                Log("[Timer] OnTimerExpired (simultaneous mode) → forcing local drop and completing cycle on server.");
 
             CoinDragHandler.ForceDropIfDragging();
+
+            if (NetworkServer.active)
+            {
+                var tm = CoinPlacementTurnManager.Instance;
+                if (tm != null)
+                {
+                    tm.ServerForceCompleteSimultaneousCycleFromTimer();
+                }
+            }
+
             return;
         }
 
@@ -232,19 +242,19 @@ public class CoinPlacementTimerUI : MonoBehaviour
             return;
         }
 
-        var tm = CoinPlacementTurnManager.Instance;
-        if (!tm)
+        var tm2 = CoinPlacementTurnManager.Instance;
+        if (!tm2)
         {
             return;
         }
 
-        uint placerAtExpiry = tm.currentPlacerNetId;
+        uint placerAtExpiry = tm2.currentPlacerNetId;
         if (placerAtExpiry == 0)
         {
             return;
         }
 
-        tm.ServerForceDropOnCurrentPlacer();
+        tm2.ServerForceDropOnCurrentPlacer();
 
         if (debugLogs)
         {

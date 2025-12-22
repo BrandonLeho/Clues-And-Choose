@@ -271,6 +271,44 @@ public class CoinPlacementTurnManager : NetworkBehaviour
         TargetForceDropIfDragging(conn);
     }
 
+    [Server]
+    public void ServerForceCompleteSimultaneousCycleFromTimer()
+    {
+        if (GameRuleSettings.IsLockAllEnabled)
+            return;
+
+        if (_firstCycleComplete)
+        {
+            if (debugLogs)
+                Log("[Turn] ForceComplete(simultaneous): already complete, ignoring.");
+            return;
+        }
+
+        if (debugLogs)
+            Log("[Turn] ForceComplete(simultaneous): timer expired, completing cycle.");
+
+        var finalOrder = new List<uint>();
+
+        foreach (var id in _currentCyclePlacedOrder)
+        {
+            if (!finalOrder.Contains(id))
+                finalOrder.Add(id);
+        }
+
+        foreach (var id in _order)
+        {
+            if (!finalOrder.Contains(id))
+                finalOrder.Add(id);
+        }
+
+        _lastCompletedOrder = finalOrder;
+        _firstCycleComplete = true;
+
+        SetPlacer(0);
+
+        OnServerFirstCycleCompleted?.Invoke();
+    }
+
     [TargetRpc]
     void TargetForceDropIfDragging(NetworkConnection target)
     {
