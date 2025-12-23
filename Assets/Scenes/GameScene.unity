@@ -13005,7 +13005,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 33.619957
+    x: 0.5922907
     y: 0
     width: 10
     height: 10
@@ -24217,7 +24217,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b9fe7ece74d297a42b8222c613f2f0e8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RouletteBetHoverZones_UseProbe
-  betPanel: {fileID: 0}
+  topPanel: {fileID: 945805250}
+  sidePanel: {fileID: 1432568450}
   enterZone: {fileID: 893170854}
   exitZone: {fileID: 251202754}
   requireRouletteMode: 1

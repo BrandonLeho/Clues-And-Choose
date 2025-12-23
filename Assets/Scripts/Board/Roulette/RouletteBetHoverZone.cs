@@ -1,10 +1,11 @@
 using UnityEngine;
 
 [DisallowMultipleComponent]
-public class RouletteBetHoverZones_UseProbe : MonoBehaviour
+public class RouletteBetHoverZones : MonoBehaviour
 {
-    [Header("References")]
-    [SerializeField] BetPanelPopAnimator betPanel;
+    [Header("Panel Animators")]
+    [SerializeField] BetPanelPopAnimator topPanel;
+    [SerializeField] BetPanelPopAnimator sidePanel;
 
     [Header("Zones (2D Colliders)")]
     [SerializeField] Collider2D enterZone;
@@ -28,11 +29,12 @@ public class RouletteBetHoverZones_UseProbe : MonoBehaviour
     void Awake()
     {
         ResetToWaitingForEnter();
+        ForceHidePanelsImmediate();
     }
 
     void Update()
     {
-        if (!betPanel) return;
+        if (!topPanel && !sidePanel) return;
 
         if (requireRouletteMode && !GameRuleSettings.IsRouletteModeEnabled)
         {
@@ -59,30 +61,40 @@ public class RouletteBetHoverZones_UseProbe : MonoBehaviour
         bool inExit = exitZone != null && exitZone.enabled && exitZone.OverlapPoint(point);
 
         if (debugLogs)
+        {
             Debug.Log($"[BetZones] state={_state} inEnter={inEnter} inExit={inExit} point={point}");
+        }
 
         switch (_state)
         {
             case State.WaitingForEnter:
+                if (inEnter)
                 {
-                    if (inEnter)
-                    {
-                        betPanel.Show();
-                        ArmExitZone();
-                    }
-                    break;
+                    ShowBothPanels();
+                    ArmExitZone();
                 }
+                break;
 
             case State.TrackingExit:
+                if (!inExit)
                 {
-                    if (!inExit)
-                    {
-                        betPanel.Hide();
-                        ResetToWaitingForEnter();
-                    }
-                    break;
+                    HideBothPanels();
+                    ResetToWaitingForEnter();
                 }
+                break;
         }
+    }
+
+    void ShowBothPanels()
+    {
+        if (topPanel) topPanel.Show();
+        if (sidePanel) sidePanel.Show();
+    }
+
+    void HideBothPanels()
+    {
+        if (topPanel) topPanel.Hide();
+        if (sidePanel) sidePanel.Hide();
     }
 
     void ArmExitZone()
@@ -103,7 +115,13 @@ public class RouletteBetHoverZones_UseProbe : MonoBehaviour
 
     void ForceHideAndReset()
     {
-        betPanel.Hide();
+        HideBothPanels();
         ResetToWaitingForEnter();
+    }
+
+    void ForceHidePanelsImmediate()
+    {
+        if (topPanel) topPanel.ApplyInstantHidden();
+        if (sidePanel) sidePanel.ApplyInstantHidden();
     }
 }
