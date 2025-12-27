@@ -10,7 +10,7 @@ public class BetPanelPopAnimator : MonoBehaviour
 
     [Header("Positions (anchored)")]
     [SerializeField] Vector2 hiddenAnchoredPos = new Vector2(0f, -120f);
-    [SerializeField] Vector2 shownAnchoredPos = Vector2.zero;
+    //[SerializeField] Vector2 shownAnchoredPos = Vector2.zero;
 
     [Header("Scale")]
     [SerializeField] float hiddenScale = 0.92f;
@@ -26,6 +26,7 @@ public class BetPanelPopAnimator : MonoBehaviour
 
     Coroutine _co;
     bool _isShown;
+    Vector2 _initialAnchoredPos;
 
     void Reset()
     {
@@ -38,6 +39,8 @@ public class BetPanelPopAnimator : MonoBehaviour
     {
         if (!panel) panel = transform as RectTransform;
         if (!canvasGroup) canvasGroup = GetComponent<CanvasGroup>() ?? gameObject.AddComponent<CanvasGroup>();
+
+        _initialAnchoredPos = panel.anchoredPosition;
 
         ApplyInstantHidden();
     }
@@ -77,7 +80,7 @@ public class BetPanelPopAnimator : MonoBehaviour
         float d = Mathf.Max(0.0001f, toShown ? inDuration : outDuration);
 
         Vector2 p0 = panel.anchoredPosition;
-        Vector2 p1 = toShown ? shownAnchoredPos : hiddenAnchoredPos;
+        Vector2 p1 = toShown ? _initialAnchoredPos : hiddenAnchoredPos;
 
         float s0 = panel.localScale.x;
         float s1 = toShown ? shownScale : hiddenScale;

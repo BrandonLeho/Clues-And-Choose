@@ -13005,7 +13005,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 0.5922907
+    x: 92.83401
     y: 0
     width: 10
     height: 10
@@ -53386,7 +53386,6 @@ MonoBehaviour:
   canvasGroup: {fileID: 945805249}
   panel: {fileID: 945805246}
   hiddenAnchoredPos: {x: 0, y: -120}
-  shownAnchoredPos: {x: 0, y: 0}
   hiddenScale: 0.92
   shownScale: 1
   inDuration: 0.12
@@ -85845,7 +85844,6 @@ MonoBehaviour:
   canvasGroup: {fileID: 1432568449}
   panel: {fileID: 1432568448}
   hiddenAnchoredPos: {x: 120, y: 0}
-  shownAnchoredPos: {x: 0, y: 0}
   hiddenScale: 0.92
   shownScale: 1
   inDuration: 0.12
