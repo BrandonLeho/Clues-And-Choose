@@ -10,11 +10,9 @@ public class BetPanelPopAnimator : MonoBehaviour
 
     [Header("Positions (anchored)")]
     [SerializeField] Vector2 hiddenAnchoredPos = new Vector2(0f, -120f);
-    //[SerializeField] Vector2 shownAnchoredPos = Vector2.zero;
 
     [Header("Scale")]
     [SerializeField] float hiddenScale = 0.92f;
-    [SerializeField] float shownScale = 1f;
 
     [Header("Timing")]
     [SerializeField] float inDuration = 0.12f;
@@ -26,7 +24,9 @@ public class BetPanelPopAnimator : MonoBehaviour
 
     Coroutine _co;
     bool _isShown;
+
     Vector2 _initialAnchoredPos;
+    Vector3 _initialScale;
 
     void Reset()
     {
@@ -41,6 +41,7 @@ public class BetPanelPopAnimator : MonoBehaviour
         if (!canvasGroup) canvasGroup = GetComponent<CanvasGroup>() ?? gameObject.AddComponent<CanvasGroup>();
 
         _initialAnchoredPos = panel.anchoredPosition;
+        _initialScale = panel.localScale;
 
         ApplyInstantHidden();
     }
@@ -62,8 +63,9 @@ public class BetPanelPopAnimator : MonoBehaviour
     public void ApplyInstantHidden()
     {
         if (!panel) return;
+
         panel.anchoredPosition = hiddenAnchoredPos;
-        panel.localScale = Vector3.one * hiddenScale;
+        panel.localScale = _initialScale * hiddenScale;
         canvasGroup.alpha = 0f;
         SetInteractable(false);
         _isShown = false;
@@ -82,8 +84,8 @@ public class BetPanelPopAnimator : MonoBehaviour
         Vector2 p0 = panel.anchoredPosition;
         Vector2 p1 = toShown ? _initialAnchoredPos : hiddenAnchoredPos;
 
-        float s0 = panel.localScale.x;
-        float s1 = toShown ? shownScale : hiddenScale;
+        Vector3 s0 = panel.localScale;
+        Vector3 s1 = toShown ? _initialScale : _initialScale * hiddenScale;
 
         float a0 = canvasGroup.alpha;
         float a1 = toShown ? 1f : 0f;
@@ -98,15 +100,14 @@ public class BetPanelPopAnimator : MonoBehaviour
             float e = ease != null ? ease.Evaluate(u) : u;
 
             panel.anchoredPosition = Vector2.LerpUnclamped(p0, p1, e);
-            float s = Mathf.LerpUnclamped(s0, s1, e);
-            panel.localScale = Vector3.one * s;
+            panel.localScale = Vector3.LerpUnclamped(s0, s1, e);
             canvasGroup.alpha = Mathf.LerpUnclamped(a0, a1, e);
 
             yield return null;
         }
 
         panel.anchoredPosition = p1;
-        panel.localScale = Vector3.one * s1;
+        panel.localScale = s1;
         canvasGroup.alpha = a1;
 
         if (!toShown) SetInteractable(false);
