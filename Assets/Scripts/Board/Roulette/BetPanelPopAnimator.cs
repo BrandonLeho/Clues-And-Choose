@@ -97,7 +97,7 @@ public class BetPanelPopAnimator : MonoBehaviour
     {
         EnsureInitialized();
 
-        panel.anchoredPosition = hiddenAnchoredPos;
+        panel.anchoredPosition = GetHiddenPos();
         panel.localScale = Vector3.one * (_shownScale * hiddenScale);
         canvasGroup.alpha = 0f;
         SetInteractable(false);
@@ -117,7 +117,7 @@ public class BetPanelPopAnimator : MonoBehaviour
         float d = Mathf.Max(0.0001f, toShown ? inDuration : outDuration);
 
         Vector2 p0 = panel.anchoredPosition;
-        Vector2 p1 = toShown ? _shownAnchoredPos : hiddenAnchoredPos;
+        Vector2 p1 = toShown ? _shownAnchoredPos : GetHiddenPos();
 
         float s0 = panel.localScale.x;
         float s1 = toShown ? _shownScale : _shownScale * hiddenScale;
@@ -176,6 +176,11 @@ public class BetPanelPopAnimator : MonoBehaviour
                 ? tItem.originalPos + offset
                 : tItem.originalPos;
         }
+    }
+
+    Vector2 GetHiddenPos()
+    {
+        return _shownAnchoredPos + hiddenAnchoredPos;
     }
 
     void SetInteractable(bool on)
