@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 [DisallowMultipleComponent]
 public class BetPanelPopAnimator : MonoBehaviour
@@ -21,6 +22,21 @@ public class BetPanelPopAnimator : MonoBehaviour
 
     [Header("Behavior")]
     [SerializeField] bool disableRaycastsWhenHidden = true;
+
+    [System.Serializable]
+    public class TranslateTarget
+    {
+        public Transform target;
+
+        [Header("Offsets (local space)")]
+        public float xOffset = 0f;
+        public float yOffset = 0f;
+
+        [HideInInspector] public Vector3 originalPos;
+    }
+
+    [Header("Extra Objects to Translate")]
+    [SerializeField] List<TranslateTarget> translateTargets = new List<TranslateTarget>();
 
     Coroutine _co;
     bool _isShown;
@@ -47,6 +63,12 @@ public class BetPanelPopAnimator : MonoBehaviour
 
         float currentScale = panel.localScale.x;
         _shownScale = Mathf.Approximately(currentScale, 0f) ? 1f : currentScale;
+
+        foreach (var t in translateTargets)
+        {
+            if (t.target != null)
+                t.originalPos = t.target.localPosition;
+        }
 
         _initialized = true;
     }
@@ -117,6 +139,23 @@ public class BetPanelPopAnimator : MonoBehaviour
             panel.localScale = Vector3.one * s;
             canvasGroup.alpha = Mathf.LerpUnclamped(a0, a1, e);
 
+            foreach (var tItem in translateTargets)
+            {
+                if (!tItem.target) continue;
+
+                Vector3 offset = new Vector3(tItem.xOffset, tItem.yOffset, 0f);
+
+                Vector3 start = toShown
+                    ? tItem.originalPos
+                    : tItem.originalPos + offset;
+
+                Vector3 end = toShown
+                    ? tItem.originalPos + offset
+                    : tItem.originalPos;
+
+                tItem.target.localPosition = Vector3.LerpUnclamped(start, end, e);
+            }
+
             yield return null;
         }
 
@@ -126,6 +165,17 @@ public class BetPanelPopAnimator : MonoBehaviour
 
         if (!toShown) SetInteractable(false);
         _co = null;
+
+        foreach (var tItem in translateTargets)
+        {
+            if (!tItem.target) continue;
+
+            Vector3 offset = new Vector3(tItem.xOffset, tItem.yOffset, 0f);
+
+            tItem.target.localPosition = toShown
+                ? tItem.originalPos + offset
+                : tItem.originalPos;
+        }
     }
 
     void SetInteractable(bool on)
