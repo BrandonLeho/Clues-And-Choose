@@ -13005,7 +13005,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 2.3178697
+    x: 2.413896
     y: 0
     width: 10
     height: 10
@@ -53409,8 +53409,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BetPanelPopAnimator
   canvasGroup: {fileID: 945805249}
   panel: {fileID: 945805246}
-  hiddenAnchoredPos: {x: 0, y: -25}
-  hiddenScale: 0.92
+  hiddenAnchoredPos: {x: 0, y: -10}
+  hiddenScale: 0.98
   inDuration: 0.12
   outDuration: 0.1
   ease:
@@ -53441,11 +53441,11 @@ MonoBehaviour:
   translateTargets:
   - target: {fileID: 1920895429}
     xOffset: 0
-    yOffset: 50
+    yOffset: 300
     originalPos: {x: 0, y: 0, z: 0}
   - target: {fileID: 313719347}
     xOffset: 0
-    yOffset: 50
+    yOffset: 125
     originalPos: {x: 0, y: 0, z: 0}
 --- !u!1001 &947314592
 PrefabInstance:
@@ -85875,8 +85875,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BetPanelPopAnimator
   canvasGroup: {fileID: 1432568449}
   panel: {fileID: 1432568448}
-  hiddenAnchoredPos: {x: 25, y: 0}
-  hiddenScale: 0.92
+  hiddenAnchoredPos: {x: 10, y: 0}
+  hiddenScale: 0.98
   inDuration: 0.12
   outDuration: 0.1
   ease:
@@ -85906,11 +85906,11 @@ MonoBehaviour:
   disableRaycastsWhenHidden: 1
   translateTargets:
   - target: {fileID: 400563417}
-    xOffset: -200
+    xOffset: -125
     yOffset: 0
     originalPos: {x: 0, y: 0, z: 0}
   - target: {fileID: 120796076}
-    xOffset: -200
+    xOffset: -125
     yOffset: 0
     originalPos: {x: 0, y: 0, z: 0}
 --- !u!114 &1432568451
