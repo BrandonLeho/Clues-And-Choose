@@ -13005,7 +13005,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 18.93852
+    x: 0.4971657
     y: 0
     width: 10
     height: 10
@@ -85875,7 +85875,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BetPanelPopAnimator
   canvasGroup: {fileID: 1432568449}
   panel: {fileID: 1432568448}
-  hiddenAnchoredPos: {x: 10, y: 0}
+  hiddenAnchoredPos: {x: 50, y: 0}
   hiddenScale: 0.98
   inDuration: 0.12
   outDuration: 0.1
