@@ -1,8 +1,19 @@
 using UnityEngine;
+using System;
 
 [DisallowMultipleComponent]
 public class RouletteBetHoverZones : MonoBehaviour
 {
+    public static bool BetPanelsActive { get; private set; }
+    public static event Action<bool> OnBetPanelsActiveChanged;
+
+    void SetBetPanelsActive(bool on)
+    {
+        if (BetPanelsActive == on) return;
+        BetPanelsActive = on;
+        OnBetPanelsActiveChanged?.Invoke(on);
+    }
+
     [Header("Panel Animators")]
     [SerializeField] BetPanelPopAnimator topPanel;
     [SerializeField] BetPanelPopAnimator sidePanel;
@@ -30,6 +41,7 @@ public class RouletteBetHoverZones : MonoBehaviour
     {
         ResetToWaitingForEnter();
         ForceHidePanelsImmediate();
+        SetBetPanelsActive(false);
     }
 
     void Update()
@@ -89,12 +101,14 @@ public class RouletteBetHoverZones : MonoBehaviour
     {
         if (topPanel) topPanel.Show();
         if (sidePanel) sidePanel.Show();
+        SetBetPanelsActive(true);
     }
 
     void HideBothPanels()
     {
         if (topPanel) topPanel.Hide();
         if (sidePanel) sidePanel.Hide();
+        SetBetPanelsActive(false);
     }
 
     void ArmExitZone()
@@ -117,11 +131,13 @@ public class RouletteBetHoverZones : MonoBehaviour
     {
         HideBothPanels();
         ResetToWaitingForEnter();
+        SetBetPanelsActive(false);
     }
 
     void ForceHidePanelsImmediate()
     {
         if (topPanel) topPanel.ApplyInstantHidden();
         if (sidePanel) sidePanel.ApplyInstantHidden();
+        SetBetPanelsActive(false);
     }
 }

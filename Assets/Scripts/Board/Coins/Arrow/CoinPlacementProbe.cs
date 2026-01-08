@@ -237,7 +237,7 @@ public class CoinPlacementProbe : MonoBehaviour
             SyncArrowSortingLayerAndOrder();
             UpdateTipLagRotation();
 
-            bool inside = IsProbeInsideGrid();
+            bool inside = IsProbeAllowedToShow();
             if (_suppressUntilInside)
             {
                 if (inside) { _suppressUntilInside = false; SetArrowShown(true); }
@@ -545,5 +545,13 @@ public class CoinPlacementProbe : MonoBehaviour
                 if (sr) _touchedSet.Remove(sr);
             }
         }
+    }
+
+    bool IsProbeAllowedToShow()
+    {
+        if (GameRuleSettings.IsRouletteModeEnabled)
+            return RouletteBetHoverZones.BetPanelsActive;
+
+        return IsProbeInsideGrid();
     }
 }
