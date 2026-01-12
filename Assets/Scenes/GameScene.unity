@@ -13419,7 +13419,7 @@ MonoBehaviour:
   m_Texture: {fileID: 2800000, guid: 94ba9cbaf7424be479eace220eff6002, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 62.53729
+    x: 3.3758078
     y: 0
     width: 10
     height: 10
@@ -13703,7 +13703,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -74, y: 74}
+  m_Offset: {x: -90, y: 90}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -13713,7 +13713,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 1500, y: 870}
+  m_Size: {x: 1530, y: 900}
   m_EdgeRadius: 0
 --- !u!1001 &252463024
 PrefabInstance:
