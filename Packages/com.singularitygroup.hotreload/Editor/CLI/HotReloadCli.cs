@@ -21,6 +21,10 @@ namespace SingularityGroup.HotReload.Editor.Cli {
         
         //InitializeOnLoad ensures controller gets initialized on unity thread
         static HotReloadCli() {
+            if (MultiplayerPlaymodeHelper.IsClone) {
+                controller = new FallbackCliController();
+                return;
+            }
             controller =
     #if UNITY_EDITOR_OSX
                 new OsxCliController();
@@ -44,15 +48,43 @@ namespace SingularityGroup.HotReload.Editor.Cli {
                 exposeServerToNetwork: HotReloadPrefs.ExposeServerToLocalNetwork, 
                 allAssetChanges: HotReloadPrefs.AllAssetChanges, 
                 createNoWindow: HotReloadPrefs.DisableConsoleWindow,
+#if UNITY_EDITOR_WIN
+                useWatchman: HotReloadPrefs.UseWatchman,
+#endif
                 detailedErrorReporting: !HotReloadPrefs.DisableDetailedErrorReporting
             );
         }
         
-        internal static async Task StartAsync(bool exposeServerToNetwork, bool allAssetChanges, bool createNoWindow, bool isReleaseMode, bool detailedErrorReporting, LoginData loginData = null) {
+        internal static async Task StartAsync(
+            bool exposeServerToNetwork, 
+            bool allAssetChanges, 
+            bool createNoWindow, 
+            bool isReleaseMode, 
+            bool detailedErrorReporting, 
+#if UNITY_EDITOR_WIN 
+            bool useWatchman = true,
+#endif
+            LoginData loginData = null
+) {
+            if (controller.PlatformName == "") {
+                return;
+            }
             var port = await Prepare().ConfigureAwait(false);
             await ThreadUtility.SwitchToThreadPool();
             StartArgs args;
-            if (TryGetStartArgs(UnityHelper.DataPath, exposeServerToNetwork, allAssetChanges, createNoWindow, isReleaseMode, detailedErrorReporting, loginData, port, out args)) {
+            if (TryGetStartArgs(
+                    UnityHelper.DataPath, 
+                    exposeServerToNetwork, 
+                    allAssetChanges, 
+                    createNoWindow, 
+                    isReleaseMode, 
+                    detailedErrorReporting, 
+                    loginData, 
+                    port, 
+#if UNITY_EDITOR_WIN 
+                    useWatchman,
+#endif
+                    out args)) {
                 await controller.Start(args);
             }
         }
@@ -73,7 +105,20 @@ namespace SingularityGroup.HotReload.Editor.Cli {
 #pragma warning restore CS0649
         }
         
-        static bool TryGetStartArgs(string dataPath, bool exposeServerToNetwork, bool allAssetChanges, bool createNoWindow, bool isReleaseMode, bool detailedErrorReporting, LoginData loginData, int port, out StartArgs args) {
+        static bool TryGetStartArgs(
+            string dataPath, 
+            bool exposeServerToNetwork, 
+            bool allAssetChanges, 
+            bool createNoWindow, 
+            bool isReleaseMode, 
+            bool detailedErrorReporting, 
+            LoginData loginData, 
+            int port, 
+#if UNITY_EDITOR_WIN 
+            bool useWatchman,
+#endif
+            out StartArgs args
+        ) {
             string serverDir;
             if(!CliUtils.TryFindServerDir(out serverDir)) {
                 Log.Warning(string.Format(Translations.Errors.WarningFailedToStartServer, 
@@ -125,6 +170,9 @@ namespace SingularityGroup.HotReload.Editor.Cli {
             if (loginData != null) {
                 cliArguments += $@" -email ""{loginData.email}"" -pass ""{loginData.password}""";
             }
+            #if UNITY_EDITOR_WIN
+            cliArguments += $@" -w ""{useWatchman}""";
+            #endif
             if (exposeServerToNetwork) {
                 // server will listen on local network interface (default is localhost only)
                 cliArguments += " -e true";
@@ -195,7 +243,8 @@ namespace SingularityGroup.HotReload.Editor.Cli {
             
             var port = DiscoverFreePort();
             HotReloadState.ServerPort = port;
-            RequestHelper.SetServerPort(port);
+            var serverInfo = RequestHelper.SetServerPort(port);
+            await Task.Run(() => File.WriteAllText(Path.Combine(PackageConst.LibraryCachePath, PackageConst.ServerInfoFileName), JsonConvert.SerializeObject(serverInfo)));
             return port;
         }
 

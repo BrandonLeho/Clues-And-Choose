@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using SingularityGroup.HotReload.DTO;
 using SingularityGroup.HotReload.Editor.Cli;
 using SingularityGroup.HotReload.Editor.Localization;
+using RuntimeLocalization = SingularityGroup.HotReload.Localization;
 using UnityEditor;
 using UnityEngine;
 using EditorGUI = UnityEditor.EditorGUI;
@@ -152,6 +153,7 @@ namespace SingularityGroup.HotReload.Editor {
                                     // misc
                                     RenderMiscHeader();
                                     using (new EditorGUILayout.VerticalScope(paddedStyle ?? (paddedStyle = new GUIStyle { padding = new RectOffset(20, 0, 0, 0) }))) {
+                                        RenderAutoClearTimeline();
                                         RenderAutostart();
                                         RenderConsoleWindow();
 
@@ -196,6 +198,11 @@ namespace SingularityGroup.HotReload.Editor {
                                     DeactivateHotReload();
                                     DisableDetailedErrorReporting();
                                     PauseHotReloadInEditMode();
+#if UNITY_EDITOR_WIN
+                                    if (PackageConst.DefaultLocale == RuntimeLocalization.Locale.English) {
+                                        UseWatchman();
+                                    }
+#endif
                                 }
                             }
                         }
@@ -344,6 +351,21 @@ namespace SingularityGroup.HotReload.Editor {
             EditorGUILayout.EndToggleGroup();
             EditorGUILayout.Space(6f);
         }
+        
+#if UNITY_EDITOR_WIN
+        void UseWatchman() {
+            HotReloadPrefs.UseWatchman = EditorGUILayout.BeginToggleGroup(new GUIContent("Use watchman"), HotReloadPrefs.UseWatchman);
+            string toggleDescription;
+            if (HotReloadPrefs.UseWatchman) {
+                toggleDescription = "Use watchman file watcher";
+            } else {
+                toggleDescription = "Use default file watcher";
+            }
+            EditorGUILayout.LabelField(toggleDescription, HotReloadWindowStyles.WrapStyle);
+            EditorGUILayout.EndToggleGroup();
+            EditorGUILayout.Space(6f);
+        }
+#endif
 
         public static void DisableDetailedErrorReportingInner(bool newSetting) {
             if (newSetting == HotReloadPrefs.DisableDetailedErrorReporting) {
@@ -373,6 +395,22 @@ namespace SingularityGroup.HotReload.Editor {
                     HotReloadRunTab.Recompile();
                 }
             }
+        }
+        
+        void RenderAutoClearTimeline() {
+            var newSettings = EditorGUILayout.BeginToggleGroup(new GUIContent(Translations.Settings.ToggleAutoClearTimeline), HotReloadPrefs.AutoClearTimeline);
+            if (newSettings != HotReloadPrefs.AutoClearTimeline) {
+                HotReloadPrefs.AutoClearTimeline = newSettings;
+            }
+            string toggleDescription;
+            if (HotReloadPrefs.AutoClearTimeline) {
+                toggleDescription = Translations.Settings.SettingsAutoClearTimelineOn;
+            } else {
+                toggleDescription = Translations.Settings.SettingsAutoClearTimelineOff;
+            }
+            EditorGUILayout.LabelField(toggleDescription, HotReloadWindowStyles.WrapStyle);
+            EditorGUILayout.EndToggleGroup();
+            EditorGUILayout.Space();
         }
 
         void RenderAutostart() {

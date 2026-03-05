@@ -75,12 +75,18 @@ namespace SingularityGroup.HotReload.Editor.Localization {
             
             // Hot Reload While Debugger Is Attached
             public static string DebuggerAttachedTitle;
-            public static string DebuggerAttachedMessage;
+            public static string DebuggerAttachedMessagePaused;
+            public static string DebuggerAttachedMessageAutoRecompile;
+            
             
             // Hot Reloaded Methods When Debugger Is Attached
             public static string DebuggerMethodsTitle;
             public static string DebuggerMethodsMessage;
             public static string DebuggerMethodsConfirmation;
+            
+            // Hot Reloaded Requires UTF8 Encoding
+            public static string UTF8EncodingRequiredTitle;
+            public static string UTF8EncodingRequiredMessage;
             
             public static void LoadEnglish() {
                 // Button texts
@@ -124,9 +130,7 @@ namespace SingularityGroup.HotReload.Editor.Localization {
                 
                 // Multidimensional Arrays
                 MultidimensionalArraysTitle = "Use jagged instead of multidimensional arrays";
-                MultidimensionalArraysMessage = "Hot Reload doesn't support methods with multidimensional arrays ([,]). You can work around this by using jagged arrays ([][])"
-
-;
+                MultidimensionalArraysMessage = "Hot Reload doesn't support methods with multidimensional arrays ([,]). You can work around this by using jagged arrays ([][])";
                 
                 // Editors Without HR Running
                 EditorsWithoutHRTitle = "Some Unity instances don't have Hot Reload running.";
@@ -159,12 +163,17 @@ namespace SingularityGroup.HotReload.Editor.Localization {
                 
                 // Hot Reload While Debugger Is Attached
                 DebuggerAttachedTitle = "Hot Reload is disabled while a debugger is attached";
-                DebuggerAttachedMessage = "Hot Reload automatically disables itself while a debugger is attached, as it can otherwise interfere with certain debugger features.\nWhile disabled, every code change will trigger a full Unity recompilation.\n\nYou can choose to keep Hot Reload enabled while a debugger is attached, though some features like debugger variable inspection might not always work as expected.";
+                DebuggerAttachedMessageAutoRecompile = "Hot Reload automatically disables itself while a debugger is attached, as it can otherwise interfere with certain debugger features.\nWhile disabled, every code change will trigger a full Unity recompilation.\n\nYou can choose to keep Hot Reload enabled while a debugger is attached, though some features like debugger variable inspection might not always work as expected.";
+                DebuggerAttachedMessagePaused = "Hot Reload automatically disables itself while a debugger is attached, as it can otherwise interfere with certain debugger features.\n\nYou can choose to keep Hot Reload enabled while a debugger is attached, though some features like debugger variable inspection might not always work as expected.";
                 
                 // Hot Reloaded Methods When Debugger Is Attached
                 DebuggerMethodsTitle = "Hot Reload may interfere with your debugger session";
                 DebuggerMethodsMessage = "Some debugger features, like variable inspection, might not work as expected for methods patched during the Hot Reload session. A full Unity recompile is required to get the full debugger experience.";
                 DebuggerMethodsConfirmation = "Using the Recompile button will stop Play Mode.\n\nDo you wish to proceed?";
+                
+                // Hot Reloaded Requires UTF8 Encoding
+                UTF8EncodingRequiredTitle = "Change file encoding to UTF-8";
+                UTF8EncodingRequiredMessage = "Unknown source file encoding detected. Change the encoding of the code editor to UTF-8 to resolve this problem.";
             }
             
             public static void LoadSimplifiedChinese() {
@@ -242,12 +251,17 @@ namespace SingularityGroup.HotReload.Editor.Localization {
 
                 // Hot Reload While Debugger Is Attached
                 DebuggerAttachedTitle = "附加调试器时禁用 Hot Reload";
-                DebuggerAttachedMessage = "附加调试器时，Hot Reload 会自动禁用自身，因为它可能会干扰某些调试器功能。\n禁用后，每次代码更改都会触发完整的 Unity 重新编译。\n\n您可以选择在附加调试器时保持 Hot Reload 启用，但某些功能（如调试器变量检查）可能不总是按预期工作。";
+                DebuggerAttachedMessageAutoRecompile = "当附加调试器时,热重载将自动禁用,以避免干扰某些调试器功能。\n禁用状态下,每次修改代码都会触发Unity完整重编译。\n\n您也可以选择在附加调试器时继续启用热重载,但请注意某些功能(例如调试器的变量检查)可能无法正常工作。";
+                DebuggerAttachedMessagePaused = "当附加调试器时,热重载将自动禁用,以避免干扰某些调试器功能。\n\n您也可以选择在附加调试器时继续启用热重载,但请注意某些功能(例如调试器的变量检查)可能无法正常工作。";
 
                 // Hot Reloaded Methods When Debugger Is Attached
                 DebuggerMethodsTitle = "Hot Reload 可能会干扰您的调试会话";
                 DebuggerMethodsMessage = "某些调试器功能，例如变量检查，对于在 Hot Reload 会话期间修补的方法可能无法按预期工作。需要完整的 Unity 重新编译才能获得完整的调试器体验。";
                 DebuggerMethodsConfirmation = "使用“重新编译”按钮将停止播放模式。\n\n您希望继续吗？";
+                
+                // Hot Reloaded Requires UTF8 Encoding
+                UTF8EncodingRequiredTitle = "将文件编码更改为 UTF-8";
+                UTF8EncodingRequiredMessage = "检测到未知的源文件编码。请将代码编辑器的编码更改为 UTF-8 以解决此问题。";
             }
         }
     }

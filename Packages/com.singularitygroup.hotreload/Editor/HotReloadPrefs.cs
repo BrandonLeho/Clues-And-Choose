@@ -5,6 +5,7 @@ using JetBrains.Annotations;
 using SingularityGroup.HotReload.Editor.Cli;
 using UnityEditor;
 using UnityEngine;
+using RuntimeLocalization = SingularityGroup.HotReload.Localization;
 
 namespace SingularityGroup.HotReload.Editor {
     internal static class HotReloadPrefs {
@@ -34,6 +35,7 @@ namespace SingularityGroup.HotReload.Editor {
         private const string PatchesCollapseKey = "HotReloadWindow.PatchesCollapse";
         private const string PatchesGroupAllKey = "HotReloadWindow.PatchesGroupAll";
         private const string LaunchOnEditorStartKey = "HotReloadWindow.LaunchOnEditorStart";
+        private const string AutoClearTimelineKey = "HotReloadWindow.AutoClearTimeline";
         private const string AutoRecompileUnsupportedChangesKey = "HotReloadWindow.AutoRecompileUnsupportedChanges";
         private const string AutoRecompilePartiallyUnsupportedChangesKey = "HotReloadWindow.AutoRecompilePartiallyUnsupportedChanges";
         private const string DisplayNewMonobehaviourMethodsAsPartiallySupportedKey = "HotReloadWindow.DisplayNewMonobehaviourMethodsAsPartiallySupported";
@@ -74,8 +76,11 @@ namespace SingularityGroup.HotReload.Editor {
         private const string OpenedWindowAtLeastOnceKey = "HotReloadWindow.OpenedWindowAtLeastOnce";
         private const string DeactivateHotReloadKey = "HotReloadWindow.DeactivateHotReload";
         private const string ActiveLocaleKey = "HotReloadWindow.ActiveLocale";
-
         public const string DontShowPromptForDownloadKey = "ServerDownloader.DontShowPromptForDownload";
+        public const string DebuggerOnboardingShownKey = "HotReloadWindow.DebuggerOnboardingShownKey";
+        #if UNITY_EDITOR_WIN
+        public const string UseWatchmanKey = "ServerDownloader.UseWatchman";
+        #endif
 
         [Obsolete] public const string AllowHttpSettingCacheKey = "HotReloadWindow.AllowHttpSettingCacheKey";
         [Obsolete] public const string AutoRefreshSettingCacheKey = "HotReloadWindow.AutoRefreshSettingCacheKey";
@@ -276,6 +281,11 @@ namespace SingularityGroup.HotReload.Editor {
         public static bool LaunchOnEditorStart {
             get { return EditorPrefs.GetBool(LaunchOnEditorStartKey, false); }
             set { EditorPrefs.SetBool(LaunchOnEditorStartKey, value); }
+        }
+        
+        public static bool AutoClearTimeline {
+            get { return EditorPrefs.GetBool(AutoClearTimelineKey, true); }
+            set { EditorPrefs.SetBool(AutoClearTimelineKey, value); }
         }
 
         public static bool AutoRecompileUnsupportedChanges {
@@ -497,6 +507,18 @@ namespace SingularityGroup.HotReload.Editor {
         public static string ActiveLocale {
             get { return EditorPrefs.GetString(ActiveLocaleKey, PackageConst.DefaultLocale); }
             set { EditorPrefs.SetString(ActiveLocaleKey, value); }
+        }
+        
+        #if UNITY_EDITOR_WIN
+        public static bool UseWatchman {
+            get { return EditorPrefs.GetBool(UseWatchmanKey, PackageConst.DefaultLocale == RuntimeLocalization.Locale.English); }
+            set { EditorPrefs.SetBool(UseWatchmanKey, value); }
+        }
+        #endif
+        
+        public static bool DebuggerOnboardingShown {
+            get { return EditorPrefs.GetBool(DebuggerOnboardingShownKey); }
+            set { EditorPrefs.SetBool(DebuggerOnboardingShownKey, value); }
         }
     }
 }
