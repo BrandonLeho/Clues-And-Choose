@@ -1,4 +1,7 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+using TMPro;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -23,6 +26,12 @@ public class BetPanelPopAnimator : MonoBehaviour
     [Header("Behavior")]
     [SerializeField] bool disableRaycastsWhenHidden = true;
 
+    [Header("Bet Choice Hover Logging")]
+    [SerializeField] bool enableProbeHoverLogging = true;
+    [SerializeField] bool logOnlyWhenBetPanelsActive = true;
+    [SerializeField] GraphicRaycaster raycaster;
+    [SerializeField] EventSystem eventSystem;
+
     [System.Serializable]
     public class TranslateTarget
     {
@@ -44,12 +53,16 @@ public class BetPanelPopAnimator : MonoBehaviour
     bool _initialized;
     Vector2 _shownAnchoredPos;
     float _shownScale;
+    readonly HashSet<GameObject> _betChoiceObjects = new HashSet<GameObject>();
+    GameObject _currentProbeHover;
 
     void Reset()
     {
         panel = transform as RectTransform;
         canvasGroup = GetComponent<CanvasGroup>();
         if (!canvasGroup) canvasGroup = gameObject.AddComponent<CanvasGroup>();
+        if (!raycaster) raycaster = GetComponentInParent<GraphicRaycaster>();
+        if (!eventSystem) eventSystem = FindFirstObjectByType<EventSystem>();
     }
 
     void EnsureInitialized()
@@ -58,6 +71,8 @@ public class BetPanelPopAnimator : MonoBehaviour
 
         if (!panel) panel = transform as RectTransform;
         if (!canvasGroup) canvasGroup = GetComponent<CanvasGroup>() ?? gameObject.AddComponent<CanvasGroup>();
+        if (!raycaster) raycaster = GetComponentInParent<GraphicRaycaster>();
+        if (!eventSystem) eventSystem = FindFirstObjectByType<EventSystem>();
 
         _shownAnchoredPos = panel.anchoredPosition;
 
@@ -70,7 +85,133 @@ public class BetPanelPopAnimator : MonoBehaviour
                 t.originalPos = t.target.localPosition;
         }
 
+        ConfigureBetChoiceHoverLoggers();
+
         _initialized = true;
+    }
+
+    void ConfigureBetChoiceHoverLoggers()
+    {
+        if (!enableProbeHoverLogging) return;
+
+        _betChoiceObjects.Clear();
+
+        var images = GetComponentsInChildren<Image>(true);
+        foreach (var image in images)
+        {
+            if (!image || image.transform == transform) continue;
+
+            if (!TryGetReadableChildLabel(image.transform, out _))
+                continue;
+
+            _betChoiceObjects.Add(image.gameObject);
+            image.raycastTarget = true;
+        }
+    }
+
+    void Update()
+    {
+        UpdateProbeHover();
+    }
+
+    void UpdateProbeHover()
+    {
+        if (!enableProbeHoverLogging || !_isShown)
+        {
+            ClearProbeHover();
+            return;
+        }
+
+        if (logOnlyWhenBetPanelsActive && !RouletteBetHoverZones.BetPanelsActive)
+        {
+            ClearProbeHover();
+            return;
+        }
+
+        var probe = CoinPlacementProbe.Active;
+        if (probe == null || !raycaster || !eventSystem)
+        {
+            ClearProbeHover();
+            return;
+        }
+
+        var pointerData = new PointerEventData(eventSystem) { position = probe.GetProbeScreenPosition() };
+        var results = new List<RaycastResult>();
+        raycaster.Raycast(pointerData, results);
+
+        GameObject target = null;
+        for (int i = 0; i < results.Count; i++)
+        {
+            target = FindBetChoiceInParents(results[i].gameObject.transform);
+            if (target) break;
+        }
+
+        if (target == _currentProbeHover)
+            return;
+
+        _currentProbeHover = target;
+        if (_currentProbeHover)
+            LogBetChoiceHover(_currentProbeHover);
+    }
+
+    GameObject FindBetChoiceInParents(Transform hit)
+    {
+        while (hit)
+        {
+            if (_betChoiceObjects.Contains(hit.gameObject))
+                return hit.gameObject;
+
+            if (hit == transform)
+                break;
+
+            hit = hit.parent;
+        }
+
+        return null;
+    }
+
+    void ClearProbeHover()
+    {
+        _currentProbeHover = null;
+    }
+
+    void LogBetChoiceHover(GameObject betChoice)
+    {
+        if (logOnlyWhenBetPanelsActive && !RouletteBetHoverZones.BetPanelsActive)
+            return;
+
+        string label = TryGetReadableChildLabel(betChoice.transform, out var labelText)
+            ? labelText
+            : betChoice.name;
+
+        Debug.Log($"[RouletteBetChoice] Hovered: {label}", betChoice);
+    }
+
+    static bool TryGetReadableChildLabel(Transform root, out string labelText)
+    {
+        labelText = string.Empty;
+        if (!root) return false;
+
+        for (int i = 0; i < root.childCount; i++)
+        {
+            var child = root.GetChild(i);
+
+            var tmp = child.GetComponent<TMP_Text>();
+            if (tmp && !string.IsNullOrWhiteSpace(tmp.text))
+            {
+                labelText = tmp.text;
+                return true;
+            }
+
+            var uiText = child.GetComponent<Text>();
+            if (uiText && !string.IsNullOrWhiteSpace(uiText.text))
+            {
+                labelText = uiText.text;
+                return true;
+            }
+        }
+
+        return false;
     }
 
     void Awake()
