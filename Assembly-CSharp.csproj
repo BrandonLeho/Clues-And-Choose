@@ -135,6 +135,7 @@
     <Compile Include="Assets\Scripts\Board\Coins\CoinSpawnOnPhaseEnd.cs" />
     <Compile Include="Assets\Scripts\Board\PlayerLIst\ClueGiverRoulette\RouletteEntryManager.cs" />
     <Compile Include="Assets\Scripts\Board\Cards\CardHover.cs" />
+    <Compile Include="Assets\Scripts\Board\Roulette\RouletteModeObjectGate.cs" />
     <Compile Include="Assets\Scripts\Steam\SteamLobby.cs" />
     <Compile Include="Assets\Scripts\Board\Coins\CoinPlacedLock.cs" />
     <Compile Include="Assets\Scripts\Steam\CustomNetworkManager.cs" />
